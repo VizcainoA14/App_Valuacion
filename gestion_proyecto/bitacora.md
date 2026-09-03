@@ -32,6 +32,62 @@ Reglas:
 
 ---
 
+## 2026-09-03 · Claude · La primera corrida de la CI encontró dos defectos reales (T-A-08)
+
+**Tareas:** `T-A-08` 🟡 (el workflow ya se ejecuta; falta verlo verde de punta a punta)
+
+El propietario hizo el primer push. La CI corrió en **Windows y Linux a la vez** y falló en el paso
+de pruebas, con **fallos distintos en cada sistema**. Los dos eran defectos de verdad, y los dos
+llevaban meses ahí sin que la suite local los viera: en una sola máquina, con un solo sistema
+operativo y una sola configuración de git, ninguno de los dos se manifiesta.
+
+### Defecto 1 — el detector de unidades de red mentía fuera de Windows
+
+**Dónde:** `main/arranque/rutaDatos.ts`. **Falló en Linux**, 2 pruebas.
+
+`esUnidadDeRed(ruta, plataforma, ejecutar)` recibe la plataforma **como parámetro**, justamente para
+poder razonar sobre Windows desde cualquier sistema. Pero por dentro usaba `isAbsolute` de
+`node:path`, que resuelve según el sistema **anfitrión**. En Linux, `Z:\valuacion` no es una ruta
+absoluta POSIX, así que la función la descartaba como *"ruta relativa"* y devolvía `esRed: false`
+sin llegar a consultar nada.
+
+En producción no se manifestaba —en Windows el anfitrión es Windows—, pero el contrato de la función
+era falso: decía estar parametrizada por plataforma y no lo estaba. Ahora hay `esRutaAbsoluta(ruta,
+plataforma)`, que elige `win32.isAbsolute` o `posix.isAbsolute` según lo que se declara, no según
+dónde corre el proceso.
+
+### Defecto 2 — CRLF: la migración de triggers no coincidía consigo misma
+
+**Dónde:** `infraestructura/db/integridad.test.ts`. **Falló en Windows**, 1 prueba.
+
+La prueba de `T-B-04` compara byte a byte `0002_triggers_integridad.sql` con lo que produce
+`scripts/generar-triggers.ts`, para que nadie edite los 119 triggers a mano. Los ejecutores Windows
+de GitHub traen `core.autocrlf=true`, así que el `checkout` convirtió LF → CRLF y el archivo dejó de
+ser idéntico al generado. En Linux pasó; en Windows no. El diff de 600 líneas era engañoso: el
+contenido era el mismo, cambiaban los finales de línea.
+
+Dos correcciones, y las dos hacen falta:
+
+- **`.gitattributes` nuevo** con `* text=auto eol=lf` y los binarios declarados (`.xlsx`, `.docx`,
+  fuentes, imágenes). Este repositorio se compara, se hashea y se audita: su contenido tiene que ser
+  idéntico en cualquier equipo, no depender de la configuración de git de quien clona.
+- **La prueba normaliza los finales de línea** antes de comparar, con la razón anotada. Lo que la
+  prueba debe medir es que nadie tocó los triggers a mano, no cómo hizo el `checkout` quien la
+  ejecuta. Verificado convirtiendo el archivo a CRLF a propósito: ahora pasa.
+
+### Lo que esto dice del proyecto
+
+La CI hizo exactamente aquello para lo que se escribió, en su primera ejecución. Las 376 pruebas
+pasaban en local; dos de ellas dependían del sistema operativo y de una opción de git, y nadie lo
+habría notado hasta que otra persona clonara el repositorio en otra máquina.
+
+**Pendiente de la próxima corrida:** en Linux el fallo detuvo el trabajo antes de `pack` y de los
+E2E, así que **el empaquetado y los 13 E2E sobre Linux siguen sin verificarse**. Localmente todo está
+en verde —376 unitarias + 5 de rendimiento + 13 E2E, también sobre el instalador— y `npm audit
+--audit-level=high` pasa (solo hay 6 vulnerabilidades *moderadas*, de `uuid` a través de `exceljs`).
+
+---
+
 ## 2026-09-03 · Claude · Etapas 5 y 6: el núcleo de ADR-026 queda completo (T-F-01, T-F-02, T-D-07, T-D-10, T-G-03)
 
 **Tareas:** `T-F-01` ✅ · `T-F-02` ✅ · `T-D-07` ✅ · `T-D-10` ✅ · `T-G-03` ✅

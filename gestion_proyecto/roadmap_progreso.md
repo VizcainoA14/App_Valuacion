@@ -96,7 +96,7 @@ verificación. El **orden** es el de esta sección.
 | `T-A-05` | Medición base: tamaño y arranque | ✅ | `T-A-03` | 98,9/120 MB · 324/350 MB · 193 kB/2,5 MB · ≈5 s frío. Hardware objetivo → Fase 9 |
 | `T-A-06` | Script de trazabilidad `/Teoria` → CSV | ✅ | `T-A-02` | 380 requisitos (378 PENDIENTE + 2 NO_IMPLEMENTADO ADR-015). Conteos 1.1 §1 corregidos |
 | `T-A-07` | Test de configuración segura de Electron | ✅ | `T-A-02` | 11 unit + verificación conductual E2E (sin `require`/`process` en el renderer) |
-| `T-A-08` | CI completa con empaquetado y E2E | 🟡 | `T-A-03`…`T-A-07` | Workflow escrito. **Falta el primer push** para verlo verde |
+| `T-A-08` | CI completa con empaquetado y E2E | 🟡 | `T-A-03`…`T-A-07` | 2026-09-03: **primera corrida**. Encontró 2 defectos reales (rutas de red dependientes del anfitrión en Linux; CRLF en la migración de triggers en Windows), ya corregidos. Falta ver `pack` y los E2E en verde sobre Linux |
 
 ---
 

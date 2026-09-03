@@ -1,0 +1,44 @@
+# Finales de línea deterministas en todo el repositorio.
+#
+# Sin esto, un `git clone` en Windows con `core.autocrlf=true` (el valor por
+# defecto de los ejecutores de GitHub) convierte LF → CRLF al descargar, y la
+# prueba de T-B-04 —que compara byte a byte la migración de triggers con lo que
+# produce `scripts/generar-triggers.ts`— falla solo en Windows. Lo detectó la CI.
+#
+# El contenido de este repositorio se compara, se hashea y se audita: tiene que
+# ser idéntico en cualquier equipo.
+
+* text=auto eol=lf
+
+# ── Binarios: nunca se tocan ─────────────────────────────────────────────────
+*.xlsx  binary
+*.docx  binary
+*.xls   binary
+*.doc   binary
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.icns  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.otf   binary
+*.exe   binary
+*.dll   binary
+*.node  binary
+*.db    binary
+*.zip   binary
+
+# ── Archivos que EXIGEN LF, aunque alguien cambie su configuración ───────────
+# Las migraciones se comparan carácter a carácter contra el generador (T-B-04).
+*.sql   text eol=lf
+*.ts    text eol=lf
+*.tsx   text eol=lf
+*.json  text eol=lf
+*.md    text eol=lf
+*.yml   text eol=lf
+*.css   text eol=lf
+*.csv   text eol=lf

@@ -108,7 +108,14 @@ hito B completo (`T-B-01` … `T-B-11`).
 
 ## 3. Tarea actual en ejecución
 
-**Ninguna.** Checkpoint limpio: `verificar:todo` (376 tests), `test:rendimiento` (5), 13 E2E (también sobre el instalador) y `boundaries` en verde (223 módulos).
+**Ninguna.** Checkpoint limpio: `verificar:todo` (376 tests), `test:rendimiento` (5), 13 E2E
+(también sobre el instalador) y `boundaries` en verde (223 módulos).
+
+> **La CI corrió por primera vez el 2026-09-03 y encontró dos defectos**, ya corregidos: el detector
+> de unidades de red usaba el `path` del anfitrión en vez de la plataforma que recibe como parámetro
+> (falló en Linux), y el `checkout` de Windows convertía a CRLF la migración de triggers que se
+> compara byte a byte (se añadió `.gitattributes`). **Falta ver `pack` y los E2E en verde sobre
+> Linux:** allí la corrida se detuvo antes de llegar a esos pasos.
 
 ---
 

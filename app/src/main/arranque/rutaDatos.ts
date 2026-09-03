@@ -5,7 +5,7 @@
  * SQLite se corrompe con el bloqueo de archivos por red y aquí se custodia
  * evidencia contable: si la ruta es de red, la aplicación NO abre la base.
  */
-import { isAbsolute, resolve } from 'node:path';
+import { posix, resolve, win32 } from 'node:path';
 import type { ConfigInstalacion } from './configInstalacion';
 
 export type OrigenRutaDatos = 'argumento' | 'config' | 'userData';
@@ -42,6 +42,17 @@ export function resolverRutaDatos(
 /** `\\servidor\recurso\...` o `//servidor/recurso/...`. Determinista, sin consultar al sistema. */
 export function esRutaUnc(ruta: string): boolean {
   return /^(\\\\|\/\/)[^\\/]+[\\/]/.test(ruta);
+}
+
+/**
+ * Si la ruta es absoluta **según la plataforma que se declara**, no según la del
+ * equipo que ejecuta. `Z:\datos` es absoluta en Windows y relativa en POSIX; usar
+ * el `path` del anfitrión haría que la comprobación dependiera de dónde corre el
+ * proceso en vez de para qué sistema se está resolviendo (lo detectó la CI: en
+ * Linux, toda ruta de Windows se descartaba como "relativa" sin consultar nada).
+ */
+export function esRutaAbsoluta(ruta: string, plataforma: NodeJS.Platform): boolean {
+  return plataforma === 'win32' ? win32.isAbsolute(ruta) : posix.isAbsolute(ruta);
 }
 
 /** `X:\...` → `X`; otras rutas → null. */
@@ -84,7 +95,7 @@ export async function esUnidadDeRed(
   ejecutar: Ejecutor,
 ): Promise<{ esRed: boolean; tipo: TipoUnidad; detalle: string }> {
   if (esRutaUnc(ruta)) return { esRed: true, tipo: 'red', detalle: 'ruta UNC' };
-  if (!isAbsolute(ruta)) return { esRed: false, tipo: 'desconocido', detalle: 'ruta relativa' };
+  if (!esRutaAbsoluta(ruta, plataforma)) return { esRed: false, tipo: 'desconocido', detalle: 'ruta relativa' };
 
   try {
     if (plataforma === 'win32') {

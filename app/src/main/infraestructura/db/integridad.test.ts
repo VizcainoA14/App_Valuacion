@@ -305,8 +305,17 @@ describe('RNF-07 · campos sensibles con justificación, también por SQL direct
 });
 
 describe('la migración de triggers está sincronizada con el generador', () => {
+  /**
+   * Los finales de línea son cosa del `git checkout`, no del generador: en Windows
+   * con `core.autocrlf=true` el archivo llega con CRLF y el generador produce LF.
+   * `.gitattributes` fija LF en todo el repositorio, y aquí se normaliza además
+   * para que la prueba mida lo que dice medir —que nadie editó los triggers a
+   * mano— y no la configuración de git de quien la ejecuta.
+   */
+  const sinCr = (s: string): string => s.replace(/\r\n/g, '\n');
+
   it('0002_triggers_integridad.sql es exactamente lo que produce scripts/generar-triggers.ts', () => {
     const enDisco = readFileSync(join(raiz, RUTA_MIGRACION), 'utf8');
-    expect(enDisco).toBe(generarSql());
+    expect(sinCr(enDisco)).toBe(sinCr(generarSql()));
   });
 });
