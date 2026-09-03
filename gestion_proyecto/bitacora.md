@@ -32,6 +32,60 @@ Reglas:
 
 ---
 
+## 2026-09-03 · Claude · Defecto de navegación reportado, y datos de prueba de un hospital ficticio
+
+**Tareas:** corrección de `Layout` · script `datos:prueba` (nuevo)
+
+### El defecto: entrar en Formatos deshabilitaba las demás etapas
+
+Lo reportó el propietario: *"si entro a una entidad y luego ingreso en formatos, las
+pestañas de configurar, inventario y las demás se bloquean"*.
+
+**Causa:** el `Layout` deducía la entidad **solo de la URL** (`useParams()`). La etapa 2
+es alcanzable sin haber configurado nada —así lo decidió ADR-026, para que un hospital
+recién instalado pueda bajar sus formatos—, de modo que su ruta es `/formatos`, sin
+`:entidadId`. Al entrar ahí, `entidadId` quedaba `undefined` y todas las etapas que
+necesitan entidad se dibujaban deshabilitadas, como si no hubiera ninguna seleccionada.
+
+Lo llamativo es que el estado ya guardaba `entidadActivaId` —lo usa la propia pantalla de
+Formatos para inyectar los catálogos— pero el `Layout` no lo miraba. **Ahora manda la ruta
+cuando la trae, y si no, la última entidad elegida**, y navegar por URL a otra entidad la
+convierte en la activa. Si la entidad recordada ya no existe (se borró la demostración),
+se olvida sola en vez de dejar la barra lateral apuntando a nada.
+
+Cubierto por `formatos.spec.ts`: tras entrar en Formatos, las cinco etapas restantes
+siguen enlazadas y se puede volver a Inventario y seguir trabajando.
+
+### Datos de prueba: E.S.E. Hospital Santa Ana de Guarne
+
+`npm run datos:prueba` genera en `/Datos_de_prueba` un juego completo **a partir de las
+plantillas reales**, no de imitaciones: así las columnas, la fila de encabezados y la de
+ejemplo son exactamente las que la aplicación espera.
+
+Dos escenarios:
+
+- **`01_caso_limpio`** — 41 bienes, 6 clases, 2 sedes, 8 servicios. Repartidos a propósito
+  para que el semáforo muestre **los cuatro colores**, haya candidatos a baja por índice y
+  por estado, dos bienes **sin soporte económico** que se resuelven con la hoja
+  `SIN_SOPORTE` (RN-03-04), un **terreno** (no depreciable) y un **ventilador en comodato**
+  (no entra al patrimonio, RN-02-04). Siete mantenimientos, dos de ellos correctivos
+  fallidos, que alimentan el criterio de baja.
+- **`02_caso_con_problemas`** — diez filas de `PL-03` y cinco de `PL-05`, **cada una con un
+  defecto distinto y documentado**: código y placa repetidos, clase/sede/servicio que no
+  existen, estado inventado, campo obligatorio vacío, serie repetida (advertencia), toma
+  posterior al corte (advertencia), adquisición posterior al corte, costo cero sin ser
+  donación, vida útil sobrescrita sin justificar.
+
+**Lo que el LEEME afirma está probado**, no prometido: `datosPrueba.test.ts` importa los
+archivos por el camino real y comprueba el recorrido completo —catálogo, inventario, datos
+económicos, cálculo y bandeja de bajas— y que el caso con problemas dé exactamente **3
+filas válidas y 7 con error**, con los mensajes que el LEEME promete. Si alguien cambia una
+regla y el juego de datos deja de cuadrar, la prueba lo dice.
+
+**Estado:** 379 tests + 5 de rendimiento + 13 E2E, en verde.
+
+---
+
 ## 2026-09-03 · Claude · La primera corrida de la CI encontró dos defectos reales (T-A-08)
 
 **Tareas:** `T-A-08` 🟡 (el workflow ya se ejecuta; falta verlo verde de punta a punta)

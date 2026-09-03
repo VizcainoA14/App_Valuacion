@@ -92,12 +92,38 @@ const EXTENSIONES: readonly { nombre: string; paso: string }[] = [
 ];
 
 export function Layout(): JSX.Element {
-  const { entidadId } = useParams();
-  const { tema, densidad, fijarTema } = useEstadoInterfaz();
+  const { entidadId: entidadDeLaRuta } = useParams();
+  const { tema, densidad, fijarTema, entidadActivaId, fijarEntidadActiva } = useEstadoInterfaz();
+
+  /**
+   * La entidad con la que se trabaja NO puede depender solo de la URL: la etapa 2
+   * (`/formatos`) es alcanzable sin haber configurado nada (ADR-026), así que su
+   * ruta no lleva `:entidadId`. Deducirla únicamente de los parámetros dejaba el
+   * resto de etapas deshabilitadas al entrar a Formatos, como si no hubiera
+   * entidad seleccionada. Manda la ruta cuando la trae; si no, la última elegida.
+   */
+  const entidadId = entidadDeLaRuta ?? entidadActivaId ?? undefined;
+
+  // Navegar por URL a otra entidad también la convierte en la activa.
+  useEffect(() => {
+    if (entidadDeLaRuta !== undefined && entidadDeLaRuta !== entidadActivaId) fijarEntidadActiva(entidadDeLaRuta);
+  }, [entidadDeLaRuta, entidadActivaId, fijarEntidadActiva]);
+
   const entidad = useCanal('entidad:porId', entidadId === undefined ? undefined : { id: entidadId }, { enabled: entidadId !== undefined });
   const ejercicios = useCanal('ejercicio:listar', entidadId === undefined ? undefined : { entidadId }, { enabled: entidadId !== undefined });
   // El ejercicio vigente es el más reciente de la entidad; las etapas 3-6 cuelgan de él.
   const ejercicioId = ejercicios.data?.[0]?.id ?? null;
+
+  /**
+   * Si la entidad recordada ya no existe (se borró la demostración desde otra
+   * ventana, o se restauró un respaldo), se olvida en vez de dejar la barra
+   * lateral apuntando a algo que no está.
+   */
+  useEffect(() => {
+    if (entidadDeLaRuta === undefined && entidadActivaId !== null && entidad.isSuccess && entidad.data === null) {
+      fijarEntidadActiva(null);
+    }
+  }, [entidadDeLaRuta, entidadActivaId, entidad.isSuccess, entidad.data, fijarEntidadActiva]);
 
   useEffect(() => {
     aplicarApariencia(tema, densidad);

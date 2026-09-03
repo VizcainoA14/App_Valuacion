@@ -35,6 +35,7 @@ línea.
 | `gestion_proyecto/` | Estado, roadmap y bitácora | **Sí, obligatoriamente en cada sesión** |
 | `.claude/` | Skills y configuración de sesión | Sí |
 | `app/` | La aplicación (Electron + React + TS; creada en el hito A) | Sí |
+| `Datos_de_prueba/` | Juego de datos de un hospital **ficticio** para probar el flujo completo. Se regenera con `npm run datos:prueba` | Sí, editando el script |
 
 ## Reglas que no se negocian
 

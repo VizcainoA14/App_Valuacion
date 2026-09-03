@@ -37,6 +37,16 @@ test('los formatos están dentro de la aplicación y se pueden descargar', async
     await pagina.getByRole('link', { name: /HOSPITAL DE DEMOSTRACIÓN/ }).click();
     await pagina.getByRole('link', { name: /^2\. Formatos/ }).click();
     await expect(pagina.getByText('Todavía no hay una entidad seleccionada')).toBeHidden();
+
+    // La etapa 2 no lleva `:entidadId` en su ruta, pero entrar en ella NO puede
+    // deshabilitar las demás: la entidad seleccionada sigue siéndolo (defecto
+    // reportado por el propietario el 2026-09-03).
+    for (const etapa of [/^1\. Configurar/, /^3\. Inventario/, /^4\. Calcular/, /^5\. Bajas/, /^6\. Informe/]) {
+      await expect(pagina.getByRole('link', { name: etapa })).toBeVisible();
+    }
+    // Y se puede volver a cualquiera de ellas y seguir trabajando.
+    await pagina.getByRole('link', { name: /^3\. Inventario/ }).click();
+    await expect(pagina.getByRole('heading', { name: '1 · Los bienes — PL-03' })).toBeVisible();
   } finally {
     await app.close();
     rmSync(userData, { recursive: true, force: true });

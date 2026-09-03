@@ -32,7 +32,8 @@
     "db:triggers": "tsx scripts/generar-triggers.ts",
     "trazabilidad": "tsx scripts/trazabilidad.ts",
     "verificar:versiones": "tsx scripts/verificar-versiones.ts",
-    "verificar:todo": "npm run typecheck && npm run lint && npm run boundaries && npm run test && npm run trazabilidad"
+    "verificar:todo": "npm run typecheck && npm run lint && npm run boundaries && npm run test && npm run trazabilidad",
+    "datos:prueba": "tsx scripts/generar-datos-prueba.ts"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",

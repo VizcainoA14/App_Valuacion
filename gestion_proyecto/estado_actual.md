@@ -15,7 +15,7 @@
 Un hospital configura la entidad, descarga sus formatos, importa el inventario, **calcula la
 depreciación y la obsolescencia**, propone y decide las bajas, y **se lleva su informe en PDF**. El
 motor reproduce las cifras de `ANEXO_C` al dígito y tarda 1,27 s en 20.000 bienes.
-**376 tests + 5 de rendimiento + 13 E2E**, también sobre el instalador. Lo que queda son las
+**379 tests + 5 de rendimiento + 13 E2E**, también sobre el instalador. Lo que queda son las
 **extensiones**, que ya no son el camino principal.
 
 > **El orden de trabajo lo fija ADR-026**, no el grafo de hitos A→H. Ver
@@ -29,6 +29,8 @@ motor reproduce las cifras de `ANEXO_C` al dígito y tarda 1,27 s en 20.000 bien
 
 | Qué | Dónde |
 |---|---|
+| **Datos de prueba** | `npm run datos:prueba` → `/Datos_de_prueba`: hospital ficticio con 41 bienes, y un segundo juego con defectos a propósito. Probado por `datosPrueba.test.ts` |
+| **Defecto de navegación corregido** | El `Layout` deducía la entidad solo de la URL; entrar en `/formatos` (que no lleva `:entidadId`) deshabilitaba las demás etapas. Ahora manda la ruta y, si no la trae, la última entidad elegida |
 | **Etapa 5 · bajas** | `compartido/motor/baja.ts` (RN-09-03 y RN-09-05) + `main/modules/bajas/`. Bandeja con los motivos del motor, justificación individual exigida (RN-09-06), recorrido de ANEXO_B §6.3, rechazo que devuelve el bien a ACTIVO. `renderer/features/bajas/` |
 | **Cierre del inventario** | `bien:activarValidados` (VALIDADO → ACTIVO). Explícito, no un efecto colateral de proponer una baja |
 | **Pasos 05 y 06 completos** | `modules/calculo/validaciones/val-05-06.ts` y `modules/bajas/validaciones/val-09.ts`: el catálogo pasa de 27 a **58 validaciones y todas tienen predicado** |
@@ -108,7 +110,7 @@ hito B completo (`T-B-01` … `T-B-11`).
 
 ## 3. Tarea actual en ejecución
 
-**Ninguna.** Checkpoint limpio: `verificar:todo` (376 tests), `test:rendimiento` (5), 13 E2E
+**Ninguna.** Checkpoint limpio: `verificar:todo` (379 tests), `test:rendimiento` (5), 13 E2E
 (también sobre el instalador) y `boundaries` en verde (223 módulos).
 
 > **La CI corrió por primera vez el 2026-09-03 y encontró dos defectos**, ya corregidos: el detector
@@ -218,7 +220,7 @@ Flecos del propietario: primer **push** (`T-A-08`); confirmar **CT-16**, **CT-17
 | 3 · Stack | ✅ | ✅ | Congelado; librerías de interfaz añadidas con versión exacta |
 | 4 · Inicialización | ✅ | ✅ | |
 | 5 · Implementación | ✅ | 🟡 | **Núcleo ADR-026: 6 de 6 etapas ✅** · 34/64 tareas |
-| 6 · Testing | ✅ | 🟡 | 376 unit/integración + 5 de rendimiento + 13 E2E (también sobre el paquete) |
+| 6 · Testing | ✅ | 🟡 | 379 unit/integración + 5 de rendimiento + 13 E2E (también sobre el paquete) |
 | 7 · Seguridad | ✅ | 🟡 | CSP, sandbox, lista blanca IPC, P-1 (el main abre los diálogos), triggers |
 | 8 · Build | ✅ | 🟡 | Instalador regenerado con la interfaz nueva; firma pendiente (hito H) |
 | 9 · Validación | ✅ | ❌ | — |
