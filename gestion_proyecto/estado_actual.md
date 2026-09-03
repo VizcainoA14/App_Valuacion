@@ -15,7 +15,7 @@
 Un hospital configura la entidad, descarga sus formatos, importa el inventario, **calcula la
 depreciación y la obsolescencia**, propone y decide las bajas, y **se lleva su informe en PDF**. El
 motor reproduce las cifras de `ANEXO_C` al dígito y tarda 1,27 s en 20.000 bienes.
-**379 tests + 5 de rendimiento + 13 E2E**, también sobre el instalador. Lo que queda son las
+**380 tests + 5 de rendimiento + 13 E2E**, también sobre el instalador. Lo que queda son las
 **extensiones**, que ya no son el camino principal.
 
 > **El orden de trabajo lo fija ADR-026**, no el grafo de hitos A→H. Ver
@@ -110,14 +110,17 @@ hito B completo (`T-B-01` … `T-B-11`).
 
 ## 3. Tarea actual en ejecución
 
-**Ninguna.** Checkpoint limpio: `verificar:todo` (379 tests), `test:rendimiento` (5), 13 E2E
+**Ninguna.** Checkpoint limpio: `verificar:todo` (380 tests), `test:rendimiento` (5), 13 E2E
 (también sobre el instalador) y `boundaries` en verde (223 módulos).
 
 > **La CI corrió por primera vez el 2026-09-03 y encontró dos defectos**, ya corregidos: el detector
 > de unidades de red usaba el `path` del anfitrión en vez de la plataforma que recibe como parámetro
 > (falló en Linux), y el `checkout` de Windows convertía a CRLF la migración de triggers que se
 > compara byte a byte (se añadió `.gitattributes`). **Falta ver `pack` y los E2E en verde sobre
-> Linux:** allí la corrida se detuvo antes de llegar a esos pasos.
+> Linux:** en la segunda corrida llegó hasta los E2E y falló uno —la UNC dejaba de serlo al
+> resolverla con `path` de POSIX—, ya corregido. **Van tres defectos de la CI y los tres son el
+> mismo error de fondo: lógica que parecía determinista pero dependía del equipo.** Desconfíe de
+> cualquier uso de `node:path` sin plataforma explícita en el arranque.
 
 ---
 
@@ -220,7 +223,7 @@ Flecos del propietario: primer **push** (`T-A-08`); confirmar **CT-16**, **CT-17
 | 3 · Stack | ✅ | ✅ | Congelado; librerías de interfaz añadidas con versión exacta |
 | 4 · Inicialización | ✅ | ✅ | |
 | 5 · Implementación | ✅ | 🟡 | **Núcleo ADR-026: 6 de 6 etapas ✅** · 34/64 tareas |
-| 6 · Testing | ✅ | 🟡 | 379 unit/integración + 5 de rendimiento + 13 E2E (también sobre el paquete) |
+| 6 · Testing | ✅ | 🟡 | 380 unit/integración + 5 de rendimiento + 13 E2E (también sobre el paquete) |
 | 7 · Seguridad | ✅ | 🟡 | CSP, sandbox, lista blanca IPC, P-1 (el main abre los diálogos), triggers |
 | 8 · Build | ✅ | 🟡 | Instalador regenerado con la interfaz nueva; firma pendiente (hito H) |
 | 9 · Validación | ✅ | ❌ | — |

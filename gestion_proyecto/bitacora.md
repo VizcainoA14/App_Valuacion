@@ -32,6 +32,63 @@ Reglas:
 
 ---
 
+## 2026-09-03 · Claude · Tercer defecto de la CI: la UNC dejaba de serlo en Linux
+
+**Tareas:** `T-A-08` 🟡 (Windows en verde de punta a punta; Linux fallaba en el último paso)
+
+La corrida de Linux llegó esta vez hasta los E2E sobre el paquete y falló **uno solo**:
+*"una ruta de datos UNC bloquea el arranque sin abrir la base"*, por tiempo agotado a los
+60 s. En Windows pasa.
+
+**Causa —la misma familia que el defecto anterior:** `resolverRutaDatos` aplicaba
+`resolve()` al argumento `--datos`, y `resolve` es del sistema **anfitrión**. Comprobado:
+
+| | Resultado | ¿Sigue siendo UNC? |
+|---|---|---|
+| Argumento crudo | `\\servidor\compartida\valuacion` | **sí** |
+| `win32.resolve` | `\\servidor\compartida\valuacion` | **sí** → Windows bloquea |
+| `posix.resolve` | `/home/runner/.../\\servidor\compartida\valuacion` | **no** → Linux no bloquea |
+
+En Linux la UNC se convertía en una ruta relativa colgada del directorio de trabajo, el
+bloqueo de `RG-10` no se disparaba, la aplicación arrancaba con normalidad y el E2E se
+quedaba esperando una salida que nunca llegaba.
+
+**Corrección:** una ruta UNC **ya es absoluta**; resolverla contra el directorio de trabajo
+es incorrecto en cualquier sistema. `resolverRutaDatos` la deja intacta.
+
+Prueba unitaria añadida, **con su alcance declarado**: en Windows pasa con y sin la
+corrección, porque `win32.resolve` devuelve la UNC tal cual; solo puede fallar donde
+`resolve` sea POSIX. El guardián real de esto es el E2E de Linux, que es quien lo encontró.
+
+### Van tres defectos, y los tres son el mismo error de fondo
+
+`isAbsolute`, `resolve` y los finales de línea: **lógica que se creía determinista pero
+dependía del equipo donde corría**. En una sola máquina, con un solo sistema y una sola
+configuración de git, los tres eran invisibles. Conviene desconfiar de cualquier uso de
+`node:path` sin plataforma explícita en el arranque.
+
+### Sobre la actualización automática (pregunta del propietario)
+
+Preguntó por qué la aplicación instalada en su equipo no se actualiza sola cuando la CI
+pasa. **No se actualiza porque no existe ese mecanismo, y es deliberado: lo decidió
+[ADR-024](../plan_desarrollo/DECISIONES/adr_arquitectura.md)** —"sin actualización
+automática en v1"— por tres razones: la red de un hospital suele bloquear descargas
+salientes y un actualizador que falla en silencio es peor que no tenerlo; una
+actualización que se instala sola durante un cálculo masivo o un cierre de ejercicio es un
+riesgo desproporcionado; y la instalación la controla el área de sistemas.
+
+Además, **la CI no publica nada**: compila el instalador para probarlo y lo descarta. No
+sube artefactos ni crea *releases*.
+
+**Discrepancia menor detectada:** ADR-024 dice que `electron-updater` queda *"integrado y
+desactivado"*, pero no está ni instalado. El efecto es el mismo para v1 (no hay
+actualización automática), pero la redacción anticipa tener la dependencia presente. Es
+una decisión para el hito H (`T-H-01`…`T-H-04`), no un pendiente del núcleo.
+
+**Estado:** 380 tests + 5 de rendimiento + 13 E2E, en verde también sobre el paquete.
+
+---
+
 ## 2026-09-03 · Claude · Defecto de navegación reportado, y datos de prueba de un hospital ficticio
 
 **Tareas:** corrección de `Layout` · script `datos:prueba` (nuevo)

@@ -26,6 +26,16 @@ export function leerArgumento(argv: readonly string[], nombre: string): string |
   return arg === undefined ? undefined : arg.slice(prefijo.length);
 }
 
+/**
+ * Una ruta UNC **ya es absoluta**: resolverla contra el directorio de trabajo la
+ * convierte en otra cosa. En POSIX, `resolve('\\\\servidor\\recurso')` antepone el
+ * `cwd` y la UNC deja de parecerlo, así que el bloqueo de red no se dispara. Lo
+ * encontró la CI: el mismo argumento se bloqueaba en Windows y no en Linux.
+ */
+function normalizarRuta(ruta: string): string {
+  return esRutaUnc(ruta) ? ruta : resolve(ruta);
+}
+
 export function resolverRutaDatos(
   argv: readonly string[],
   config: ConfigInstalacion,
@@ -33,9 +43,9 @@ export function resolverRutaDatos(
 ): RutaDatos {
   const porArgumento = leerArgumento(argv, 'datos');
   if (porArgumento !== undefined && porArgumento !== '') {
-    return { ruta: resolve(porArgumento), origen: 'argumento' };
+    return { ruta: normalizarRuta(porArgumento), origen: 'argumento' };
   }
-  if (config.rutaDatos !== null) return { ruta: resolve(config.rutaDatos), origen: 'config' };
+  if (config.rutaDatos !== null) return { ruta: normalizarRuta(config.rutaDatos), origen: 'config' };
   return { ruta: userData, origen: 'userData' };
 }
 

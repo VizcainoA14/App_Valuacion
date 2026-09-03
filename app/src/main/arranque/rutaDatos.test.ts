@@ -102,6 +102,31 @@ describe('resolverRutaDatos (precedencia plan 4.3 §6)', () => {
     expect(resolverRutaDatos(['--datos='], CONFIG_POR_DEFECTO, userData).origen).toBe('userData');
   });
 
+  /**
+   * `resolve` es del sistema ANFITRIÓN: en POSIX antepone el `cwd` y la UNC deja de
+   * parecerlo, con lo que el bloqueo de red no se dispara. Una UNC ya es absoluta y
+   * no se resuelve contra nada.
+   *
+   * Aviso honesto sobre el alcance: en Windows esta prueba pasa con y sin la
+   * corrección, porque `win32.resolve` devuelve la UNC intacta. Solo puede fallar
+   * donde `resolve` sea POSIX —la CI de Linux, que fue quien lo encontró—. Queda
+   * aquí porque documenta el invariante y lo vigila en la mitad de la matriz.
+   */
+  it('una UNC sobrevive intacta a la resolución, corra donde corra', () => {
+    const unc = '\\\\servidor\\compartida\\valuacion';
+    const userData = 'C:\\Users\\x\\AppData\\Roaming\\valuacion';
+
+    expect(resolverRutaDatos([`--datos=${unc}`], CONFIG_POR_DEFECTO, userData)).toEqual({ ruta: unc, origen: 'argumento' });
+    expect(resolverRutaDatos([], { ...CONFIG_POR_DEFECTO, rutaDatos: unc }, userData)).toEqual({ ruta: unc, origen: 'config' });
+
+    // Nunca se le antepone el directorio de trabajo: eso es lo que la rompía en Linux.
+    expect(resolverRutaDatos([`--datos=${unc}`], CONFIG_POR_DEFECTO, userData).ruta).not.toContain(process.cwd());
+
+    // Y sigue reconociéndose como red, que es lo que el arranque comprueba.
+    expect(esRutaUnc(resolverRutaDatos([`--datos=${unc}`], CONFIG_POR_DEFECTO, userData).ruta)).toBe(true);
+    expect(esRutaUnc(resolverRutaDatos(['--datos=//servidor/compartida/valuacion'], CONFIG_POR_DEFECTO, userData).ruta)).toBe(true);
+  });
+
   it('leerArgumento', () => {
     expect(leerArgumento(['app', '--log=debug'], 'log')).toBe('debug');
     expect(leerArgumento(['app'], 'log')).toBeUndefined();
