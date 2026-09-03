@@ -1,0 +1,56 @@
+/*
+ * Tokens semánticos (plan 2.5 §8). Valores RGB sin "rgb()" para admitir opacidad.
+ * Contraste verificado ≥ 4,5:1 texto/fondo en ambos modos (RNF-11):
+ *   claro:  texto #1D1D1F sobre #FFFFFF = 16,1:1 · secundario #5A5F6A = 6,4:1 · acento #1F5FBF = 6,3:1
+ *   oscuro: texto #E8EAED sobre #111318 = 15,4:1 · secundario #A6ABB5 = 8,2:1 · acento #8FB6F5 = 8,9:1
+ * Los semáforos SIEMPRE van con icono y texto: el color no es el único portador.
+ */
+:root {
+  --color-fondo: 255 255 255;
+  --color-superficie: 245 246 248;
+  --color-elevada: 255 255 255;
+  --color-borde: 217 220 225;
+  --color-texto: 29 29 31;
+  --color-texto-secundario: 90 95 106;
+  --color-acento: 31 95 191;
+  --color-acento-texto: 255 255 255;
+  --color-exito: 27 110 58;
+  --color-exito-fondo: 230 245 236;
+  --color-aviso: 138 90 0;
+  --color-aviso-fondo: 255 243 214;
+  --color-alerta: 168 74 0;
+  --color-alerta-fondo: 255 236 220;
+  --color-peligro: 179 38 30;
+  --color-peligro-fondo: 252 232 230;
+  --color-foco: 31 95 191;
+
+  --alto-control: 32px;
+  --alto-fila: 36px;
+  color-scheme: light;
+}
+
+[data-tema='oscuro'] {
+  --color-fondo: 17 19 24;
+  --color-superficie: 27 30 37;
+  --color-elevada: 34 38 46;
+  --color-borde: 58 63 74;
+  --color-texto: 232 234 237;
+  --color-texto-secundario: 166 171 181;
+  --color-acento: 143 182 245;
+  --color-acento-texto: 17 19 24;
+  --color-exito: 116 209 146;
+  --color-exito-fondo: 22 48 33;
+  --color-aviso: 242 193 78;
+  --color-aviso-fondo: 56 43 10;
+  --color-alerta: 245 158 90;
+  --color-alerta-fondo: 61 34 12;
+  --color-peligro: 242 139 130;
+  --color-peligro-fondo: 66 24 22;
+  --color-foco: 143 182 245;
+  color-scheme: dark;
+}
+
+[data-densidad='compacta'] {
+  --alto-control: 28px;
+  --alto-fila: 28px;
+}

@@ -1,0 +1,39 @@
+@import './tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* CSS plano a propósito: sin anidamiento ni @apply, que el piso R-05 no admite (plan 3.2 §2). */
+
+html,
+body,
+#raiz {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background-color: rgb(var(--color-fondo));
+  color: rgb(var(--color-texto));
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  font-size: 13px;
+  line-height: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Anillo de foco visible para navegación por teclado (accesibilidad: foco y selección). */
+:focus-visible {
+  outline: 2px solid rgb(var(--color-foco));
+  outline-offset: 2px;
+}
+
+/* Reduce Motion: sin transiciones para quien lo pide. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

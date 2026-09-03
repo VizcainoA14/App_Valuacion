@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    // Herramientas: scripts de proyecto y archivos de configuración.
+    // Corren en el Node de desarrollo (>= 22.20.0), no dentro de Electron.
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "types": ["node"]
+  },
+  "include": [
+    "scripts/**/*.ts",
+    "electron.vite.config.ts",
+    "drizzle.config.ts",
+    "vitest.config.ts",
+    "vitest.rendimiento.config.ts",
+    "playwright.config.ts",
+    "tests/e2e/**/*.ts"
+  ]
+}

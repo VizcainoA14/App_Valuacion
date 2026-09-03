@@ -143,12 +143,16 @@ valor_avaluo_calculado = valor_equipo_nuevo_equivalente
                        × factor_estado
 ```
 
-**Ejemplo:** equipo nuevo equivalente $10.000.000 · índice 0,6922 · estado Bueno (1,00)
+**Ejemplo:** equipo nuevo equivalente $10.000.000 · índice 0,6899 · estado Bueno (1,00)
 
 ```
-factor_vida_restante = 1 − 0,6922 = 0,3078
-valor_avaluo         = 10.000.000 × 0,3078 × 1,00 = $3.078.000
+factor_vida_restante = 1 − 0,6899 = 0,3101
+valor_avaluo         = 10.000.000 × 0,3101 × 1,00 = $3.101.000
 ```
+
+> **Corregido el 2026-09-01.** El ejemplo partía del índice 0,6922 del caso erróneo de `ANEXO_C`
+> §2.3. Con el índice correcto (0,6899) el avalúo sugerido es $3.101.000. Ver
+> `CORRECCIONES.md` § C-03.
 
 ### `RN-07-05` — El valor final siempre lo decide una persona
 La app **sugiere** `valor_avaluo_calculado`; el especialista registra `valor_avaluo_final`. Si difieren, la justificación técnica es obligatoria. Nunca se publica un avalúo sin responsable identificado.
@@ -159,12 +163,20 @@ Todo bien debe tener `justificacion_tecnica`, aun cuando el valor final coincida
 ### `RN-07-07` — Clasificación del ajuste
 
 ```
-diferencia = valor_avaluo_final − saldo_por_depreciar
+diferencia = valor_avaluo_final − valor_neto_libros
 
 diferencia > 0  → VALORIZACION      (mayor valor del activo)
 diferencia < 0  → DESVALORIZACION   (menor valor / deterioro)
 diferencia = 0  → SIN_CAMBIO
 ```
+
+> **Corregido el 2026-09-01.** La base de comparación era `saldo_por_depreciar`, que **no** descuenta
+> el deterioro ya reconocido en el paso 06. Comparar contra esa cifra vuelve a restar el deterioro
+> dentro de la desvalorización, y puede llegar a **invertir el signo del ajuste** sobre un mismo bien.
+> El ajuste que ordena la resolución lleva el activo desde la cifra que figura en el balance —el
+> valor neto en libros— hasta su valor razonable. Configurable con `base_comparacion_avaluo`
+> (`ANEXO_B` §2.5) para entidades cuya política contable exija lo contrario. Ver
+> `CORRECCIONES.md` § C-04 y `ANEXO_C` §5.4.
 
 ### `RN-07-08` — Bienes propuestos para baja
 Los candidatos del paso 05 se valúan por `VALOR_RESIDUAL_CHATARRA` o `VALOR_CERO`, según exista o no valor de salvamento.

@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json.schemastore.org/base.json",
+  "nombre": "Configuración de sesión — App de Valuación de Activos",
+  "version": "1.1",
+  "actualizado": "2026-09-01",
+  "descripcion": "Reglas de comportamiento obligatorias para cualquier agente o desarrollador que trabaje en este repositorio. Su propósito es garantizar la continuidad del trabajo entre sesiones.",
+  "protocolo_inicio": {
+    "obligatorio": true,
+    "descripcion": "Al iniciar una sesión o recibir un prompt nuevo, ANTES de responder, proponer o modificar cualquier cosa, leer en este orden:",
+    "pasos": [
+      {
+        "orden": 1,
+        "archivo": "gestion_proyecto/estado_actual.md",
+        "motivo": "Recuperar el contexto: última tarea, tarea actual, siguiente paso, bloqueos."
+      },
+      {
+        "orden": 2,
+        "archivo": "gestion_proyecto/roadmap_progreso.md",
+        "motivo": "Saber qué tareas están completadas, en curso, pendientes o bloqueadas."
+      },
+      {
+        "orden": 3,
+        "archivo": "gestion_proyecto/bitacora.md",
+        "motivo": "Leer las 2 o 3 entradas más recientes para entender qué se decidió y por qué.",
+        "alcance": "Solo las entradas recientes, no el archivo completo."
+      },
+      {
+        "orden": 4,
+        "archivo": "plan_desarrollo/DECISIONES/README.md",
+        "motivo": "Conocer las 25 decisiones ya cerradas. NO volver a proponerlas ni discutirlas.",
+        "condicion": "Si la tarea toca arquitectura, stack o dependencias."
+      },
+      {
+        "orden": 5,
+        "archivo": "plan_desarrollo/FASE_1_ANALISIS/1.4_contradicciones_teoria.md",
+        "motivo": "Consultar la resolucion adoptada para cada contradiccion. Las 15 estan RESUELTAS desde el 2026-09-01; /Teoria fue corregida a la version 2.1.",
+        "condicion": "Si la tarea toca el motor de cálculo, la importación o el modelo de usuarios."
+      },
+      {
+        "orden": 6,
+        "archivo": "plan_desarrollo/FASE_5_IMPLEMENTACION/5.0_backlog_maestro.md",
+        "motivo": "Localizar la tarea concreta, sus dependencias y su criterio de verificación."
+      }
+    ],
+    "regla_de_oro": "Nunca empezar a implementar sin haber leído estado_actual.md. Si el estado y el código no coinciden, detenerse, informar la discrepancia y actualizar el estado antes de seguir."
+  },
+  "actualizacion_obligatoria": {
+    "obligatorio": true,
+    "descripcion": "Al terminar una tarea importante, o antes de finalizar una sesión, actualizar los archivos de seguimiento. No es opcional.",
+    "disparadores": [
+      "Se completó una tarea del backlog (T-*)",
+      "Se resolvió o cambió de estado una contradicción (CT-*)",
+      "Se tomó una decisión técnica no trivial",
+      "Se cambió la versión de una dependencia",
+      "Se midió el rendimiento de algo",
+      "Se modificó un valor esperado en los tests del motor de cálculo",
+      "La sesión va a terminar, aunque la tarea quede a medias"
+    ],
+    "acciones": [
+      {
+        "archivo": "gestion_proyecto/estado_actual.md",
+        "actualizar": [
+          "Última tarea realizada",
+          "Tarea actual en ejecución",
+          "Siguiente paso inmediato",
+          "Bloqueos y decisiones pendientes",
+          "Fecha y autor de la última actualización"
+        ]
+      },
+      {
+        "archivo": "gestion_proyecto/roadmap_progreso.md",
+        "actualizar": [
+          "Estado de las tareas afectadas (Pendiente / En curso / Completado / Bloqueado / Omitido)",
+          "Tabla de resumen con los conteos",
+          "Tabla de tareas bloqueadas y su causa"
+        ]
+      },
+      {
+        "archivo": "gestion_proyecto/bitacora.md",
+        "actualizar": [
+          "Añadir una entrada nueva ARRIBA, con el formato documentado en el propio archivo"
+        ]
+      },
+      {
+        "archivo": "app/docs/trazabilidad.csv",
+        "actualizar": [
+          "Marcar como IMPLEMENTADO los requisitos que la tarea cubre"
+        ],
+        "condicion": "Si la tarea implementó requisitos de /Teoria y el archivo ya existe."
+      }
+    ],
+    "prohibido": [
+      "Terminar una sesión de trabajo sin actualizar estado_actual.md",
+      "Marcar una tarea como completada sin que cumpla su criterio de verificación",
+      "Marcar una tarea como omitida sin justificación escrita en la bitácora",
+      "Borrar o reescribir entradas pasadas de la bitácora"
+    ]
+  },
+  "sincronizacion": {
+    "obligatorio": true,
+    "descripcion": "roadmap_progreso.md debe coincidir siempre con las fases y tareas de /plan_desarrollo.",
+    "reglas": [
+      "Si se añade, elimina o renombra una tarea en plan_desarrollo/FASE_5_IMPLEMENTACION/5.0_backlog_maestro.md, se actualiza roadmap_progreso.md en la MISMA sesión.",
+      "Si se añade una fase al plan, se añade su fila a la tabla de fases del roadmap.",
+      "Los identificadores de tarea (T-*) son estables: no se renumeran. Una tarea cancelada se marca como Omitida, no se borra.",
+      "Los códigos de /Teoria (RF-, RN-, VAL-, EN-, IN-, PL-, INT-) NUNCA se renumeran ni se inventan."
+    ],
+    "verificacion": "Antes de cerrar la sesión, comprobar que el número de tareas del roadmap coincide con el del backlog maestro."
+  },
+  "reglas_de_trabajo": {
+    "precedencia_documental": [
+      "1. /Teoria/ANEXO_C_FORMULAS_Y_REGLAS.md — manda en todo lo relativo al motor de cálculo, por encima de cualquier documento de paso.",
+      "2. /Teoria/* — especificación funcional autoritativa.",
+      "3. /plan_desarrollo/* — cómo construirlo.",
+      "4. /gestion_proyecto/* — dónde vamos."
+    ],
+    "nunca_contradecir_teoria": "El plan y el codigo no contradicen /Teoria (version vigente: 2.1). Cuando /Teoria se contradice a si misma, la discrepancia se documenta en plan_desarrollo/FASE_1_ANALISIS/1.4_contradicciones_teoria.md como una CT-* nueva, con resolucion propuesta y severidad. Si la resolucion exige corregir /Teoria, se aplica CON nota al pie en el documento afectado y entrada en /Teoria/CORRECCIONES.md. Nunca se corrige en silencio.",
+    "decisiones_cerradas": "Las 25 decisiones de plan_desarrollo/DECISIONES/ están cerradas. No se reabren. Si aparece información nueva que las invalide, se abre un ADR NUEVO que sustituye al anterior; el original no se edita.",
+    "tareas_bloqueadas": "Actualmente NO hay tareas bloqueadas. Si una tarea se bloquea en el futuro, no se ejecuta hasta resolver la causa; si el bloqueo se ignora por presion de tiempo, debe quedar registrado en la bitacora como deuda asumida.",
+    "motor_de_calculo": "Regla especial: ningún valor esperado en los tests del motor de cálculo se modifica sin una entrada en la bitácora que lo justifique. Es la mitigación del riesgo RG-01 (validar el motor contra cifras erróneas).",
+    "idioma": "El código, los nombres de tabla, los enums y la documentación están en español, igual que /Teoria. Excepciones: las APIs de las librerías y las palabras clave del lenguaje.",
+    "restricciones_de_producto": [
+      "La aplicacion es de ESCRITORIO, MONOUSUARIO y SIN INICIO DE SESION. Los 10 perfiles de ANEXO_B 7.2 son un catalogo de Responsable para atribuir firmas en documentos, NO cuentas de acceso. Ver ADR-016.",
+      "El inventario entra SOLO por importacion de PL-03. No hay captura en campo, ni camara, ni escaner, ni app movil. RF-02-01 y RF-02-02 estan NO IMPLEMENTADOS. Ver ADR-015.",
+      "El dinero se representa como enteros de centavos en la base y se opera con decimal.js. NUNCA con number de pesos. Ver ADR-006.",
+      "El motor de calculo es dominio puro: no importa fs, electron, sqlite, react ni Date.",
+      "Un ejercicio CERRADO es inmutable, tambien frente a SQL directo: triggers, no validaciones de formulario. Ver ADR-017.",
+      "PROHIBIDO colocar la base SQLite en una unidad de red compartida. La aplicacion lo verifica al arrancar y bloquea."
+    ]
+  },
+  "skills_relevantes": {
+    "electron-skill": {
+      "ruta": ".claude/skills/electron-skill/SKILL.md",
+      "usar_para": "Arquitectura main/preload/renderer, IPC seguro, empaquetado, actualizaciones.",
+      "aplicada_en": [
+        "plan_desarrollo/FASE_2_ARQUITECTURA/2.2_procesos_electron.md",
+        "plan_desarrollo/FASE_2_ARQUITECTURA/2.3_contrato_ipc.md",
+        "plan_desarrollo/FASE_7_SEGURIDAD/7.1_seguridad.md",
+        "plan_desarrollo/FASE_8_BUILD/8.1_build_y_distribucion.md"
+      ]
+    },
+    "apple-design-skill": {
+      "ruta": ".claude/skills/apple-design-skill/SKILL.md",
+      "usar_para": "Revisión de UI/UX, accesibilidad, convenciones de escritorio, modo oscuro.",
+      "aplicada_en": [
+        "plan_desarrollo/FASE_2_ARQUITECTURA/2.5_estado_renderer.md",
+        "plan_desarrollo/FASE_9_VALIDACION/9.1_checklist_final.md (sección G)"
+      ],
+      "nota": "Invocar esta skill al diseñar o revisar cualquiera de las 52 pantallas."
+    },
+    "gestion-memoria": {
+      "ruta": ".claude/skills/gestion-memoria/SKILL.md",
+      "usar_para": "Protocolo de continuidad entre sesiones. Es la versión ejecutable de este archivo."
+    }
+  },
+  "advertencias": [
+    {
+      "codigo": "ADV-01",
+      "texto": "RESUELTA el 2026-09-01. El .gitignore se reescribio: .claude/ ahora SI se versiona (solo se ignora .claude/settings.local.json), de modo que las skills y este archivo viajan con el repositorio."
+    },
+    {
+      "codigo": "ADV-02",
+      "texto": "RESUELTA el 2026-09-01. Las 15 contradicciones CT-* estan resueltas y /Teoria fue corregida a la version 2.1 (ver /Teoria/CORRECCIONES.md). NO quedan tareas bloqueadas."
+    },
+    {
+      "codigo": "ADV-03",
+      "texto": "La implementacion NO ha comenzado. El directorio /app no existe todavia. La primera tarea es T-A-01 (congelar versiones)."
+    },
+    {
+      "codigo": "ADV-04",
+      "texto": "Al leer /Teoria, tener presente que la version vigente es la 2.1. Los documentos corregidos llevan una nota al pie fechada el 2026-09-01 que apunta a /Teoria/CORRECCIONES.md. Si se encuentra una cifra sin esa nota que parezca incorrecta, verificarla antes de codificar contra ella."
+    }
+  ]
+}

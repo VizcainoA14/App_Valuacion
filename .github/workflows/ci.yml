@@ -1,0 +1,74 @@
+# T-A-08 — CI completa (plan FASE_4/4.2 §5).
+# Dos decisiones deliberadas:
+#  1. Se EMPAQUETA en cada commit: los fallos de módulo nativo y asarUnpack solo
+#     aparecen en el paquete (RG-06).
+#  2. E2E corre sobre el paquete construido, no sobre el servidor de desarrollo.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+defaults:
+  run:
+    working-directory: app
+
+jobs:
+  verificar:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Versiones congeladas (T-A-01)
+        run: npm run verificar:versiones
+
+      - name: Tipos
+        run: npm run typecheck
+
+      - name: Lint (ESLint + Stylelint + piso R-05)
+        run: npm run lint
+
+      - name: Fronteras entre módulos (D-1…D-6)
+        run: npm run boundaries
+
+      - name: Pruebas unitarias e integración
+        run: npm run test
+
+      # Paso propio y sin paralelismo: una medición que compite por CPU no vale (RNF-01, RNF-02).
+      - name: Presupuesto de rendimiento (20.000 bienes)
+        run: npm run test:rendimiento
+
+      - name: Trazabilidad /Teoria (RG-15)
+        run: npm run trazabilidad
+
+      - name: Empaquetar (RG-06)
+        run: npm run pack
+
+      - name: E2E sobre el paquete (Windows)
+        if: runner.os == 'Windows'
+        run: npm run test:e2e
+        env:
+          PROBAR_PAQUETE: '1'
+
+      - name: E2E sobre el paquete (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run --auto-servernum npm run test:e2e
+        env:
+          PROBAR_PAQUETE: '1'
+
+      - name: Auditoría de dependencias
+        run: npm audit --audit-level=high

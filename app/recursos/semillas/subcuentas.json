@@ -1,0 +1,18 @@
+{
+  "_fuente": "Grupo 16 (Propiedades, planta y equipo) del Catálogo General de Cuentas de la CGN. Sugerencia editable: el plan de cuentas vigente lo entrega el contador (IN-01-05) y prevalece sobre esta lista.",
+  "subcuentas": [
+    { "codigo": "1605", "nombre": "Terrenos" },
+    { "codigo": "1615", "nombre": "Construcciones en curso" },
+    { "codigo": "1635", "nombre": "Bienes muebles en bodega" },
+    { "codigo": "1640", "nombre": "Edificaciones" },
+    { "codigo": "1650", "nombre": "Redes, líneas y cables" },
+    { "codigo": "1655", "nombre": "Maquinaria y equipo" },
+    { "codigo": "1660", "nombre": "Equipo médico y científico" },
+    { "codigo": "1665", "nombre": "Muebles, enseres y equipo de oficina" },
+    { "codigo": "1670", "nombre": "Equipos de comunicación y computación" },
+    { "codigo": "1675", "nombre": "Equipos de transporte, tracción y elevación" },
+    { "codigo": "1680", "nombre": "Equipos de comedor, cocina, despensa y hotelería" },
+    { "codigo": "1685", "nombre": "Depreciación acumulada de propiedades, planta y equipo (cr)" },
+    { "codigo": "1695", "nombre": "Deterioro acumulado de propiedades, planta y equipo (cr)" }
+  ]
+}

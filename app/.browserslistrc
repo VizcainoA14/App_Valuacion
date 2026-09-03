@@ -1,0 +1,17 @@
+# Piso de compatibilidad R-05 (4 años desde 2026-09 = septiembre de 2022).
+# Entorno por defecto: aplica al código compartido, al CSS SIEMPRE, y a un
+# eventual despliegue en navegador. Ver plan_desarrollo/FASE_3_STACK/3.2 §2-3.
+[production]
+chrome >= 105
+edge >= 105
+firefox >= 104
+safari >= 15.6
+ios_saf >= 15.6
+samsung >= 18
+not dead
+not op_mini all
+
+# Renderer de escritorio: el Chromium 152 que empaqueta Electron 44.1.1.
+# Congelado por T-A-01 (docs/decisiones-runtime.md).
+[electron]
+electron 44.0

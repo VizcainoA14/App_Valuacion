@@ -146,22 +146,36 @@ Se almacenan en campos distintos. La depreciación usa la contable; la obsolesce
 | Parámetro | Valores posibles | Recomendado | Impacto |
 |---|---|---|---|
 | `metodo_depreciacion` | línea recta | línea recta | Fórmula del paso 06 |
-| `metodo_conteo_meses` | mes_completo / dias_exactos / fraccion_anual | a definir con el contador | Cuadre con contabilidad |
+| `metodo_conteo_meses` | mes_completo / dias_exactos / fraccion_anual | **dias_exactos** — a confirmar por acta con el contador | Cuadre con contabilidad |
 | `deprecia_mes_adquisicion` | sí / no | sí | Meses transcurridos |
+| `usa_puesta_en_servicio` | sí / no | no | Fecha de inicio de la depreciación |
+| `enfoque_adiciones` | simplificado / componente_separado | simplificado | Tratamiento de adiciones y mejoras |
+| `base_comparacion_avaluo` | valor_neto_libros / saldo_por_depreciar | valor_neto_libros | Signo del ajuste del paso 07 |
 | `valor_residual_pct` | 0–100 | 0 | Base depreciable |
 | `moneda` | COP | COP | Formato |
 | `decimales_calculo` | 0–4 | 2 | Redondeo |
 | `umbral_capitalizacion` | monto | según manual | Qué es activo vs. gasto |
+
+> **Actualizado el 2026-09-01.** Se añaden tres parámetros que `ANEXO_C` ya usaba sin declararlos, y
+> se fija `dias_exactos` como valor **sugerido** para el conteo de meses, por coherencia con el
+> divisor 365,25 del índice de obsolescencia. Sigue siendo obligatorio confirmarlo por acta antes de
+> calcular (`VAL-01-07`, `VAL-06-01`). Ver `CORRECCIONES.md` § C-06 y § C-07.
 
 ### `RN-01-05` — Umbrales del semáforo de obsolescencia
 Configurables por entidad. Valores por defecto:
 
 | Nivel | Rango del índice | Interpretación |
 |---|---|---|
-| Verde | 0,00 – 0,50 | Vida útil sana |
-| Amarillo | 0,51 – 0,80 | En envejecimiento |
-| Naranja | 0,81 – 0,99 | Próximo al fin de vida útil |
-| Rojo | ≥ 1,00 | Vida útil agotada |
+| Verde | índice ≤ 0,50 | Vida útil sana |
+| Amarillo | 0,50 < índice ≤ 0,80 | En envejecimiento |
+| Naranja | 0,80 < índice < 1,00 | Próximo al fin de vida útil |
+| Rojo | índice ≥ 1,00 | Vida útil agotada |
+
+> **Corregido el 2026-09-01.** La tabla anterior (0,51–0,80 y 0,81–0,99) dejaba sin clasificar los
+> índices entre 0,50 y 0,51 y entre 0,80 y 0,81, que sí existen: el índice se guarda con **cuatro
+> decimales** (`ANEXO_B` §4.2), de modo que 0,5043 era un valor real sin semáforo asignado. Las
+> fronteras son `≤`, tal como ya lo hacía el pseudocódigo de `ANEXO_C` §2.6. Ver
+> `CORRECCIONES.md` § C-11.
 
 ### `RN-01-06` — Fecha de corte única por ejercicio
 No pueden coexistir dos fechas de corte en el mismo ejercicio. Cambiarla obliga a recalcular todo y debe quedar registrado en la bitácora.

@@ -1,0 +1,34 @@
+# ── Dependencias y artefactos de construcción ────────────────────────
+node_modules/
+dist/
+out/
+build/Release/
+*.tsbuildinfo
+
+# ── Entorno local ────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Datos locales de la aplicación (nunca se versionan) ──────────────
+*.db
+*.db-wal
+*.db-shm
+*.bak
+
+# ── Configuración local de Claude Code ───────────────────────────────
+# El resto de .claude/ SÍ se versiona: contiene las skills y el
+# archivo config_sesion.json con el protocolo de continuidad entre
+# sesiones. Ver CLAUDE.md.
+.claude/settings.local.json
+
+# ── Sistema operativo y editores ─────────────────────────────────────
+Thumbs.db
+Desktop.ini
+.DS_Store
+*.swp
+.vscode/settings.json
+
+# ── Temporales de Office (al abrir las plantillas) ───────────────────
+~$*.xlsx
+~$*.docx

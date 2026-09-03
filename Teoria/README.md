@@ -1,6 +1,6 @@
 # Base Teórica — Aplicación de Valuación de Activos para E.S.E / Hospitales
 
-**Versión:** 2.0
+**Versión:** 2.1 · *corregida el 2026-09-01, ver `CORRECCIONES.md`*
 **Ámbito:** Valuación de activos dentro del proceso de saneamiento contable de la cuenta de Propiedad, Planta y Equipo (PPE) de una Empresa Social del Estado.
 **Propósito de este repositorio documental:** servir como especificación funcional y base teórica para construir una aplicación que automatice el proceso **en cualquier hospital**, sin depender de los datos de una entidad concreta.
 
@@ -55,6 +55,7 @@ El proceso se descompone en **11 pasos** más **4 anexos transversales**. Cada p
 | `ANEXO_B_DICCIONARIO_DE_DATOS.md` | Modelo de datos completo de la app |
 | `ANEXO_C_FORMULAS_Y_REGLAS.md` | Motor de cálculo: fórmulas, casos borde, pseudocódigo |
 | `ANEXO_D_MARCO_NORMATIVO.md` | Normatividad aplicable y cómo se traduce a requisitos |
+| `CORRECCIONES.md` | **Registro de correcciones aplicadas a esta base teórica** (v2.0 → v2.1) |
 
 ---
 

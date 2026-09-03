@@ -1,0 +1,25 @@
+{
+  "_fuente": "RN-01-02: catálogo de abreviaturas por tipo de bien para el plaqueteo. Sugerencia editable; la entidad conserva su nomenclatura si ya la tiene (IN-01-07).",
+  "abreviaturas": [
+    { "abreviatura": "AGM", "descripcion": "Agitador de Mazzini" },
+    { "abreviatura": "AUT", "descripcion": "Autoclave" },
+    { "abreviatura": "BAS", "descripcion": "Báscula" },
+    { "abreviatura": "CAM", "descripcion": "Camilla" },
+    { "abreviatura": "CEN", "descripcion": "Centrífuga" },
+    { "abreviatura": "CPU", "descripcion": "Computador de escritorio" },
+    { "abreviatura": "DES", "descripcion": "Desfibrilador" },
+    { "abreviatura": "ECG", "descripcion": "Electrocardiógrafo" },
+    { "abreviatura": "ECO", "descripcion": "Ecógrafo" },
+    { "abreviatura": "ESC", "descripcion": "Escritorio" },
+    { "abreviatura": "IMP", "descripcion": "Impresora" },
+    { "abreviatura": "INC", "descripcion": "Incubadora" },
+    { "abreviatura": "LAM", "descripcion": "Lámpara cielítica" },
+    { "abreviatura": "MIC", "descripcion": "Microscopio" },
+    { "abreviatura": "MON", "descripcion": "Monitor de signos vitales" },
+    { "abreviatura": "NEV", "descripcion": "Nevera / refrigerador" },
+    { "abreviatura": "POR", "descripcion": "Computador portátil" },
+    { "abreviatura": "SIL", "descripcion": "Silla" },
+    { "abreviatura": "SUC", "descripcion": "Succionador" },
+    { "abreviatura": "VEH", "descripcion": "Vehículo" }
+  ]
+}

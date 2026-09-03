@@ -1,0 +1,18 @@
+{
+  // SOLO para dependency-cruiser: une los alias de los cuatro tsconfig para que
+  // pueda resolver imports en todo src/. No lo usa tsc ni el editor.
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM"],
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@compartido/*": ["src/compartido/*"],
+      "@motor/*": ["src/compartido/motor/*"],
+      "@main/*": ["src/main/*"],
+      "@renderer/*": ["src/renderer/*"]
+    }
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

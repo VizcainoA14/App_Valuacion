@@ -113,19 +113,26 @@ porcentaje             = indice_obsolescencia × 100
 
 anios_restantes        = vida_util_tecnica_anios − edad_actual_anios
 
-fecha_fin_vida_util    = fecha_adquisicion + vida_util_tecnica_anios
+fecha_fin_vida_util    = fecha_adquisicion + (vida_util_tecnica_anios × 365,25 días)
 ```
 
 **Ejemplo de verificación:**
 Bien adquirido el 23/02/2015, vida útil técnica 15 años, fecha de corte 30/06/2025.
 
 ```
-edad_actual   = 10,3833 años
-indice        = 10,3833 / 15 = 0,6922  → 69,22 %
-anios_rest.   = 4,6167 años
-fin_vida_util = 23/02/2030
-semaforo      = Amarillo
+días transcurridos = 3.780
+edad_actual        = 3.780 / 365,25 = 10,3491 años
+indice             = 10,3491 / 15   = 0,6899  → 68,99 %
+anios_rest.        = 15 − 10,3491   = 4,6509 años
+fin_vida_util      = 23/02/2030
+semaforo           = Amarillo
 ```
+
+> **Corregido el 2026-09-01.** El ejemplo anterior usaba una edad de 10,3833 años que no se deriva
+> de los 3.780 días transcurridos entre las dos fechas: `3.780 / 365,25 = 10,3491`. El índice
+> correcto es **0,6899**, no 0,6922. La fórmula de `fecha_fin_vida_util` se alinea además con
+> `ANEXO_C` §2.1, que multiplica por 365,25 en lugar de sumar años calendario. Ver
+> `CORRECCIONES.md` § C-01 y § C-12.
 
 ### `RN-05-02` — El índice no se limita a 1
 Un bien con más años que su vida útil arroja un índice mayor que 1 (ej. 1,35 = 135%). **No se debe truncar**: la magnitud del exceso es información valiosa para priorizar reposición.

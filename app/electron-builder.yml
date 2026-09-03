@@ -1,0 +1,69 @@
+# T-A-03 — Empaquetado (plan FASE_8/8.1 y 5.1 §T-A-03).
+appId: co.fundasaberes.valuacion-activos
+productName: Valuación de Activos
+executableName: ValuacionActivos
+copyright: Fundasaberes
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - out/**
+  - "!**/*.map"
+  # better-sqlite3 publica fuentes C y binarios de todas las plataformas; solo
+  # hace falta el prebuild de la plataforma destino (ahorra ~25 MB instalados).
+  - "!**/node_modules/better-sqlite3/deps/**"
+  - "!**/node_modules/better-sqlite3/src/**"
+  - "!**/node_modules/better-sqlite3/binding.gyp"
+
+# El .node de better-sqlite3 debe quedar FUERA del asar o la app no arranca (RG-06).
+asarUnpack:
+  - "**/node_modules/better-sqlite3/**"
+
+# better-sqlite3 v13 es Node-API con binarios empaquetados en prebuilds/ (estables
+# entre ABIs): NO necesita recompilarse para Electron. Recompilar exigiría Visual
+# Studio C++ y fallaría en máquinas sin él. Ver docs/decisiones-runtime.md §4.
+npmRebuild: false
+
+# Solo los idiomas que la app usa (es-CO + inglés de respaldo): ahorra ~45 MB
+# de locales de Chromium y deja la app dentro del presupuesto de 350 MB.
+electronLanguages:
+  - es
+  - es-419
+  - en-US
+
+# ANEXO_A §6.1: la aplicación entrega sus propias plantillas. Van fuera del asar
+# para poder leerlas y copiarlas como archivos normales (ADR-026).
+extraResources:
+  - from: ../Plantillas_Valuacion_Activos
+    to: plantillas
+    filter:
+      - excel/**
+      - word/**
+      - LEEME_PLANTILLAS.md
+
+win:
+  target:
+    - nsis
+  files:
+    - "!**/node_modules/better-sqlite3/prebuilds/darwin-*.node"
+    - "!**/node_modules/better-sqlite3/prebuilds/linux*.node"
+    - "!**/node_modules/better-sqlite3/prebuilds/win32-arm64.node"
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  # T-H-01: actualizar o desinstalar jamás borra los datos del usuario.
+  deleteAppDataOnUninstall: false
+  artifactName: ${productName}-${version}-instalador.${ext}
+
+linux:
+  target:
+    - AppImage
+  category: Office
+  files:
+    - "!**/node_modules/better-sqlite3/prebuilds/darwin-*.node"
+    - "!**/node_modules/better-sqlite3/prebuilds/win32-*.node"
+    - "!**/node_modules/better-sqlite3/prebuilds/linux*-arm64.node"

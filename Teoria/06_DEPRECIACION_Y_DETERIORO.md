@@ -128,19 +128,34 @@ meses_transcurridos    = f(fecha_inicio_depreciacion, fecha_corte, metodo_conteo
 depreciacion_acumulada = MIN(depreciacion_mensual × meses_transcurridos,
                              base_depreciable)
 
-saldo_por_depreciar    = saldo_final_ajustado − depreciacion_acumulada − deterioro
+saldo_por_depreciar    = saldo_final_ajustado − depreciacion_acumulada
+
+valor_neto_libros      = saldo_final_ajustado − depreciacion_acumulada − deterioro
 ```
+
+> **Corregido el 2026-09-01.** La versión anterior restaba el deterioro dentro de
+> `saldo_por_depreciar`, colapsando dos conceptos que `ANEXO_B` §4.3 modela como campos separados y
+> que `ANEXO_C` §3.1 define por separado. **Son dos cifras distintas:** el saldo por depreciar mide
+> cuánto queda por depreciar; el valor neto en libros es lo que figura en el balance. Ver
+> `CORRECCIONES.md` § C-04.
 
 **Ejemplo de verificación:**
-Costo 23.739.280 · sin adiciones · residual 0% · vida útil 180 meses · adquirido 27/04/2018 · corte 30/06/2025.
+Costo 23.739.280 · sin adiciones · residual 0% · vida útil 180 meses · adquirido 27/04/2018 · corte 30/06/2025 · método `dias_exactos`.
 
 ```
+días transcurridos     = 2.621
 base_depreciable       = 23.739.280
 depreciacion_mensual   = 23.739.280 / 180 = 131.884,89
-meses_transcurridos    = 87,4  (según método configurado)
-depreciacion_acumulada = 11.522.343,13
-saldo_por_depreciar    = 12.216.936,87
+meses_transcurridos    = (2.621 / 365,25) × 12 = 86,1109
+depreciacion_acumulada = 131.884,89 × 86,1109 = 11.356.724,23
+saldo_por_depreciar    = 23.739.280 − 11.356.724,23 = 12.382.555,77
+porcentaje_depreciado  = 47,84 %
 ```
+
+> **Corregido el 2026-09-01.** Las cifras anteriores (87,4 meses, 11.522.343,13) no se obtienen con
+> ninguno de los tres métodos de conteo aplicados a estas fechas: entre 27/04/2018 y 30/06/2025 hay
+> **2.621 días**, que dan 86,1109 meses por `dias_exactos` y 86 por `mes_completo`. Ver
+> `CORRECCIONES.md` § C-02 y la tabla comparativa de `ANEXO_C` §3.3.
 
 ### `RN-06-02` — Fecha de inicio de la depreciación
 

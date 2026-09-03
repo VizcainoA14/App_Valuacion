@@ -161,6 +161,23 @@ valor_neto_final = nuevo_saldo_bruto
                  − nuevo_deterioro
 ```
 
+**Regla de exclusión mutua (obligatoria).** Cada columna tiene un origen único:
+
+| Columna | Se alimenta de | Naturaleza | Paso |
+|---|---|---|:-:|
+| `incorporaciones` | Partidas `SOBRANTE_FISICO` con acción `INCORPORAR` | Bien que existe y no estaba en libros | 04 |
+| `retiros_por_baja` | `PropuestaBaja` en `APROBADO_COMITE` o posterior | Bien que sale del patrimonio | 09 |
+| `ajustes_de_valor` | Partidas conciliatorias con acción `AJUSTAR_VALOR` | **Corrección de un error de registro** | 04 |
+| `valorizaciones` / `desvalorizaciones` | `ValuacionMueble.tipo_ajuste`, `AvaluoInmueble.diferencia_valuacion` | **Cambio de medición a valor razonable** | 07, 08 |
+
+Un bien **no puede aportar a las dos últimas columnas a la vez**. Si tiene avalúo, su diferencia va a
+valorización o desvalorización y la partida conciliatoria de valor queda marcada como *absorbida*.
+La aplicación debe emitir un **error de consolidación**, no una advertencia, si detecta lo contrario.
+
+> **Añadido el 2026-09-01.** La fórmula sumaba `ajustes_de_valor` y `valorizaciones/desvalorizaciones`
+> sin declarar qué alimenta cada columna, de modo que un mismo bien podía contarse dos veces y
+> desinflar o inflar el patrimonio. Ver `CORRECCIONES.md` § C-05 y `ANEXO_C` §7.0.
+
 ### `RN-10-02` — Cuadre obligatorio en tres niveles
 No se emite ninguna resolución si no se cumple simultáneamente:
 

@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    // MOD-00 + MOD-06: sin Node, sin Electron, sin DOM, sin React.
+    // "types": [] y "lib" sin DOM hacen que importar 'fs' o usar 'document'
+    // sea un error de compilación, no una convención (regla D-2 / M-1).
+    // Mismo piso que el renderer: ES2021 + las dos partes de ES2022 verificadas
+    // contra R-05 (ver tsconfig.renderer.json).
+    "target": "ES2021",
+    "lib": ["ES2021", "ES2022.Array", "ES2022.Object"],
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "@compartido/*": ["src/compartido/*"],
+      "@motor/*": ["src/compartido/motor/*"]
+    }
+  },
+  "include": ["src/compartido/**/*.ts"]
+}

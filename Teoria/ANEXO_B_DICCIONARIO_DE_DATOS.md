@@ -14,7 +14,7 @@ Entidad
  ├── ConvencionCodigo ── AbreviaturaTipo
  ├── Inmueble ──── AvaluoInmueble ──── OfertaComparable
  │                              └───── DocumentoInmueble
- ├── Usuario ──── Rol
+ ├── Responsable          (catálogo de personas; NO son cuentas de acceso)
  └── Ejercicio
       ├── Bien ─────┬── HojaVida ──── SoporteDocumental
       │             ├── FotoBien
@@ -119,8 +119,11 @@ Entidad
 | Clave | Tipo | Valores | Por defecto |
 |---|---|---|---|
 | `metodo_depreciacion` | enum | `linea_recta` | `linea_recta` |
-| `metodo_conteo_meses` | enum | `mes_completo`, `dias_exactos`, `fraccion_anual` | — (obligatorio definir) |
+| `metodo_conteo_meses` | enum | `mes_completo`, `dias_exactos`, `fraccion_anual` | **`dias_exactos`** (sugerido; requiere confirmación por acta antes de calcular) |
 | `deprecia_mes_adquisicion` | booleano | sí/no | sí |
+| `usa_puesta_en_servicio` | booleano | sí/no | no |
+| `enfoque_adiciones` | enum | `simplificado`, `componente_separado` | `simplificado` |
+| `base_comparacion_avaluo` | enum | `valor_neto_libros`, `saldo_por_depreciar` | `valor_neto_libros` |
 | `valor_residual_pct` | número | 0–100 | 0 |
 | `decimales_calculo` | entero | 0–4 | 2 |
 | `umbral_capitalizacion` | número | monto | según manual |
@@ -131,6 +134,17 @@ Entidad
 | `tolerancia_cruce_valor_pct` | número | 0–100 | 5 |
 | `vigencia_avaluo_meses` | entero | | 12 |
 | `moneda` | texto | | COP |
+
+> **Actualizado el 2026-09-01.** Se añadieron cuatro claves y se fijó un valor por defecto para
+> `metodo_conteo_meses`. Ver `CORRECCIONES.md` § C-06 y § C-07.
+>
+> - `usa_puesta_en_servicio` y `enfoque_adiciones` eran usadas por `ANEXO_C` §3.2 y §3.6 sin figurar
+>   en esta tabla.
+> - `base_comparacion_avaluo` implementa la corrección de `ANEXO_C` §5.4.
+> - `metodo_conteo_meses` pasa a tener el valor sugerido **`dias_exactos`**, por coherencia con el
+>   divisor 365,25 que ya usa el índice de obsolescencia. **Sigue siendo obligatorio confirmarlo por
+>   acta** (`IN-06-04`) antes de que la aplicación permita calcular: `VAL-06-01` no se levanta con el
+>   valor sugerido, solo con la confirmación explícita.
 
 ### 2.6 `Ejercicio`
 
@@ -306,13 +320,32 @@ ABIERTO → EN_LEVANTAMIENTO → EN_CONCILIACION → EN_CALCULO
 ### 6.2 `Bien.estado_registro`
 
 ```
-BORRADOR → VALIDADO → ACTIVO
-              ↓
-         INCOMPLETO (falta dato económico)
-              ↓
-      PROPUESTO_BAJA → DADO_DE_BAJA
+BORRADOR ──→ VALIDADO ──→ ACTIVO ──→ PROPUESTO_BAJA ──→ DADO_DE_BAJA
+    │            │          ▲               │              (terminal)
+    └────────────┴──→ INCOMPLETO ───────────┘
+                         ▲   │
+                         └───┘   rechazo del Comité (RN-09-04):
+                                 PROPUESTO_BAJA ──→ ACTIVO
 ```
-Un bien nunca se elimina físicamente.
+
+**Transiciones válidas** (seis estados; es el enum canónico):
+
+| Desde | Hacia | Condición |
+|---|---|---|
+| `BORRADOR` | `VALIDADO` | Pasa `VAL-02-01` … `VAL-02-04` |
+| `BORRADOR` / `VALIDADO` / `ACTIVO` | `INCOMPLETO` | Falta `fecha_adquisicion` o `costo_adquisicion` (`RN-03-01`) |
+| `VALIDADO` | `ACTIVO` | Tiene hoja de vida si su clase la requiere (`VAL-03-01`) |
+| `INCOMPLETO` | `VALIDADO` / `ACTIVO` | Se completó el dato económico |
+| `ACTIVO` | `PROPUESTO_BAJA` | Existe `PropuestaBaja` (paso 09) |
+| **`PROPUESTO_BAJA`** | **`ACTIVO`** | **El Comité rechaza la baja (`RN-09-04`)** |
+| `PROPUESTO_BAJA` | `DADO_DE_BAJA` | Acta del Comité aprueba (`INT-07`) |
+| `DADO_DE_BAJA` | — | **Terminal** |
+
+Un bien nunca se elimina físicamente (`RN-09-09`).
+
+> **Corregido el 2026-09-01.** Faltaba la transición de regreso `PROPUESTO_BAJA → ACTIVO`, que
+> `RN-09-04` sí exige. Además, el §10.1 del paso 02 listaba solo cuatro estados; **el enum canónico
+> es el de esta sección, con seis**. Ver `CORRECCIONES.md` § C-08.
 
 ### 6.3 `PropuestaBaja.estado_aprobacion`
 
@@ -346,27 +379,64 @@ PROYECTADO → EN_REVISION_JURIDICA → APROBADO_COMITE
 | `campo` | texto(60) | Campo modificado |
 | `valor_anterior` | texto | |
 | `valor_nuevo` | texto | |
-| `usuario_id` | UUID | Quién |
+| `responsable_id` | UUID | Quién decidió. Nulo cuando la acción no tiene responsable identificable (una importación, un recálculo) |
 | `fecha` | timestamp | Cuándo |
-| `ip` | texto(45) | Desde dónde |
+| `origen` | texto(120) | Nombre del equipo + usuario del sistema operativo |
+| ~~`ip`~~ | — | **Sin uso.** Ver nota |
 | `justificacion` | texto | Obligatoria en cambios sensibles |
 
 **Campos que exigen justificación al modificarse:** `costo_adquisicion`, `fecha_adquisicion`, `clase_activo_id`, `valor_avaluo_final`, `vida_util_tecnica_override`, `deterioro`, `causal_baja`, `fecha_corte`.
 
-### 7.2 `Usuario` y `Rol`
+> **Actualizado el 2026-09-01.** `usuario_id` presuponía cuentas de acceso; la aplicación no tiene
+> inicio de sesión (ver §7.2). Se sustituye por `responsable_id`, que apunta al catálogo de
+> `Responsable`. El campo `ip` no aplica en una aplicación local sin red y se sustituye por `origen`.
+> Ver `CORRECCIONES.md` § C-09.
+>
+> **La bitácora sigue siendo obligatoria y completa.** No tener usuarios no significa no tener
+> trazabilidad: la Resolución 193 de 2016 exige poder reconstruir qué cambió, cuándo y con qué
+> justificación, y eso se conserva íntegro.
 
-| Rol | Permisos principales |
-|---|---|
-| `ADMINISTRADOR` | Configuración, usuarios, todos los pasos |
-| `COORDINADOR` | Todos los pasos, cierre de ejercicio |
-| `TECNICO_CAMPO` | Captura de inventario (paso 02) |
-| `ESPECIALISTA_BIOMEDICO` | Hojas de vida, obsolescencia, valuación y bajas de equipo médico |
-| `ESPECIALISTA_SISTEMAS` | Ídem para cómputo y comunicaciones |
-| `ESPECIALISTA_FISICOS` | Ídem para maquinaria, muebles, transporte |
-| `CONTADOR` | Saldos, conciliación, validación de depreciación |
-| `PERITO` | Inmuebles (paso 08) |
-| `COMITE` | Aprobación de bajas y actos |
-| `CONSULTA` | Solo lectura y reportes |
+### 7.2 `Responsable` y perfil
+
+> **Reinterpretado el 2026-09-01.** La versión anterior modelaba estos perfiles como **cuentas de
+> usuario con control de acceso**, lo que presupone un sistema multiusuario. La aplicación es de
+> escritorio, monousuario y **sin inicio de sesión**: la maneja una sola persona en el hospital.
+> Ver `CORRECCIONES.md` § C-09.
+>
+> Los perfiles **siguen siendo necesarios**, pero como **dato de atribución**, no como permiso: los
+> documentos exigen decir quién certificó, quién valuó, quién avaluó y quién firma. Se modelan como
+> un catálogo de personas que se configura una vez y se selecciona al firmar cada acto.
+
+```
+Responsable(id, entidad_id, nombre_completo, documento_identidad,
+            perfil, cargo, tarjeta_profesional, registro_raa,
+            es_externo, activo)
+```
+
+| Perfil | Interviene en | Qué firma |
+|---|---|---|
+| `COORDINADOR` | Todo el proceso | Informes, actas de parametrización |
+| `ESPECIALISTA_BIOMEDICO` | Pasos 03, 05, 07, 09 (equipo médico) | Hojas de vida, conceptos, certificaciones técnicas de baja |
+| `ESPECIALISTA_SISTEMAS` | Ídem para cómputo y comunicaciones | Ídem |
+| `ESPECIALISTA_FISICOS` | Ídem para maquinaria, muebles, transporte | Ídem |
+| `CONTADOR` | Pasos 04, 06, 10 | Acta de método de depreciación, matriz de conciliación, consolidado |
+| `PERITO` | Paso 08 · **externo**, con `registro_raa` | Informe de avalúo, certificado de avalúo |
+| `MIEMBRO_COMITE` | Pasos 09, 10 | Actas del Comité |
+| `GERENTE` | Paso 10 | Resoluciones |
+| `ASESOR_JURIDICO` | Paso 10 | Concepto jurídico sobre los proyectos |
+| `SUPERVISOR` | Paso 11 | Certificación de cumplimiento, acta de entrega |
+
+**Consecuencias del cambio:**
+
+- No hay contraseñas, ni sesión, ni matriz de permisos. `Responsable` es un catálogo, no una cuenta.
+- El campo `Bitacora.usuario_id` pasa a ser `Bitacora.responsable_id`, opcional: apunta a quien
+  decidió, cuando la acción tiene un responsable identificable (una valuación, una certificación).
+- El campo `Bitacora.ip` queda **sin uso** (siempre nulo): se sustituye por `origen`, con el nombre
+  del equipo y el usuario del sistema operativo.
+- Las "bandejas de trabajo por especialista" (`RF-07-05`) son **filtros** sobre la misma base, no
+  colas de usuarios distintos.
+- La trazabilidad exigida por la Resolución 193 de 2016 se mantiene íntegra: qué cambió, cuándo, con
+  qué justificación y bajo la responsabilidad de quién.
 
 ---
 
@@ -395,6 +465,20 @@ PROYECTADO → EN_REVISION_JURIDICA → APROBADO_COMITE
 | Bienes por hospital de mediana/alta complejidad | 3.000 – 20.000 registros |
 | Hojas de vida biomédicas | 20 % – 40 % del total |
 | Cálculo masivo | Procesar por lotes; el cálculo de un ejercicio completo debe resolverse en segundos, no minutos |
-| Fotografías | Almacenamiento de objetos, no en base de datos; comprimir en el cliente |
+| Fotografías | Fuera de la base de datos, en el sistema de archivos local; comprimir en el cliente |
 | Exportación a Excel | Generación en segundo plano con notificación al finalizar para volúmenes altos |
-| Captura móvil | Base local con sincronización diferencial y resolución de conflictos por marca de tiempo |
+| ~~Captura móvil~~ | **Fuera de alcance.** Ver nota de abajo |
+
+> **Actualizado el 2026-09-01 — captura móvil.** La aplicación es de escritorio y monousuario. **No
+> hay captura móvil ni sincronización diferencial.** El levantamiento en campo se hace en la
+> plantilla `PL-03` (impresa o en Excel) y se **importa** a la aplicación. Ver `CORRECCIONES.md`
+> § C-10.
+>
+> Se descarta expresamente la "resolución de conflictos por marca de tiempo" que recomendaba la
+> versión anterior: cuando el dato en disputa es el costo de un activo, resolver automáticamente por
+> la hora de edición es inaceptable. Toda diferencia la resuelve una persona.
+>
+> **Fotografías:** "almacenamiento de objetos" presuponía infraestructura en la nube. En una
+> aplicación local el equivalente es el sistema de archivos: `<datos>/almacen/<ejercicio>/<bien>/`,
+> con la ruta relativa y una suma SHA-256 en la base. Los campos `*_url` del modelo son **rutas
+> relativas al almacén**, no URL.

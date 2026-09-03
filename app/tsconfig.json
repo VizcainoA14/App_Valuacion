@@ -1,0 +1,13 @@
+{
+  // Solución raíz: solo referencia a los tsconfig específicos.
+  // Main, preload, renderer y compartido tienen lib y target distintos a propósito:
+  // un único tsconfig permitiría usar APIs de Node en el renderer (plan 4.1 §3).
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.compartido.json" },
+    { "path": "./tsconfig.main.json" },
+    { "path": "./tsconfig.preload.json" },
+    { "path": "./tsconfig.renderer.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}

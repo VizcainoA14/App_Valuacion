@@ -38,6 +38,10 @@ Compensa los años bisiestos. Es el divisor usado en los cálculos de referencia
 
 ### 2.3 Caso de verificación
 
+> **Corregido el 2026-09-01.** La versión anterior mezclaba dos valores de edad (10,3491 y 10,3833)
+> y calculaba el índice con el segundo, que no se deriva de los 3.780 días declarados. Ver
+> `CORRECCIONES.md` § C-01. Las cifras de abajo son las que producen las fórmulas de §2.1.
+
 | Dato | Valor |
 |---|---|
 | Fecha de adquisición | 2015-02-23 |
@@ -46,13 +50,16 @@ Compensa los años bisiestos. Es el divisor usado en los cálculos de referencia
 
 ```
 días transcurridos = 3.780
-edad_actual        = 3.780 / 365.25 = 10,3491  ≈ 10,38 (según redondeo de días)
-indice             = 10,3833 / 15   = 0,6922
-porcentaje         = 69,22 %
-anios_restantes    = 4,6167
-fin_vida_util      = 2030-02-23
+edad_actual        = 3.780 / 365.25   = 10,3491
+indice             = 10,3491 / 15     = 0,6899
+porcentaje         = 68,99 %
+anios_restantes    = 15 − 10,3491     = 4,6509
+fin_vida_util      = 2015-02-23 + (15 × 365.25 días) = 2030-02-23
 semaforo           = AMARILLO
 ```
+
+> **Sobre `fin_vida_util`:** 15 × 365,25 = 5.478,75 días, que caen a mitad del 2030-02-22. Se
+> redondea al día más cercano con desempate hacia arriba (`RED-06`) → **2030-02-23**.
 
 ### 2.4 Casos borde
 
@@ -88,7 +95,7 @@ funcion calcularObsolescencia(bien, ejercicio):
         edad_actual_anios:   redondear(edad, 4),
         indice_obsolescencia: redondear(indice, 4),
         anios_restantes:      redondear(vida_util - edad, 4),
-        fecha_fin_vida_util:  bien.fecha_adquisicion + años(vida_util),
+        fecha_fin_vida_util:  bien.fecha_adquisicion + dias(vida_util × 365.25),
         semaforo:             clasificarSemaforo(indice),
         vida_util_aplicada:   vida_util
     }
@@ -190,20 +197,37 @@ Matemáticamente equivalente al método B; se conserva por claridad de presentac
 
 #### Comparación con un caso real
 
+> **Corregido el 2026-09-01.** Ninguna de las tres cifras de la versión anterior era reproducible
+> con las fórmulas de §3.1, y eran incoherentes entre sí (11.696.594,45 / 131.884,89 = 88,69 meses,
+> no los 87,3908 que la propia fila declaraba). Ver `CORRECCIONES.md` § C-02.
+
 | Dato | Valor |
 |---|---|
 | Fecha de adquisición | 2018-04-27 |
 | Fecha de corte | 2025-06-30 |
 | Costo | 23.739.280 |
 | Vida útil | 180 meses |
+| Valor residual | 0 % |
 
-| Método | Meses | Depreciación acumulada |
-|---|:-:|---|
-| `mes_completo` | 86 | 11.510.502,22 |
-| `dias_exactos` | 87,3908 | 11.696.594,45 |
-| Valor del archivo de referencia | ~87,4 | 11.522.343,13 |
+```
+días transcurridos   = 2.621
+base_depreciable     = 23.739.280
+depreciacion_mensual = 23.739.280 / 180 = 131.884,89
+```
 
-> La diferencia entre métodos supera los $180.000 en **un solo bien**. En un inventario de miles de registros el efecto agregado es material. De ahí la exigencia del acta.
+| Método | Meses | Depreciación acumulada | Saldo por depreciar |
+|---|:-:|---|---|
+| `mes_completo` | 86 | 11.342.100,44 | 12.397.179,56 |
+| **`dias_exactos`** (por defecto) | **86,1109** | **11.356.724,23** | **12.382.555,77** |
+| `fraccion_anual` | 86,1109 | 11.356.724,23 | 12.382.555,77 |
+
+> **Diferencia entre métodos: 0,1109 meses = $14.623,79 en este bien.** La magnitud unitaria es
+> pequeña, pero el problema real no es el monto: es que si contabilidad calcula con un método y la
+> aplicación con otro, las cifras **no cuadran nunca** y el ejercicio no puede cerrarse (§7.1). De
+> ahí la exigencia del acta.
+>
+> El caso ilustra además por qué el método debe fijarse **antes** de calcular: cambiarlo después
+> obliga a recalcular el ejercicio completo.
 
 ### 3.4 Casos borde
 
@@ -314,24 +338,52 @@ valor_avaluo_calculado = valor_equipo_nuevo_equivalente
 
 ### 5.3 Ejemplo
 
+> **Corregido el 2026-09-01.** Usaba el índice 0,6922 del caso erróneo de §2.3. Con el índice
+> correcto (0,6899) el resultado es 3.101.000. Ver `CORRECCIONES.md` § C-03.
+
 ```
 valor_nuevo_equivalente = 10.000.000
-indice_obsolescencia    = 0,6922
+indice_obsolescencia    = 0,6899      (caso de §2.3)
 estado                  = BUENO → factor 1,00
 
-factor_vida_restante = 1 − 0,6922 = 0,3078
-valor_avaluo         = 10.000.000 × 0,3078 × 1,00 = 3.078.000
+factor_vida_restante = 1 − 0,6899 = 0,3101
+valor_avaluo         = 10.000.000 × 0,3101 × 1,00 = 3.101.000
 ```
 
 ### 5.4 Clasificación del ajuste
 
+> **Corregido el 2026-09-01.** La base de comparación era `saldo_por_depreciar`, que **no** descuenta
+> el deterioro ya reconocido en el paso 06 y por tanto lo contaba dos veces, llegando a invertir el
+> signo del ajuste. Ver `CORRECCIONES.md` § C-04.
+
 ```
-diferencia = valor_avaluo_final − saldo_por_depreciar
+diferencia = valor_avaluo_final − valor_neto_libros
 
 diferencia > 0 → VALORIZACION
 diferencia < 0 → DESVALORIZACION
 diferencia = 0 → SIN_CAMBIO
 ```
+
+**Por qué `valor_neto_libros` y no `saldo_por_depreciar`:** el ajuste que ordena la resolución lleva
+el activo desde **la cifra que figura en el balance** hasta su valor razonable. Esa cifra es el valor
+neto en libros, con el deterioro ya descontado.
+
+```
+Bien con deterioro reconocido:
+  costo + adiciones        10.000.000
+  − depreciación acumulada  6.000.000
+  = saldo_por_depreciar     4.000.000
+  − deterioro               1.000.000
+  = valor_neto_libros       3.000.000   ← lo que dice el balance
+  avalúo final              3.500.000
+
+  contra valor_neto_libros:   +500.000 → VALORIZACION      ✔ correcto
+  contra saldo_por_depreciar: −500.000 → DESVALORIZACION   ✘ vuelve a restar el deterioro
+```
+
+El parámetro `base_comparacion_avaluo` (ver `ANEXO_B` §2.5) permite a una entidad usar
+`saldo_por_depreciar` si su política contable lo exige, pero el valor por defecto es
+`valor_neto_libros`.
 
 ### 5.5 Casos borde
 
@@ -402,6 +454,41 @@ nueva_depreciacion = depreciacion_anterior
                    − depreciacion_retirada_por_baja
 
 valor_neto_final = nuevo_saldo_bruto − nueva_depreciacion − nuevo_deterioro
+```
+
+### 7.0 Regla de exclusión mutua (obligatoria)
+
+> **Añadida el 2026-09-01.** La fórmula suma `ajustes_de_valor` **y**
+> `valorizaciones/desvalorizaciones` sin declarar qué alimenta cada columna. Sin esta regla, un
+> mismo bien puede aportar a las dos y su ajuste se cuenta dos veces. Ver `CORRECCIONES.md` § C-05.
+
+Cada columna tiene un origen único y excluyente:
+
+| Columna | Se alimenta de | Naturaleza | Paso |
+|---|---|---|:-:|
+| `incorporaciones` | Partidas `SOBRANTE_FISICO` con acción `INCORPORAR` | Bien que existe y no estaba en libros | 04 |
+| `retiros_por_baja` | `PropuestaBaja` en `APROBADO_COMITE` o posterior | Bien que sale del patrimonio | 09 |
+| `ajustes_de_valor` | Partidas conciliatorias con acción `AJUSTAR_VALOR` | **Corrección de un error de registro** (costo mal digitado, fecha equivocada, subcuenta errónea) | 04 |
+| `valorizaciones` / `desvalorizaciones` | `ValuacionMueble.tipo_ajuste` y `AvaluoInmueble.diferencia_valuacion` | **Cambio de medición a valor razonable** | 07, 08 |
+
+**Regla:** un bien no puede aportar simultáneamente a `ajustes_de_valor` y a
+`valorizaciones/desvalorizaciones`. Si el bien tiene avalúo (pasos 07 u 08), su diferencia va a
+valorización o desvalorización, y la partida conciliatoria de valor queda marcada como **absorbida**.
+
+El motor debe emitir un **error de consolidación** —no una advertencia— si detecta un bien
+contribuyendo a ambas columnas.
+
+```
+Ejemplo del error que esta regla evita:
+
+  Bien X en libros                        10.000.000
+  Conciliación: costo mal registrado         −2.000.000   (ajustes_de_valor)
+  Valuación: desvalorización por la misma
+  causa, calculada sobre el costo correcto   −2.000.000   (desvalorizaciones)
+
+  nuevo_saldo = 10.000.000 − 2.000.000 − 2.000.000 =  6.000.000
+  correcto    =                                        8.000.000
+                                        se descontaron 2.000.000 de más
 ```
 
 ### 7.1 Verificación de cuadre en tres niveles

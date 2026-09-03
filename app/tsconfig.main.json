@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    // Proceso main: corre en el Node 24.19.0 que incorpora Electron 44.1.1.
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@compartido/*": ["src/compartido/*"],
+      "@motor/*": ["src/compartido/motor/*"],
+      "@main/*": ["src/main/*"]
+    }
+  },
+  "include": ["src/main/**/*.ts", "src/compartido/**/*.ts"]
+}

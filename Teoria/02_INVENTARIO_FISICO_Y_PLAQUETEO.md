@@ -190,14 +190,18 @@ ActaCustodia(id, ejercicio_id, servicio_id, responsable, fecha,
              documento_url, estado_firma)
 ```
 
-`estado_registro`: `borrador` | `validado` | `incompleto` | `dado_de_baja`
+`estado_registro`: `BORRADOR` | `VALIDADO` | `ACTIVO` | `INCOMPLETO` | `PROPUESTO_BAJA` | `DADO_DE_BAJA`
+
+> **Corregido el 2026-09-01.** Esta lista tenía cuatro estados y omitía `ACTIVO` y `PROPUESTO_BAJA`.
+> El enum canónico, con sus transiciones válidas, es el de `ANEXO_B` §6.2. Ver
+> `CORRECCIONES.md` § C-08.
 
 ### 10.2 Requisitos funcionales
 
 | Código | Requisito |
 |---|---|
-| `RF-02-01` | Captura móvil de inventario con funcionamiento **offline** y sincronización posterior |
-| `RF-02-02` | Lectura de código de barras / QR con la cámara |
+| ~~`RF-02-01`~~ | ~~Captura móvil de inventario con funcionamiento **offline** y sincronización posterior~~ · **FUERA DE ALCANCE** — ver nota |
+| ~~`RF-02-02`~~ | ~~Lectura de código de barras / QR con la cámara~~ · **FUERA DE ALCANCE** — ver nota |
 | `RF-02-03` | Generación automática del código institucional según la convención del paso 01 |
 | `RF-02-04` | Generación e impresión de etiquetas (Code128 / QR) por lotes |
 | `RF-02-05` | Captura de fotografía asociada al bien |
@@ -207,13 +211,30 @@ ActaCustodia(id, ejercicio_id, servicio_id, responsable, fecha,
 | `RF-02-09` | Generación automática de actas de custodia por dependencia |
 | `RF-02-10` | Registro de traslados sin perder el histórico de ubicación |
 
+> **Nota de alcance — 2026-09-01.** `RF-02-01` y `RF-02-02` describen una **aplicación móvil con
+> sincronización**, incompatible con una aplicación de escritorio monousuario. Quedan **fuera de
+> alcance** y no se implementan. Ver `CORRECCIONES.md` § C-10.
+>
+> **Cómo se cubre el levantamiento en campo:** el conteo se realiza sobre la plantilla `PL-03`
+> (impresa o en Excel) y se **importa** a la aplicación mediante `RF-02-07`, con validación previa y
+> reporte de errores fila por fila. La aplicación no se usa dentro del servicio.
+>
+> `RF-02-04` (generación e impresión de etiquetas) **sí se mantiene**: la aplicación genera las
+> etiquetas Code128/QR para imprimir y adherir. Lo que no hay es lectura desde la aplicación.
+>
+> Consecuencia sobre `RF-02-06` (validación de duplicados en tiempo real): se aplica durante la
+> **importación** y durante la edición manual de un bien, no durante una captura en campo que ya no
+> existe.
+
 ### 10.3 Pantallas
 
-1. **Captura en campo (móvil)** — formulario optimizado, cámara, escáner, modo offline.
+1. **Importador de inventario** — carga de `PL-03`, previsualización con errores resaltados, confirmación.
 2. **Listado de bienes** — filtros por sede, servicio, clase, estado; búsqueda por código/placa/serie.
-3. **Ficha del bien** — datos, fotos, historial de movimientos.
+3. **Ficha del bien** — datos, fotos, historial de movimientos; edición y corrección manual.
 4. **Generador de etiquetas** — selección por lote y vista previa de impresión.
 5. **Tablero de cobertura** — porcentaje de servicios completados.
+
+> La pantalla 1 sustituye a la antigua "Captura en campo (móvil)", eliminada por la nota de alcance.
 
 ---
 

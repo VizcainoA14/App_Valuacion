@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    // Preload con sandbox: solo contextBridge/ipcRenderer de Electron.
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM"],
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@compartido/*": ["src/compartido/*"]
+    }
+  },
+  "include": ["src/preload/**/*.ts", "src/compartido/**/*.ts"]
+}

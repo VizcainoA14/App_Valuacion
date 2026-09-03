@@ -1,0 +1,22 @@
+{
+  "_fuente": "ANEXO_B §2.5 (valores por defecto). Debe coincidir con PARAMETROS_POR_DEFECTO de compartido/parametros; un test lo verifica.",
+  "parametros": {
+    "metodo_depreciacion": "linea_recta",
+    "metodo_conteo_meses": "dias_exactos",
+    "metodo_conteo_meses_confirmado": false,
+    "deprecia_mes_adquisicion": true,
+    "usa_puesta_en_servicio": false,
+    "enfoque_adiciones": "simplificado",
+    "base_comparacion_avaluo": "valor_neto_libros",
+    "valor_residual_pct": 0,
+    "decimales_calculo": 2,
+    "umbral_capitalizacion": 0,
+    "umbral_semaforo_verde": 0.5,
+    "umbral_semaforo_amarillo": 0.8,
+    "umbral_semaforo_naranja": 0.99,
+    "umbral_reparacion_baja_pct": 50,
+    "tolerancia_cruce_valor_pct": 5,
+    "vigencia_avaluo_meses": 12,
+    "moneda": "COP"
+  }
+}
