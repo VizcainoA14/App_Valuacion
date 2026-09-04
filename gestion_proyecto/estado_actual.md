@@ -4,8 +4,8 @@
 > que retome el trabajo. Ver `.claude/config_sesion.json` § *protocolo_inicio*.
 
 **Última actualización:** 2026-09-04
-**Actualizado por:** Claude (sesión de implementación — núcleo de ADR-026 completo + defecto de `PL-03`)
-**Versión del plan:** 1.1 + **ADR-026** · **Versión de `/Teoria`:** 2.1
+**Actualizado por:** Claude (verificación normativa + ADR-027: fuera el catálogo de responsables)
+**Versión del plan:** 1.1 + **ADR-026** + **ADR-027** · **Versión de `/Teoria`:** 2.1
 
 ---
 
@@ -15,7 +15,7 @@
 Un hospital configura la entidad, descarga sus formatos, importa el inventario, **calcula la
 depreciación y la obsolescencia**, propone y decide las bajas, y **se lleva su informe en PDF**. El
 motor reproduce las cifras de `ANEXO_C` al dígito y tarda 1,27 s en 20.000 bienes.
-**386 tests + 5 de rendimiento + 15 E2E**, también sobre el instalador. Lo que queda son las
+**379 tests + 5 de rendimiento + 15 E2E**, también sobre el instalador. Lo que queda son las
 **extensiones**, que ya no son el camino principal.
 
 > **El orden de trabajo lo fija ADR-026**, no el grafo de hitos A→H. Ver
@@ -25,7 +25,29 @@ motor reproduce las cifras de `ANEXO_C` al dígito y tarda 1,27 s en 20.000 bien
 
 ## 2. Última tarea realizada
 
-**Defecto reportado en la importación de `PL-03`**, el 2026-09-04.
+**Documentación técnica de `/app`**, el 2026-09-04.
+
+| Qué | Dónde |
+|---|---|
+| **`app/docs/`** | 10 documentos escritos **leyendo el código**, no de memoria: panorama, arquitectura, arranque y datos, base de datos, IPC, motor, importación, interfaz, pruebas y construcción |
+| **Cifras verificadas contra el código** | 21.967 líneas · 44 tablas · 119 disparadores · 55 canales · 58 validaciones · 379 tests + 15 E2E (12 archivos) + 5 de rendimiento · 218 módulos |
+| **Se corrigieron 3 cifras propias** al contrastarlas: `npm run sembrar` no existe como script, los E2E son 15 en 12 archivos, y el rendimiento 5 en 3 archivos |
+| **Enlazado** | Fila nueva en el mapa de `CLAUDE.md`, junto a `Normatividad/` |
+
+**Antes**, el mismo día: **verificación normativa y ADR-027**.
+
+| Qué | Dónde |
+|---|---|
+| **`/Normatividad`** | Carpeta nueva: 5 fichas + índice contrastando el proceso con la norma colombiana. Cada afirmación marcada ✅ verificada / ⚠️ indirecta / ❓ por confirmar, y una lista explícita de lo que **no** se verificó |
+| **Veredicto** | El proceso está bien planteado; ninguna contradicción con la norma. Coinciden línea recta, tope en la base depreciable, valor residual, revisión anual de vida útil, inventario físico y depuración permanente |
+| **Hallazgo que valida un diseño** | La Guía 003 de la CGN: *«el deterioro se reconoce solo cuando existen indicios»*. Devolver `NO_CALCULABLE` en vez de cero no era solo prudencia |
+| **4 puntos a precisar** | (1) el marco contable de una E.S.E —Res. 414 o 533— lo decide el Comité Interinstitucional de la CEFP, no se puede asumir; (2) las vidas útiles precargadas son sugerencias y la interfaz no lo dice; (3) el art. 355 está redactado para entidades territoriales; (4) las subcuentas no se verificaron |
+| **ADR-027 · fuera los responsables** | El Comité de Sostenibilidad Contable es *sugerido*, no obligatorio (Res. 193/2016 §3.2.2), y ningún texto exige un catálogo de personas. Se retiran 4 canales, el módulo `plataforma`, el DTO y la pantalla |
+| **Lo que sí exige la norma** | Responsabilidad del representante legal y del contador (§1.1). La entidad gana `nombre_contador` y `tarjeta_profesional_contador`; el informe firma con **dos nombres propios** en vez de tres columnas con una en blanco |
+| **La tabla `responsable` sobrevive** | Catorce claves foráneas apuntan a ella y **SQLite no deja eliminar una columna que participa en una FK** (comprobado). `firmanteRepo` mantiene dos filas por entidad derivadas de sus datos. Compromiso admitido y escrito en el ADR |
+| **Decisión del propietario** | La etapa de **bajas se conserva** como estaba, así que **las 6 etapas de ADR-026 siguen en pie**. Lo que se simplificó es el contenido de cada una, no su número: desaparecieron dos preguntas obligatorias y una sección entera |
+
+**Antes**, el mismo día: **defecto reportado en la importación de `PL-03`**.
 
 | Qué | Dónde |
 |---|---|
@@ -123,8 +145,8 @@ hito B completo (`T-B-01` … `T-B-11`).
 
 ## 3. Tarea actual en ejecución
 
-**Ninguna.** Checkpoint limpio: `verificar:todo` (387 tests), `test:rendimiento` (5), 13 E2E
-(también sobre el instalador) y `boundaries` en verde (223 módulos).
+**Ninguna.** Checkpoint limpio y **cerrado sobre el paquete**: `verificar:todo` (379 tests; los 8 del catálogo retirado se fueron con él), `test:rendimiento` (5), 13 E2E
+en verde tanto sobre `out/` como sobre el paquete (`PROBAR_PAQUETE=1`), y `boundaries` en verde (218 módulos). Instalador reconstruido el 2026-09-04 a las 15:31.
 
 > **La CI corrió por primera vez el 2026-09-03 y encontró dos defectos**, ya corregidos: el detector
 > de unidades de red usaba el `path` del anfitrión en vez de la plataforma que recibe como parámetro

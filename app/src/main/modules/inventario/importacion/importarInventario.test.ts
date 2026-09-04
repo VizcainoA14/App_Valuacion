@@ -69,10 +69,7 @@ async function arnesConEjercicio() {
   );
   const sede = valor(await a.registro.invocar('sede:crear', { entidadId: entidad.id, codigo: '01', nombre: 'Sede principal', direccion: 'Calle 1', municipio: 'Popayán', activa: true }));
   const servicio = valor(await a.registro.invocar('servicio:crear', { sedeId: sede.id, codigo: 'LAB', nombre: 'LABORATORIO CLINICO', tipo: 'asistencial', responsable: null, activo: true }));
-  const firmante = valor(
-    await a.registro.invocar('responsable:crear', { entidadId: entidad.id, nombreCompleto: 'Ana Coordinadora', documentoIdentidad: '1', perfil: 'COORDINADOR', cargo: 'Líder' }),
-  );
-  const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Ejercicio 2026', fechaCorte: FECHA_CORTE, responsableId: firmante.id }));
+  const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Ejercicio 2026', fechaCorte: FECHA_CORTE }));
   return { ...a, entidadId: entidad.id, ejercicioId: ejercicio.id, claseId: clase.id, servicioId: servicio.id };
 }
 
@@ -136,10 +133,7 @@ describe('PL-03 · toma de inventario físico', () => {
     const entidad = valor(await a.registro.invocar('entidad:crear', { ...ENTIDAD_PRUEBA, precargarSemillas: true }));
     const sede = valor(await a.registro.invocar('sede:crear', { entidadId: entidad.id, codigo: '01', nombre: 'Sede principal', direccion: 'Calle 1', municipio: 'Popayán', activa: true }));
     valor(await a.registro.invocar('servicio:crear', { sedeId: sede.id, codigo: 'LAB', nombre: 'LABORATORIO CLINICO', tipo: 'asistencial', responsable: null, activo: true }));
-    const firmante = valor(
-      await a.registro.invocar('responsable:crear', { entidadId: entidad.id, nombreCompleto: 'Ana Coordinadora', documentoIdentidad: '1', perfil: 'COORDINADOR', cargo: 'Líder' }),
-    );
-    const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Ejercicio 2026', fechaCorte: FECHA_CORTE, responsableId: firmante.id }));
+    const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Ejercicio 2026', fechaCorte: FECHA_CORTE }));
 
     a.seleccionarArchivo(
       await rellenar('PL-03_toma_inventario_fisico.xlsx', {

@@ -12,10 +12,7 @@ async function configuracionCompleta() {
   const a = await entidadNueva();
   const sede = valor(await a.registro.invocar('sede:crear', { entidadId: a.entidad.id, codigo: '01', nombre: 'Principal', direccion: 'Calle 1', municipio: 'Popayán' }));
   valor(await a.registro.invocar('servicio:crear', { sedeId: sede.id, codigo: 'URG', nombre: 'Urgencias', tipo: 'asistencial' }));
-  const coordinadora = valor(
-    await a.registro.invocar('responsable:crear', { entidadId: a.entidad.id, nombreCompleto: 'Ana Coordinadora', documentoIdentidad: '1', perfil: 'COORDINADOR', cargo: 'Líder' }),
-  );
-  return { ...a, sede, coordinadora };
+  return { ...a, sede };
 }
 
 describe('entidad y semillas (RF-01-01, RF-01-03)', () => {
@@ -85,8 +82,8 @@ describe('parámetros de cálculo (RN-01-04, RN-01-05, RF-01-08)', () => {
   });
 
   it('un ejercicio ABIERTO recibe los parámetros ajustados; RN-01-01 se aplica al avanzar', async () => {
-    const { registro, entidad, coordinadora } = await configuracionCompleta();
-    const ej = valor(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte 2025', fechaCorte: '2025-06-30', responsableId: coordinadora.id }));
+    const { registro, entidad } = await configuracionCompleta();
+    const ej = valor(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte 2025', fechaCorte: '2025-06-30' }));
     expect(ej.parametrosCongelados.metodo_conteo_meses_confirmado).toBe(false);
     valor(await registro.invocar('parametros:actualizar', { entidadId: entidad.id, cambios: { metodo_conteo_meses_confirmado: true }, justificacion: 'Acta' }));
     const refrescado = valor(await registro.invocar('ejercicio:porId', { id: ej.id }));
@@ -132,8 +129,8 @@ describe('eliminar entidad', () => {
   });
 
   it('se niega en cuanto existe un ejercicio, y dice por qué', async () => {
-    const { registro, entidad, coordinadora } = await configuracionCompleta();
-    valor(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte 2025', fechaCorte: '2025-06-30', responsableId: coordinadora.id }));
+    const { registro, entidad } = await configuracionCompleta();
+    valor(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte 2025', fechaCorte: '2025-06-30' }));
 
     const r = await registro.invocar('entidad:eliminar', { id: entidad.id, justificacion: 'Ya no la quiero' });
     expect(r.ok).toBe(false);
@@ -157,16 +154,16 @@ describe('eliminar entidad', () => {
 
 describe('ejercicio (RF-01-05, RN-01-01, RN-01-06)', () => {
   it('congela los parámetros vigentes y rechaza fechas futuras o responsables ajenos', async () => {
-    const { registro, entidad, coordinadora } = await configuracionCompleta();
-    expect(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Futuro', fechaCorte: '2027-01-01', responsableId: coordinadora.id })).toMatchObject({ ok: false, error: { codigo: 'VAL-01-06' } });
-    const ej = valor(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte junio 2025', fechaCorte: '2025-06-30', contratoNumero: 'C-001', responsableId: coordinadora.id }));
+    const { registro, entidad } = await configuracionCompleta();
+    expect(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Futuro', fechaCorte: '2027-01-01' })).toMatchObject({ ok: false, error: { codigo: 'VAL-01-06' } });
+    const ej = valor(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte junio 2025', fechaCorte: '2025-06-30', contratoNumero: 'C-001' }));
     expect(ej.estado).toBe('ABIERTO');
     expect(ej.parametrosCongelados.base_comparacion_avaluo).toBe('valor_neto_libros');
   });
 
   it('cambiar la fecha de corte exige justificación y queda como campo sensible en bitácora', async () => {
-    const { registro, entidad, coordinadora, sqlite } = await configuracionCompleta();
-    const ej = valor(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte', fechaCorte: '2025-06-30', responsableId: coordinadora.id }));
+    const { registro, entidad, sqlite } = await configuracionCompleta();
+    const ej = valor(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte', fechaCorte: '2025-06-30' }));
     expect(await registro.invocar('ejercicio:cambiarFechaCorte', { id: ej.id, fechaCorte: '2025-12-31', justificacion: '' })).toMatchObject({ ok: false, error: { tipo: 'VALIDACION' } });
     const r = valor(await registro.invocar('ejercicio:cambiarFechaCorte', { id: ej.id, fechaCorte: '2025-12-31', justificacion: 'Comité acordó nuevo corte' }));
     expect(r.fechaCorte).toBe('2025-12-31');
@@ -186,8 +183,8 @@ describe('validaciones del paso 01 (TR-01, RF-01-06)', () => {
   });
 
   it('con sedes, servicios, ejercicio y método confirmado se puede avanzar; quedan solo advertencias', async () => {
-    const { registro, entidad, coordinadora } = await configuracionCompleta();
-    const ej = valor(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte', fechaCorte: '2025-06-30', responsableId: coordinadora.id }));
+    const { registro, entidad } = await configuracionCompleta();
+    const ej = valor(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte', fechaCorte: '2025-06-30' }));
     valor(await registro.invocar('parametros:actualizar', { entidadId: entidad.id, cambios: { metodo_conteo_meses_confirmado: true }, justificacion: 'Acta' }));
     const v = valor(await registro.invocar('validaciones:evaluar', { paso: 1, entidadId: entidad.id, ejercicioId: ej.id }));
     expect(v.puedeAvanzar).toBe(true);

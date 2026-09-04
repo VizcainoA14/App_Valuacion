@@ -12,6 +12,9 @@ export interface EntidadDto {
   readonly nivelComplejidad: NivelComplejidad;
   readonly nombreGerente: string;
   readonly actoNombramientoGerente: string | null;
+  /** Firmante contable del informe (ADR-027). */
+  readonly nombreContador: string | null;
+  readonly tarjetaProfesionalContador: string | null;
   readonly direccion: string;
   readonly telefono: string | null;
   readonly email: string | null;

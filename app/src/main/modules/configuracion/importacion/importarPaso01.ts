@@ -178,6 +178,8 @@ function aplicarPl01(ctx: ContextoIpc, ambito: AmbitoImportacion, lectura: Lectu
         nivelComplejidad: (cambiosEntidad['nivelComplejidad'] ?? 'I') as 'I' | 'II' | 'III',
         nombreGerente: cambiosEntidad['nombreGerente'] ?? '',
         actoNombramientoGerente: cambiosEntidad['actoNombramientoGerente'] ?? null,
+        nombreContador: cambiosEntidad['nombreContador'] ?? null,
+        tarjetaProfesionalContador: null,
         direccion: cambiosEntidad['direccion'] ?? '',
         telefono: cambiosEntidad['telefono'] ?? null,
         email: cambiosEntidad['email'] ?? null,

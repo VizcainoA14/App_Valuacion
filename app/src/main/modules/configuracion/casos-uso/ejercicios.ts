@@ -6,7 +6,7 @@ import { ErrorReglaNegocio, ErrorValidacion } from '../../../../compartido/error
 import { nuevoId } from '../../../infraestructura/db/identificadores';
 import { ejercicioRepo } from '../repositorio/ejercicio.repo';
 import { parametroRepo } from '../repositorio/parametro.repo';
-import { responsableRepo } from '../../plataforma';
+import { firmanteRepo } from '../repositorio/firmante.repo';
 import { exigirEntidad } from './entidades';
 
 export function listarEjercicios(e: EntradaValidadaDe<'ejercicio:listar'>, ctx: ContextoIpc): EjercicioDto[] {
@@ -22,11 +22,15 @@ export function hoyIso(ctx: ContextoIpc): string {
 }
 
 export function crearEjercicio(e: EntradaValidadaDe<'ejercicio:crear'>, ctx: ContextoIpc): EjercicioDto {
-  exigirEntidad(ctx, e.entidadId);
-  const responsable = responsableRepo.porId(ctx.db, e.responsableId);
-  if (responsable === null || responsable.entidadId !== e.entidadId) {
-    throw new ErrorValidacion('RESPONSABLE_INEXISTENTE', 'El responsable no pertenece a la entidad.', { campo: 'responsableId' });
-  }
+  const entidad = exigirEntidad(ctx, e.entidadId);
+  // ADR-027: ya no se elige a nadie. Quien abre el ejercicio es el
+  // representante legal de la entidad, y sus datos ya están en la entidad.
+  const firmanteId = firmanteRepo.sincronizar(
+    ctx.db,
+    e.entidadId,
+    { nombreGerente: entidad.nombreGerente, nombreContador: entidad.nombreContador, tarjetaProfesionalContador: entidad.tarjetaProfesionalContador },
+    ctx.ahoraIso(),
+  );
   if (e.fechaCorte > hoyIso(ctx)) {
     throw new ErrorReglaNegocio('VAL-01-06', 'La fecha de corte no puede ser futura.', { campo: 'fechaCorte' });
   }
@@ -39,7 +43,7 @@ export function crearEjercicio(e: EntradaValidadaDe<'ejercicio:crear'>, ctx: Con
     fechaCorte: e.fechaCorte,
     parametrosCongeladosJson: JSON.stringify(congelados),
     contratoNumero: e.contratoNumero,
-    creadoPorResponsableId: e.responsableId,
+    creadoPorResponsableId: firmanteId,
     creadoEn: ctx.ahoraIso(),
   });
   ctx.bitacora.registrar({
@@ -47,7 +51,7 @@ export function crearEjercicio(e: EntradaValidadaDe<'ejercicio:crear'>, ctx: Con
     entidadAfectada: 'ejercicio',
     registroId: creado.id,
     accion: 'CREAR',
-    responsableId: e.responsableId,
+    responsableId: firmanteId,
     valorNuevo: `${creado.nombre} · corte ${creado.fechaCorte} · parámetros congelados`,
   });
   return creado;

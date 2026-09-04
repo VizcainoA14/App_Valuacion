@@ -8,11 +8,6 @@ export const CANALES_PERMITIDOS = [
   'app:obtenerEstado',
   'app:registrarErrorRenderer',
   'tarea:cancelar',
-  // TR-12 · responsables
-  'responsable:listar',
-  'responsable:crear',
-  'responsable:actualizar',
-  'responsable:desactivar',
   // Paso 01 · configuración (MOD-02)
   'entidad:listar',
   'entidad:porId',

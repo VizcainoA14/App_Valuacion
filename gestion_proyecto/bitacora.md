@@ -32,6 +32,126 @@ Reglas:
 
 ---
 
+## 2026-09-04 · Claude · Documentación técnica de `/app`
+
+**Tareas:** documentación (no abre tarea del backlog)
+
+**Qué se hizo.** Diez documentos en `app/docs/`, con índice: panorama, arquitectura, arranque y
+datos, base de datos, IPC, motor de cálculo, importación, interfaz, pruebas y calidad, construir y
+distribuir. Enlazados desde el mapa de `CLAUDE.md`.
+
+**Escritos leyendo el código, no de memoria.** Todas las cifras se contaron sobre el repositorio:
+21.967 líneas de TS/TSX, 44 tablas, 119 disparadores en la migración `0002`, 55 canales IPC, 58
+validaciones declaradas, 218 módulos, 379 tests unitarios en 35 archivos, 15 E2E en 12 archivos y 5
+de rendimiento en 3.
+
+**Tres afirmaciones propias resultaron falsas y se corrigieron** antes de publicarlas:
+
+1. `npm run sembrar` **no existe** como script; el archivo `scripts/sembrar.ts` sí, y se invoca con
+   `npx tsx`.
+2. Los E2E son **15 pruebas en 12 archivos**, no 15 archivos: `arranque` tiene 3 y
+   `arranque-datos` 2.
+3. El rendimiento son **5 pruebas en 3 archivos**.
+
+En cambio se confirmó lo que sí era cierto: `calculo.test.ts` da **42 casos** (34 bloques `it` más
+un `it.each` que expande el resto).
+
+**Criterio al escribir.** Se documentó no solo *qué* hace cada parte sino *por qué* está así, con las
+razones vividas: por qué el motor es puro, por qué el dinero es entero de centavos, por qué las
+fechas no usan `Date`, por qué la integridad son disparadores y no validaciones de formulario, por
+qué existe el índice laxo del importador y dónde está su frontera, y por qué la limpieza de
+`dev:aislado` es al abrir y no al cerrar. También lo que la CI enseñó: los tres defectos que fueron
+el mismo error de fondo.
+
+Se dejaron escritas las trampas que muerden a quien retome esto: que `npm run dev` abre la base real
+de la app instalada, que `out/` no basta para probar, y que SQLite no deja eliminar una columna que
+participa en una clave foránea.
+
+**Siguiente:** mantenerlos al día cuando el código cambie. Un documento que miente es peor que no
+tenerlo.
+
+---
+
+## 2026-09-04 · Claude · Verificación normativa y retirada del catálogo de responsables (ADR-027)
+
+**Tareas:** investigación normativa (nueva carpeta `/Normatividad`) · ADR-027
+
+### 1. Verificación contra fuentes oficiales del Estado
+
+Se creó **`/Normatividad`** con cinco fichas y un índice, contrastando el proceso que implementa la
+aplicación con la normativa colombiana consultada en línea. Cada afirmación va marcada como
+✅ verificada, ⚠️ indirecta o ❓ por confirmar, y el README enumera lo que **no** se pudo verificar.
+
+**Veredicto: el proceso está bien planteado.** No apareció ninguna contradicción entre el motor de
+cálculo y la norma. Coinciden la línea recta, el tope en la base depreciable, el valor residual que
+no se deprecia, la revisión anual de la vida útil con concepto técnico, el inventario físico
+periódico (Res. 193/2016 num. 9) y la depuración contable **permanente** (num. 3.2.15).
+
+**Lo que más tranquiliza:** devolver `NO_CALCULABLE` en vez de un cero cuando falta el valor
+recuperable no era solo prudencia de ingeniería. La Guía de Aplicación 003 de la CGN dice que *«el
+deterioro se reconoce solo cuando existen indicios»*; un cero habría sido afirmar que no hay
+deterioro, que es una afirmación contable con consecuencias.
+
+**Cuatro puntos a precisar**, ninguno un error de cálculo:
+
+1. **El marco contable no es automático.** Una E.S.E aplica la Resolución 414 de 2014 (empresas) o
+   la 533 de 2015 (entidades de gobierno) según la clasifique el **Comité Interinstitucional de la
+   Comisión de Estadísticas de Finanzas Públicas**. Cambia el Catálogo General de Cuentas.
+   `ANEXO_D` acierta al poner la 414 por defecto, pero falta la advertencia de que se confirme.
+2. Las vidas útiles precargadas son **sugerencias**; la interfaz no lo dice.
+3. El art. 355 de la Ley 1819 de 2016 está redactado para **entidades territoriales**; que aplique
+   a una E.S.E lo debe decidir su revisoría, no el programa.
+4. Las subcuentas (1605…1680) **no se verificaron** contra el catálogo vigente.
+
+También se confirmó que la cadena del saneamiento es Ley 1739/2014 → 1753/2015 → **1819/2016 art.
+355** → Res. 107/2017, y **no** la Ley 1955 de 2019, que se cita por error con frecuencia.
+`ANEXO_D` §2.2 ya la tenía bien.
+
+### 2. ADR-027 — fuera el catálogo de responsables
+
+El propietario pidió que no hubiera «responsables ni nada por el estilo». La investigación dice que
+**se puede**: el Comité Técnico de Sostenibilidad Contable es una *herramienta sugerida* en la
+Res. 193/2016, no una obligación, y ningún texto exige un catálogo de personas con perfiles. Lo que
+la norma sí asigna (num. 1.1) es responsabilidad al **representante legal** y al **contador**.
+
+Así que se retiró el catálogo y se conservó lo único que la norma respalda: **el informe lo firman
+el Gerente y el Contador**, ahora dos campos de la entidad.
+
+- Fuera: 4 canales IPC, el módulo `plataforma`, el DTO, la pantalla y las preguntas obligatorias de
+  «responsable que abre el ejercicio» y «especialista que certifica».
+- La entidad gana `nombre_contador` y `tarjeta_profesional_contador` (migración `0003`).
+- El bloque de firmas pasa de tres columnas —una en blanco— a **dos con nombre propio**.
+
+**La tabla `responsable` sobrevive, y queda escrito por qué.** Catorce columnas del esquema apuntan
+a ella; se comprobó que **SQLite no permite eliminar una columna que participa en una clave
+foránea**, así que retirarla obligaría a reconstruir catorce tablas con sus disparadores sobre bases
+con datos reales, a cambio de algo que el usuario no ve. Un repositorio interno (`firmanteRepo`)
+mantiene dos filas por entidad derivadas de sus propios datos. Es un compromiso admitido: hay un
+concepto en la base que ya no existe en el producto.
+
+**Decisión del propietario:** consultado sobre la etapa de bajas, eligió **conservarla como estaba**.
+Por tanto **las 6 etapas de ADR-026 siguen en pie**; lo que se simplificó es el contenido de cada
+una, no su número. La fusión de «Formatos» dentro de «Inventario» **no se hizo** y queda pendiente
+si el propietario la quiere.
+
+`ANEXO_B` §7.2 y `TR-12` quedan NO IMPLEMENTADOS, como `RF-02-01`/`RF-02-02` por ADR-015.
+**`/Teoria` no se tocó.**
+
+**Verificación.** `verificar:todo` en verde: **379 tests** (los 8 del catálogo retirado se fueron con
+él), typecheck de los cinco proyectos, lint y 218 módulos sin violaciones de frontera. Un único test
+falló al principio y era exactamente el cambio esperado: el especialista de una propuesta de baja
+pasó a ser el Gerente.
+
+**Cierre.** Los **15 E2E pasan dos veces**: sobre `out/` y sobre el paquete (`PROBAR_PAQUETE=1`),
+incluido el `paso01` reescrito sin el catálogo. Se comprobó además que la migración `0003` corre
+sobre una base **preexistente** —15 → 17 columnas en `entidad`, 122 disparadores intactos—, que es
+el caso real de un hospital que ya tiene la aplicación instalada. Instalador reconstruido.
+
+**Siguiente:** sin cambios en el plan. Pendiente si el propietario lo quiere: fundir la etapa
+«Formatos» dentro de «Inventario» para bajar de 6 etapas a 5.
+
+---
+
 ## 2026-09-04 · Claude · `npm run dev` compartía base con la app instalada: `dev:aislado`
 
 **Tareas:** herramienta de desarrollo (no abre tarea del backlog)

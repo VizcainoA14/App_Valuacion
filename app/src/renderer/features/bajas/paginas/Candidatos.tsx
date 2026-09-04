@@ -1,6 +1,6 @@
 /**
  * ADR-026 etapa 5 — la bandeja de candidatos. El motor los señaló; aquí un
- * especialista mira cada uno, escribe por qué se da de baja y lo propone.
+ * hospital mira cada uno, escribe por qué se da de baja y lo propone.
  *
  * La app no da de baja nada: registra una propuesta que el Comité decide
  * (RN-09-04). Por eso el botón dice "Proponer baja" y no "Dar de baja".
@@ -22,12 +22,11 @@ const CANALES_BAJA = ['baja:candidatos', 'baja:listar', 'baja:resumen', 'bien:li
 export function Candidatos(): JSX.Element {
   const { entidadId, ejercicioId } = useContextoEjercicio();
   const candidatos = useCanal('baja:candidatos', { ejercicioId });
-  const responsables = useCanal('responsable:listar', { entidadId, incluirInactivos: false });
   const [enFormulario, setEnFormulario] = useState<CandidatoBajaDto | null>(null);
 
   const activar = useMutacion('bien:activarValidados', [...CANALES_BAJA]);
 
-  if (candidatos.isPending || responsables.isPending) return <Cargando />;
+  if (candidatos.isPending) return <Cargando />;
   if (candidatos.data === undefined) return <Aviso tono="peligro">No se pudo leer la bandeja de candidatos.</Aviso>;
 
   const lista = candidatos.data;
@@ -103,7 +102,6 @@ export function Candidatos(): JSX.Element {
         <FormularioPropuesta
           candidato={enFormulario}
           ejercicioId={ejercicioId}
-          especialistas={(responsables.data ?? []).map((r) => ({ valor: r.id, etiqueta: `${r.nombreCompleto} — ${r.cargo}` }))}
           onCerrar={() => setEnFormulario(null)}
         />
       )}
@@ -114,12 +112,10 @@ export function Candidatos(): JSX.Element {
 function FormularioPropuesta({
   candidato,
   ejercicioId,
-  especialistas,
   onCerrar,
 }: {
   candidato: CandidatoBajaDto;
   ejercicioId: string;
-  especialistas: readonly { valor: string; etiqueta: string }[];
   onCerrar: () => void;
 }): JSX.Element {
   const [causal, setCausal] = useState<CausalBaja>(candidato.causalSugerida);
@@ -128,7 +124,6 @@ function FormularioPropuesta({
   const [valorReposicion, setValorReposicion] = useState('');
   const [valorSalvamento, setValorSalvamento] = useState('');
   const [destino, setDestino] = useState<DestinoFinal | ''>('');
-  const [especialistaId, setEspecialistaId] = useState(especialistas[0]?.valor ?? '');
   const [error, setError] = useState<string | null>(null);
 
   const proponer = useMutacion('baja:proponer', [...CANALES_BAJA], {
@@ -155,7 +150,6 @@ function FormularioPropuesta({
       valorReposicion: aCentavos(valorReposicion),
       valorSalvamento: aCentavos(valorSalvamento),
       destinoFinalPropuesto: destino === '' ? null : destino,
-      especialistaId,
       fechaPropuesta: new Date().toISOString().slice(0, 10),
     });
   }
@@ -172,7 +166,7 @@ function FormularioPropuesta({
       pie={
         <>
           <Boton onClick={onCerrar}>Cancelar</Boton>
-          <Boton variante="primario" cargando={proponer.isPending} disabled={justificacion.trim().length < 20 || especialistaId === ''} onClick={enviar}>
+          <Boton variante="primario" cargando={proponer.isPending} disabled={justificacion.trim().length < 20} onClick={enviar}>
             Proponer al Comité
           </Boton>
         </>
@@ -188,7 +182,7 @@ function FormularioPropuesta({
         <Selector
           etiqueta="Causal"
           obligatorio
-          ayuda="La app sugiere una según el estado y el índice; la fija el especialista, que es quien firma."
+          ayuda="La app sugiere una según el estado y el índice; la decisión es de quien propone."
           value={causal}
           opciones={CAUSAL_BAJA.valores.map((c) => ({ valor: c, etiqueta: CAUSAL_BAJA.etiqueta(c) }))}
           onChange={(e) => setCausal(e.target.value as CausalBaja)}
@@ -224,14 +218,6 @@ function FormularioPropuesta({
           />
         </div>
 
-        <Selector
-          etiqueta="Especialista que certifica"
-          obligatorio
-          ayuda="Queda registrado como responsable del concepto técnico (VAL-09-05)."
-          value={especialistaId}
-          opciones={especialistas}
-          onChange={(e) => setEspecialistaId(e.target.value)}
-        />
       </div>
     </Dialogo>
   );

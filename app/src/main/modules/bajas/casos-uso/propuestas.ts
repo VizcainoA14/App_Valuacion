@@ -18,6 +18,7 @@ import { aX10k, desdeX10k } from '../../../../compartido/motor/dinero';
 import { esCandidatoBaja } from '../../../../compartido/motor/candidatoBaja';
 import { calcularEfectoContableBaja, evaluarReparacion } from '../../../../compartido/motor/baja';
 import { nuevoId } from '../../../infraestructura/db/identificadores';
+import { firmanteRepo } from '../../configuracion';
 import { bajaRepo, type FilaCandidato, type FilaPropuesta } from '../repositorio/baja.repo';
 
 const X10K = 10_000;
@@ -176,6 +177,15 @@ export function proponerBaja(e: EntradaValidadaDe<'baja:proponer'>, ctx: Context
 
   const id = nuevoId();
   const ahora = ctx.ahoraIso();
+  // ADR-027: el esquema exige atribuir la propuesta a alguien. Ese alguien es el
+  // representante legal, que ya está en los datos de la entidad; al hospital no
+  // se le pide elegir a nadie.
+  const fila = ctx.sqlite.prepare('SELECT entidad_id FROM ejercicio WHERE id = ?').get(e.ejercicioId) as { entidad_id: string } | undefined;
+  if (fila === undefined) throw new ErrorValidacion('EJERCICIO_INEXISTENTE', 'El ejercicio no existe.', { campo: 'ejercicioId' });
+  const firmanteId = firmanteRepo.gerente(ctx.db, fila.entidad_id);
+  if (firmanteId === null) {
+    throw new ErrorReglaNegocio('ENTIDAD_SIN_GERENTE', 'La entidad no tiene registrado su Gerente. Complete los datos de la entidad antes de proponer bajas.', { campo: 'ejercicioId' });
+  }
   bajaRepo.insertar(ctx.sqlite, {
     id,
     ejercicioId: e.ejercicioId,
@@ -187,7 +197,7 @@ export function proponerBaja(e: EntradaValidadaDe<'baja:proponer'>, ctx: Context
     relacionReparacionReposicion: economia.estado === 'CALCULADO' ? aX10k(economia.valor.relacion) : null,
     valorSalvamento: e.valorSalvamento ?? null,
     destinoFinalPropuesto: e.destinoFinalPropuesto ?? null,
-    especialistaId: e.especialistaId,
+    especialistaId: firmanteId,
     fechaPropuesta: e.fechaPropuesta,
     creadoEn: ahora,
     actualizadoEn: ahora,

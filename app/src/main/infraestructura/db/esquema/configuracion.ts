@@ -36,6 +36,14 @@ export const entidad = sqliteTable(
     nivelComplejidad: enumCatalogo('nivel_complejidad', NIVEL_COMPLEJIDAD).notNull(),
     nombreGerente: texto('nombre_gerente').notNull(),
     actoNombramientoGerente: texto('acto_nombramiento_gerente'),
+    /**
+     * Los dos firmantes del informe. La Resolución 193 de 2016 §1.1 asigna el
+     * control interno contable al representante legal y el proceso contable al
+     * contador: por eso son campos de la entidad y no un catálogo de personas
+     * (ADR-027). Nulos mientras la entidad no los haya diligenciado.
+     */
+    nombreContador: texto('nombre_contador'),
+    tarjetaProfesionalContador: texto('tarjeta_profesional_contador'),
     direccion: texto('direccion').notNull(),
     telefono: texto('telefono'),
     email: texto('email'),

@@ -14,7 +14,6 @@ import { aCentavos, aX10k, decimal } from '../../../../compartido/motor/dinero';
 import { comoFechaIso } from '../../../../compartido/tipos/basicos';
 import { sumarDias } from '../../../../compartido/motor/fechas';
 import { componerCodigo } from '../../../../compartido/reglas/codigoInstitucional';
-import type { PerfilResponsable } from '../../../../compartido/enums/plataforma';
 import type { EstadoActual } from '../../../../compartido/enums/catalogos';
 import { nuevoId } from '../../../infraestructura/db/identificadores';
 import { entidadRepo } from '../repositorio/entidad.repo';
@@ -24,7 +23,7 @@ import { claseRepo, aniosAX10k } from '../repositorio/clase.repo';
 import { parametroRepo } from '../repositorio/parametro.repo';
 import { abreviaturaRepo, convencionRepo } from '../repositorio/convencion.repo';
 import { ejercicioRepo } from '../repositorio/ejercicio.repo';
-import { responsableRepo } from '../../plataforma';
+import { firmanteRepo } from '../repositorio/firmante.repo';
 import { CLASES_SUGERIDAS, ABREVIATURAS_SUGERIDAS, PARAMETROS_SEMILLA } from '../semillas';
 
 export const NIT_DEMOSTRACION = demo.entidad.nit;
@@ -40,25 +39,13 @@ export function cargarDemostracion(_e: EntradaValidadaDe<'demo:cargar'>, ctx: Co
 
   const entidad = entidadRepo.insertar(db, { id: nuevoId(), ...demo.entidad, nivelComplejidad: demo.entidad.nivelComplejidad as 'I' | 'II' | 'III', esDemostracion: true, creadoEn: ahora, actualizadoEn: ahora });
 
-  // Responsables (TR-12): uno por perfil que interviene en el recorrido.
-  const responsables = new Map<PerfilResponsable, string>();
-  for (const r of demo.responsables) {
-    const creado = responsableRepo.insertar(db, {
-      id: nuevoId(),
-      entidadId: entidad.id,
-      nombreCompleto: r.nombreCompleto,
-      documentoIdentidad: r.documentoIdentidad,
-      perfil: r.perfil as PerfilResponsable,
-      cargo: r.cargo,
-      tarjetaProfesional: 'tarjetaProfesional' in r ? r.tarjetaProfesional : null,
-      registroRaa: 'registroRaa' in r ? r.registroRaa : null,
-      esExterno: 'esExterno' in r ? r.esExterno : false,
-      activo: true,
-      creadoEn: ahora,
-      actualizadoEn: ahora,
-    });
-    responsables.set(creado.perfil, creado.id);
-  }
+  // ADR-027: los firmantes salen de la propia entidad, no de un catálogo.
+  const firmanteId = firmanteRepo.sincronizar(
+    db,
+    entidad.id,
+    { nombreGerente: entidad.nombreGerente, nombreContador: entidad.nombreContador, tarjetaProfesionalContador: entidad.tarjetaProfesionalContador },
+    ahora,
+  );
 
   // Sedes y servicios.
   const sedes = new Map<string, string>();
@@ -83,10 +70,8 @@ export function cargarDemostracion(_e: EntradaValidadaDe<'demo:cargar'>, ctx: Co
   convencionRepo.guardar(db, entidad.id, SEGMENTOS_DEMO, 3, ahora);
   abreviaturaRepo.reemplazar(db, entidad.id, ABREVIATURAS_SUGERIDAS);
 
-  // Ejercicio con parámetros congelados, abierto por la coordinadora.
-  const coordinadora = responsables.get('COORDINADOR');
-  if (coordinadora === undefined) throw new ErrorValidacion('DEMO_SIN_COORDINADOR', 'La semilla no trae coordinador.');
-  const ejercicio = ejercicioRepo.insertar(db, { id: nuevoId(), entidadId: entidad.id, nombre: demo.ejercicio.nombre, fechaCorte: demo.ejercicio.fechaCorte, parametrosCongeladosJson: JSON.stringify(parametros), contratoNumero: demo.ejercicio.contratoNumero, creadoPorResponsableId: coordinadora, creadoEn: ahora });
+  // Ejercicio con parámetros congelados, abierto por el representante legal.
+  const ejercicio = ejercicioRepo.insertar(db, { id: nuevoId(), entidadId: entidad.id, nombre: demo.ejercicio.nombre, fechaCorte: demo.ejercicio.fechaCorte, parametrosCongeladosJson: JSON.stringify(parametros), contratoNumero: demo.ejercicio.contratoNumero, creadoPorResponsableId: firmanteId, creadoEn: ahora });
 
   // 50 bienes con hoja de vida, en ACTIVO por la ruta válida de la máquina de estados.
   const insertarBien = ctx.sqlite.prepare(
@@ -147,8 +132,9 @@ export function cargarDemostracion(_e: EntradaValidadaDe<'demo:cargar'>, ctx: Co
     });
   }
 
-  // Inmueble con avalúo del perito (paso 08).
-  const perito = responsables.get('PERITO');
+  // Inmueble con avalúo (paso 08). El perito externo es una extensión aún no
+  // construida; la demostración atribuye el avalúo al firmante de la entidad.
+  const perito = firmanteId;
   const inm = demo.inmueble;
   const inmuebleId = nuevoId();
   ctx.sqlite
@@ -163,7 +149,6 @@ export function cargarDemostracion(_e: EntradaValidadaDe<'demo:cargar'>, ctx: Co
   const m2Depreciado = decimal(av.costoReposicionM2).mul(av.factorDepreciacion);
   const valorConstruccion = m2Depreciado.mul(inm.areaConstruidaM2);
   const valorTotal = valorTerreno.plus(valorConstruccion);
-  const peritoNombre = demo.responsables.find((r) => r.perfil === 'PERITO');
   ctx.sqlite
     .prepare(
       `INSERT INTO avaluo_inmueble (id, inmueble_id, ejercicio_id, metodo_terreno, valor_m2_terreno_cent, valor_total_terreno_cent, metodo_construccion, costo_reposicion_m2_cent, factor_depreciacion_x10k, valor_m2_construccion_depreciado_cent, valor_total_construccion_cent, valor_total_inmueble_cent, perito_id, perito_nombre, perito_registro_raa, fecha_visita, fecha_informe, vigencia_hasta, valor_libros_anterior_cent, diferencia_valuacion_cent, creado_en)
@@ -171,7 +156,7 @@ export function cargarDemostracion(_e: EntradaValidadaDe<'demo:cargar'>, ctx: Co
     )
     .run(
       nuevoId(), inmuebleId, ejercicio.id, av.metodoTerreno, aCentavos(av.valorM2Terreno), aCentavos(valorTerreno), av.metodoConstruccion, aCentavos(av.costoReposicionM2), aX10k(av.factorDepreciacion), aCentavos(m2Depreciado), aCentavos(valorConstruccion), aCentavos(valorTotal),
-      perito ?? null, peritoNombre?.nombreCompleto ?? 'Perito de ejemplo', (peritoNombre !== undefined && 'registroRaa' in peritoNombre ? peritoNombre.registroRaa : null) ?? 'AVAL-DEMO', av.fechaVisita, av.fechaInforme, sumarDias(comoFechaIso(av.fechaInforme), 365), aCentavos(av.valorLibrosAnterior), aCentavos(valorTotal.minus(av.valorLibrosAnterior)), ahora,
+      perito, entidad.nombreGerente, 'AVAL-DEMO', av.fechaVisita, av.fechaInforme, sumarDias(comoFechaIso(av.fechaInforme), 365), aCentavos(av.valorLibrosAnterior), aCentavos(valorTotal.minus(av.valorLibrosAnterior)), ahora,
     );
 
   ctx.bitacora.registrar({ ejercicioId: ejercicio.id, entidadAfectada: 'entidad', registroId: entidad.id, accion: 'IMPORTAR', valorNuevo: `Hospital de demostración cargado: ${demo.bienes.length} bienes, ${demo.sedes.length} sedes, 1 inmueble` });

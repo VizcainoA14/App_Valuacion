@@ -5,6 +5,7 @@ import type { EntidadDto } from '../../../../compartido/dtos/configuracion';
 import { ErrorReglaNegocio, ErrorValidacion } from '../../../../compartido/errores';
 import { nuevoId } from '../../../infraestructura/db/identificadores';
 import { entidadRepo } from '../repositorio/entidad.repo';
+import { firmanteRepo } from '../repositorio/firmante.repo';
 import { claseRepo, aniosAX10k } from '../repositorio/clase.repo';
 import { sedeRepo } from '../repositorio/sede.repo';
 import { servicioRepo } from '../repositorio/servicio.repo';
@@ -66,6 +67,10 @@ export function crearEntidad(e: EntradaValidadaDe<'entidad:crear'>, ctx: Context
   const ahora = ctx.ahoraIso();
   const { precargarSemillas, ...campos } = e;
   const creada = entidadRepo.insertar(ctx.db, { id: nuevoId(), ...campos, esDemostracion: false, creadoEn: ahora, actualizadoEn: ahora });
+
+  // ADR-027: los dos firmantes del informe se derivan de la entidad. Nadie los
+  // administra: se mantienen al día solos.
+  firmanteRepo.sincronizar(ctx.db, creada.id, creada, ahora);
 
   if (precargarSemillas) {
     precargarClasesSugeridas(ctx, creada.id);
@@ -135,6 +140,8 @@ export function actualizarEntidad(e: EntradaValidadaDe<'entidad:actualizar'>, ct
     throw new ErrorReglaNegocio('NIT_DUPLICADO', 'Otra entidad ya tiene ese NIT.', { campo: 'nit' });
   }
   const actualizada = entidadRepo.actualizar(ctx.db, e.id, presentes, ctx.ahoraIso());
+  // Si cambió el Gerente o el Contador, el bloque de firmas del informe cambia con ellos.
+  firmanteRepo.sincronizar(ctx.db, e.id, actualizada, ctx.ahoraIso());
   ctx.bitacora.registrarCambios(
     { entidadAfectada: TABLA, registroId: e.id, justificacion: e.justificacion },
     actual as unknown as Record<string, unknown>,

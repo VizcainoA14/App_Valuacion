@@ -82,8 +82,7 @@ describe('01_caso_limpio · el hospital ficticio entra sin un solo error', () =>
     const p = valor(await a.registro.invocar('parametros:obtener', { entidadId: a.entidadId }));
     expect(p.metodo_conteo_meses).toBe('dias_exactos');
     valor(await a.registro.invocar('parametros:actualizar', { entidadId: a.entidadId, cambios: { ...p, metodo_conteo_meses_confirmado: true }, justificacion: 'Acta de comité con el contador' }));
-    const responsable = valor(await a.registro.invocar('responsable:crear', { entidadId: a.entidadId, nombreCompleto: 'JORGE IVAN GOMEZ', documentoIdentidad: '71000111', perfil: 'COORDINADOR', cargo: 'Subgerente administrativo' }));
-    const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: a.entidadId, nombre: 'Corte 2025', fechaCorte: FECHA_CORTE, responsableId: responsable.id }));
+    const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: a.entidadId, nombre: 'Corte 2025', fechaCorte: FECHA_CORTE }));
 
     // ── Inventario (paso 02) ──
     const inventario = await a.importar(limpio, 'PL-03_toma_inventario_fisico.xlsx', 'PL-03', ejercicio.id);
@@ -195,8 +194,7 @@ describe('02_caso_con_problemas · la aplicación informa cada defecto, fila por
       const informe = await a.importar(limpio, archivo, plantilla);
       await a.confirmar(informe.token);
     }
-    const responsable = valor(await a.registro.invocar('responsable:crear', { entidadId: a.entidadId, nombreCompleto: 'JORGE IVAN GOMEZ', documentoIdentidad: '71000111', perfil: 'COORDINADOR', cargo: 'Subgerente' }));
-    const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: a.entidadId, nombre: 'Corte 2025', fechaCorte: FECHA_CORTE, responsableId: responsable.id }));
+    const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: a.entidadId, nombre: 'Corte 2025', fechaCorte: FECHA_CORTE }));
 
     const informe = await a.importar(conProblemas, 'PL-03_toma_inventario_fisico.xlsx', 'PL-03', ejercicio.id);
     expect(informe.hojas[0]).toMatchObject({ filasLeidas: 10, filasValidas: 3, filasConError: 7 });
@@ -231,8 +229,7 @@ describe('02_caso_con_problemas · la aplicación informa cada defecto, fila por
       const previo = await a.importar(limpio, archivo, plantilla);
       await a.confirmar(previo.token);
     }
-    const responsable = valor(await a.registro.invocar('responsable:crear', { entidadId: a.entidadId, nombreCompleto: 'JORGE IVAN GOMEZ', documentoIdentidad: '71000111', perfil: 'COORDINADOR', cargo: 'Subgerente' }));
-    const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: a.entidadId, nombre: 'Corte 2025', fechaCorte: FECHA_CORTE, responsableId: responsable.id }));
+    const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: a.entidadId, nombre: 'Corte 2025', fechaCorte: FECHA_CORTE }));
 
     const inventario = await a.importar(limpio, 'PL-03_toma_inventario_fisico.xlsx', 'PL-03', ejercicio.id);
     await a.confirmar(inventario.token);

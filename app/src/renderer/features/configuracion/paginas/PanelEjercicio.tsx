@@ -1,6 +1,6 @@
 /**
  * Pantalla 5 — Panel del ejercicio: semáforo de validaciones bloqueantes (RF-01-06),
- * creación del ejercicio con parámetros congelados (RF-01-05) y responsables (TR-12).
+ * creación del ejercicio con parámetros congelados (RF-01-05).
  */
 import { useState, type JSX } from 'react';
 import { useNavigate } from 'react-router';
@@ -8,19 +8,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { CalendarDays, Plus, Snowflake } from 'lucide-react';
-import { zFechaIso, zTexto, zTextoNulable, zUuid, zCatalogo } from '@compartido/esquemas/basicos';
-import { PERFIL_RESPONSABLE } from '@compartido/enums/plataforma';
+import { zFechaIso, zTexto, zTextoNulable } from '@compartido/esquemas/basicos';
 import { ESTADO_EJERCICIO } from '@compartido/enums/estados';
-import { useCanal, useMutacion, EFECTOS_PASO_01 } from '../../../ipc/consultas';
+import { useMutacion, EFECTOS_PASO_01 } from '../../../ipc/consultas';
 import { useEstadoInterfaz } from '../../../app/estado';
 import { PanelValidaciones } from '../../../componentes/PanelValidaciones/PanelValidaciones';
-import { Aviso, Boton, Campo, Cargando, Encabezado, EstadoVacio, Insignia, Seccion, Selector, TablaSimple, AreaTexto } from '../../../componentes/ui';
+import { Aviso, Boton, Campo, Cargando, Encabezado, EstadoVacio, Insignia, Seccion, TablaSimple, AreaTexto } from '../../../componentes/ui';
 import { Dialogo } from '../../../componentes/Dialogo/Dialogo';
 import { formatearFecha, formatearMarcaTiempo } from '../../../formato';
 import { useEntidadId, useEjercicioVigente, useValidaciones, mensajeError } from '../hooks';
 
-const esquemaEjercicio = z.object({ nombre: zTexto(150), fechaCorte: zFechaIso, contratoNumero: zTextoNulable(50), responsableId: zUuid });
-const esquemaResponsable = z.object({ nombreCompleto: zTexto(150), documentoIdentidad: zTexto(20), perfil: zCatalogo(PERFIL_RESPONSABLE), cargo: zTexto(150), registroRaa: zTextoNulable(50) });
+const esquemaEjercicio = z.object({ nombre: zTexto(150), fechaCorte: zFechaIso, contratoNumero: zTextoNulable(50) });
 const esquemaFecha = z.object({ fechaCorte: zFechaIso, justificacion: zTexto(500) });
 
 export function PanelEjercicio(): JSX.Element {
@@ -83,7 +81,6 @@ export function PanelEjercicio(): JSX.Element {
           />
         </Seccion>
 
-        <Responsables entidadId={entidadId} />
       </div>
       <DialogoNuevoEjercicio entidadId={entidadId} abierto={creando} onCerrar={() => setCreando(false)} />
     </>
@@ -91,22 +88,18 @@ export function PanelEjercicio(): JSX.Element {
 }
 
 function DialogoNuevoEjercicio({ entidadId, abierto, onCerrar }: { entidadId: string; abierto: boolean; onCerrar: () => void }): JSX.Element {
-  const responsables = useCanal('responsable:listar', { entidadId });
   const crear = useMutacion('ejercicio:crear', [...EFECTOS_PASO_01]);
   const { register, handleSubmit, formState: { errors } } = useForm<z.input<typeof esquemaEjercicio>, unknown, z.output<typeof esquemaEjercicio>>({ resolver: zodResolver(esquemaEjercicio) });
-  const lista = responsables.data ?? [];
   return (
-    <Dialogo abierto={abierto} onCambioAbierto={(a) => { if (!a) onCerrar(); }} titulo="Nuevo ejercicio de valuación" descripcion="Se congela una copia de los parámetros vigentes; quien lo abre firma el acta de parametrización.">
+    <Dialogo abierto={abierto} onCambioAbierto={(a) => { if (!a) onCerrar(); }} titulo="Nuevo ejercicio de valuación" descripcion="Se congela una copia de los parámetros vigentes. Lo firma el Gerente registrado en los datos de la entidad.">
       <form noValidate onSubmit={handleSubmit((v) => crear.mutate({ entidadId, ...v }, { onSuccess: onCerrar }))} className="flex flex-col gap-3">
         {crear.isError && <Aviso tono="peligro">{mensajeError(crear.error)}</Aviso>}
-        {lista.length === 0 && <Aviso tono="aviso">Registre primero un responsable (coordinador) en la sección de abajo.</Aviso>}
         <Campo etiqueta="Nombre" obligatorio ayuda='P. ej. "Valuación corte junio 2026"' error={errors.nombre?.message} {...register('nombre')} />
         <Campo etiqueta="Fecha de corte" type="date" obligatorio ayuda="Parámetro central de todos los cálculos (IN-01-08). No puede ser futura." error={errors.fechaCorte?.message} {...register('fechaCorte')} />
         <Campo etiqueta="Número de contrato" error={errors.contratoNumero?.message} {...register('contratoNumero')} />
-        <Selector etiqueta="Responsable que abre el ejercicio" obligatorio vacio="Seleccione…" opciones={lista.map((r) => ({ valor: r.id, etiqueta: `${r.nombreCompleto} · ${PERFIL_RESPONSABLE.etiqueta(r.perfil)}` }))} error={errors.responsableId?.message} {...register('responsableId')} />
         <div className="flex justify-end gap-2">
           <Boton onClick={onCerrar}>Cancelar</Boton>
-          <Boton type="submit" variante="primario" cargando={crear.isPending} disabled={lista.length === 0}>
+          <Boton type="submit" variante="primario" cargando={crear.isPending}>
             Crear ejercicio
           </Boton>
         </div>
@@ -141,51 +134,3 @@ function CambiarFechaCorte({ ejercicioId, fechaActual }: { ejercicioId: string; 
   );
 }
 
-function Responsables({ entidadId }: { entidadId: string }): JSX.Element {
-  const responsables = useCanal('responsable:listar', { entidadId, incluirInactivos: true });
-  const crear = useMutacion('responsable:crear', ['responsable:listar']);
-  const [nuevo, setNuevo] = useState(false);
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<z.input<typeof esquemaResponsable>, unknown, z.output<typeof esquemaResponsable>>({ resolver: zodResolver(esquemaResponsable), defaultValues: { perfil: 'COORDINADOR' } });
-  return (
-    <Seccion
-      titulo="Responsables"
-      descripcion="Catálogo de personas para atribuir firmas (ANEXO_B §7.2). No son cuentas de acceso."
-      acciones={
-        <Boton icono={<Plus className="h-4 w-4" aria-hidden />} onClick={() => setNuevo(true)}>
-          Nuevo responsable
-        </Boton>
-      }
-    >
-      {nuevo && (
-        <form noValidate onSubmit={handleSubmit((v) => crear.mutate({ entidadId, ...v, esExterno: v.perfil === 'PERITO' }, { onSuccess: () => { setNuevo(false); reset(); } }))} className="mb-4 flex flex-col gap-3 rounded-md border border-borde bg-superficie p-3">
-          {crear.isError && <Aviso tono="peligro">{mensajeError(crear.error)}</Aviso>}
-          <div className="grid gap-3 md:grid-cols-3">
-            <Campo etiqueta="Nombre completo" obligatorio error={errors.nombreCompleto?.message} {...register('nombreCompleto')} />
-            <Campo etiqueta="Documento de identidad" obligatorio error={errors.documentoIdentidad?.message} {...register('documentoIdentidad')} />
-            <Selector etiqueta="Perfil" obligatorio opciones={PERFIL_RESPONSABLE.valores.map((v) => ({ valor: v, etiqueta: PERFIL_RESPONSABLE.etiqueta(v) }))} error={errors.perfil?.message} {...register('perfil')} />
-            <Campo etiqueta="Cargo" obligatorio error={errors.cargo?.message} {...register('cargo')} />
-            <Campo etiqueta="Registro R.A.A" ayuda="Obligatorio para el perito avaluador" error={errors.registroRaa?.message} {...register('registroRaa')} />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Boton onClick={() => setNuevo(false)}>Cancelar</Boton>
-            <Boton type="submit" variante="primario" cargando={crear.isPending}>
-              Guardar responsable
-            </Boton>
-          </div>
-        </form>
-      )}
-      <TablaSimple
-        columnas={[
-          { clave: 'nombre', titulo: 'Nombre', celda: (r) => <span className="flex items-center gap-2">{r.nombreCompleto}{!r.activo && <Insignia tono="neutro">Inactivo</Insignia>}</span> },
-          { clave: 'doc', titulo: 'Documento', celda: (r) => <span className="font-mono">{r.documentoIdentidad}</span> },
-          { clave: 'perfil', titulo: 'Perfil', celda: (r) => PERFIL_RESPONSABLE.etiqueta(r.perfil) },
-          { clave: 'cargo', titulo: 'Cargo', celda: (r) => r.cargo },
-          { clave: 'raa', titulo: 'R.A.A', celda: (r) => r.registroRaa ?? '—' },
-        ]}
-        filas={responsables.data ?? []}
-        claveFila={(r) => r.id}
-        vacio={<p className="text-texto-secundario">Sin responsables. El coordinador abre el ejercicio; el contador firma el acta del método de conteo.</p>}
-      />
-    </Seccion>
-  );
-}

@@ -17,7 +17,6 @@ interface Escenario extends Arnes {
   ejercicioId: string;
   claseId: string;
   servicioId: string;
-  especialistaId: string;
 }
 
 async function escenario(): Promise<Escenario> {
@@ -40,16 +39,12 @@ async function escenario(): Promise<Escenario> {
   );
   const sede = valor(await a.registro.invocar('sede:crear', { entidadId: entidad.id, codigo: '01', nombre: 'Principal', direccion: 'Calle 1', municipio: 'Popayán', activa: true }));
   const servicio = valor(await a.registro.invocar('servicio:crear', { sedeId: sede.id, codigo: 'LAB', nombre: 'Laboratorio', tipo: 'asistencial', responsable: null, activo: true }));
-  const firmante = valor(await a.registro.invocar('responsable:crear', { entidadId: entidad.id, nombreCompleto: 'Ana Coordinadora', documentoIdentidad: '1', perfil: 'COORDINADOR', cargo: 'Líder' }));
-  const especialista = valor(
-    await a.registro.invocar('responsable:crear', { entidadId: entidad.id, nombreCompleto: 'Luis Biomédico', documentoIdentidad: '2', perfil: 'ESPECIALISTA_BIOMEDICO', cargo: 'Ingeniero biomédico' }),
-  );
 
   const p = valor(await a.registro.invocar('parametros:obtener', { entidadId: entidad.id }));
   valor(await a.registro.invocar('parametros:actualizar', { entidadId: entidad.id, cambios: { ...p, metodo_conteo_meses_confirmado: true }, justificacion: 'Acta con el contador' }));
 
-  const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte 2025', fechaCorte: FECHA_CORTE, responsableId: firmante.id }));
-  return { ...a, entidadId: entidad.id, ejercicioId: ejercicio.id, claseId: clase.id, servicioId: servicio.id, especialistaId: especialista.id };
+  const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte 2025', fechaCorte: FECHA_CORTE }));
+  return { ...a, entidadId: entidad.id, ejercicioId: ejercicio.id, claseId: clase.id, servicioId: servicio.id };
 }
 
 /** Bien con hoja de vida, sembrado por SQL; el camino de importación ya tiene pruebas. */
@@ -89,7 +84,6 @@ async function proponer(e: Escenario, bienId: string, extra: Record<string, unkn
     bienId,
     causal: 'OBSOLESCENCIA',
     justificacionTecnica: JUSTIFICACION,
-    especialistaId: e.especialistaId,
     fechaPropuesta: '2025-07-15',
     ...extra,
   });
@@ -145,7 +139,9 @@ describe('propuestas de baja (T-F-02)', () => {
     const buena = valor(await proponer(e, bienId));
     expect(buena.justificacionTecnica).toBe(JUSTIFICACION);
     expect(buena.estadoAprobacion).toBe('PROPUESTO');
-    expect(buena.especialistaNombre).toBe('Luis Biomédico');
+    // ADR-027: ya no se elige especialista. La propuesta se atribuye al
+    // representante legal registrado en los datos de la entidad.
+    expect(buena.especialistaNombre).toBe('Gerente Prueba');
   });
 
   it('RN-09-03: calcula y guarda la relación reparación/reposición con su recomendación', async () => {

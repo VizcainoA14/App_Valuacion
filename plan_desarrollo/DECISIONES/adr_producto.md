@@ -115,3 +115,70 @@ Siguen en el plan, con sus tareas intactas, y se construyen **después** del nú
 
 Si un hospital exige el expediente contractual completo antes de que el núcleo esté cerrado, se
 prioriza esa extensión para ese cliente — pero no se altera el orden general sin un ADR nuevo.
+
+---
+
+## ADR-027 · El catálogo de responsables se retira; firman el Gerente y el Contador
+
+**Fecha:** 2026-09-04 · **Estado:** Aceptada · **Sustituye parcialmente a:** ADR-016
+
+### Contexto
+
+El propietario pidió que la aplicación fuera «lo más sencilla posible» y, en concreto, **«no quiero
+responsables ni nada por el estilo»**. Antes de aceptar o rechazar la petición se verificó qué exige
+realmente la norma colombiana (ver `/Normatividad`, fichas 03 y 05):
+
+- La **Resolución 193 de 2016 (CGN)**, numeral 3.2.2, menciona el **Comité Técnico de Sostenibilidad
+  Contable** como *herramienta de mejora continua*. **No lo exige ni detalla su integración.**
+- Ninguna norma consultada exige un **catálogo de personas con perfiles** (especialista biomédico,
+  perito, almacenista…). Eso era una conveniencia de gestión heredada de `ANEXO_B` §7.2.
+- Lo que la norma **sí** asigna (numeral 1.1) es responsabilidad nominal: el **representante legal**
+  responde del control interno contable y el **contador** del proceso contable.
+
+La petición del propietario es, por tanto, compatible con la norma **si y solo si** el informe sigue
+saliendo firmado por esas dos personas. Un informe de saneamiento sin firma responsable no es
+defendible ante una contraloría; pero para tener esa firma no hacía falta nada de lo que existía.
+
+### Decisión
+
+1. **Se retira el catálogo de responsables** del producto: sus cuatro canales IPC
+   (`responsable:listar|crear|actualizar|desactivar`), su módulo, su DTO y su pantalla.
+2. **La entidad gana dos campos**: `nombre_contador` y `tarjeta_profesional_contador`. Junto al
+   `nombre_gerente` que ya existía, son los **dos firmantes del informe**.
+3. **Nada vuelve a pedir elegir a una persona.** Crear un ejercicio y proponer una baja dejan de
+   preguntarlo: se atribuyen al representante legal, que ya está en los datos de la entidad.
+4. **La tabla `responsable` permanece en la base**, degradada a detalle interno de integridad
+   referencial. Un repositorio interno (`firmanteRepo`) mantiene **exactamente dos filas por
+   entidad** —GERENTE y CONTADOR—, derivadas de los campos de la entidad y sincronizadas cada vez
+   que estos cambian. No hay pantalla, ni canal, ni catálogo.
+
+### Por qué la tabla sobrevive
+
+**Catorce columnas del esquema apuntan a `responsable`**: `ejercicio.creado_por_responsable_id`,
+`propuesta_baja.especialista_id`, las actas del Comité, el cierre, la consolidación, los avalúos de
+inmuebles. SQLite **no permite eliminar una columna que participa en una clave foránea** —se
+comprobó—, así que retirarla obligaría a reconstruir catorce tablas, con sus disparadores, sobre
+bases que ya contienen datos de hospitales reales. El precio es alto y lo que se compra es
+invisible para el usuario.
+
+Además, las extensiones aún no construidas —Comité, resoluciones, entrega contractual— necesitan
+esas claves intactas. Degradar la tabla en vez de destruirla deja el camino abierto sin cobrarle
+nada al hospital hoy.
+
+**Se admite que esto es un compromiso**, y por eso queda escrito: existe un concepto en la base que
+no existe en el producto. Quien lea el esquema debe saber por qué.
+
+### Consecuencias
+
+- La interfaz pierde una sección entera y dos preguntas obligatorias del recorrido.
+- El bloque de firmas del informe pasa de tres columnas (una en blanco) a **dos con nombre propio**.
+- `ANEXO_B` §7.2 y `TR-12` quedan **NO IMPLEMENTADOS**, como ya ocurría con `RF-02-01`/`RF-02-02` por
+  ADR-015. `/Teoria` **no se modifica**: sigue describiendo el proceso completo; lo que cambia es el
+  alcance del producto.
+- Si un hospital necesita atribuir firmas a varios especialistas —el día que exista el Comité—,
+  habrá que reintroducir la administración de esas filas. La base ya está preparada; el producto no.
+
+### Cuándo reconsiderarla
+
+Cuando se construya la extensión del Comité y las resoluciones (pasos 09-10), que sí exige actas
+firmadas por varias personas distintas del Gerente. Entonces se abre un ADR nuevo.

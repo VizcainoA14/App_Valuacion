@@ -33,6 +33,8 @@ export function FormularioEntidad({ valoresIniciales, textoGuardar, guardando, o
         <Campo etiqueta="Departamento" obligatorio error={errors.departamento?.message} {...register('departamento')} />
         <Campo etiqueta="Nombre del gerente" obligatorio error={errors.nombreGerente?.message} {...register('nombreGerente')} />
         <Campo etiqueta="Acto de nombramiento del gerente" ayuda="Decreto o resolución y fecha" error={errors.actoNombramientoGerente?.message} {...register('actoNombramientoGerente')} />
+        <Campo etiqueta="Nombre del contador" ayuda="Firma el informe junto al gerente (Resolución 193 de 2016)" error={errors.nombreContador?.message} {...register('nombreContador')} />
+        <Campo etiqueta="Tarjeta profesional del contador" ayuda="Aparece bajo su firma en el informe" error={errors.tarjetaProfesionalContador?.message} {...register('tarjetaProfesionalContador')} />
         <div className="md:col-span-2">
           <Campo etiqueta="Dirección de la sede principal" obligatorio error={errors.direccion?.message} {...register('direccion')} />
         </div>

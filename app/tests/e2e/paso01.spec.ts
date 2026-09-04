@@ -55,18 +55,10 @@ test('paso 01 completo: entidad → sedes → parámetros → ejercicio → pued
     await expect(pagina.locator('[data-validacion="VAL-01-06"]')).toHaveAttribute('data-cumple', 'false');
     await expect(pagina.locator('[data-validacion="VAL-01-07"]')).toHaveAttribute('data-cumple', 'false');
 
-    // Responsable que abre el ejercicio (TR-12).
-    await pagina.getByRole('button', { name: 'Nuevo responsable' }).click();
-    await pagina.getByLabel('Nombre completo').fill('Ana Coordinadora');
-    await pagina.getByLabel('Documento de identidad').fill('1000000000');
-    await pagina.getByLabel('Cargo').fill('Líder de valuación');
-    await pagina.getByRole('button', { name: 'Guardar responsable' }).click();
-    await expect(pagina.getByText('Ana Coordinadora')).toBeVisible();
-
+    // ADR-027: el ejercicio ya no pide elegir a nadie; lo firma el Gerente de la entidad.
     await pagina.getByRole('button', { name: 'Nuevo ejercicio' }).click();
     await pagina.getByRole('textbox', { name: 'Nombre', exact: true }).fill('Valuación corte junio 2025');
     await pagina.getByLabel('Fecha de corte').fill('2025-06-30');
-    await pagina.getByLabel('Responsable que abre el ejercicio').selectOption({ index: 1 });
     await pagina.getByRole('button', { name: 'Crear ejercicio' }).click();
     await expect(pagina.getByText('Valuación corte junio 2025')).toBeVisible();
     await expect(pagina.getByText(/dias_exactos \(sin confirmar\)/)).toBeVisible();

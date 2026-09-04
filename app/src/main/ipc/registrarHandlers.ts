@@ -2,7 +2,6 @@ import type { RegistroIpc } from './registroIpc';
 import type { GestorTareas } from './tareas';
 import { probarConexion } from '../infraestructura/db/conexion';
 import { versionEsquema } from '../infraestructura/db/migrador';
-import { registrarCanalesPlataforma } from '../modules/plataforma';
 import { registrarCanalesConfiguracion, PREDICADOS_PASO_01, IMPORTADORES_PASO_01 } from '../modules/configuracion';
 import { registrarCanalesValidaciones } from '../modules/validaciones';
 import { PREDICADOS_PASO_02, registrarCanalesInventario, IMPORTADOR_PL_03 } from '../modules/inventario';
@@ -22,7 +21,7 @@ export interface DependenciasHandlers {
 }
 
 /**
- * Registra TODOS los canales del contrato: los de plataforma y los de cada módulo.
+ * Registra TODOS los canales del contrato, módulo por módulo.
  * El test de T-B-08 compara lo registrado aquí con `CANALES`.
  */
 export function registrarTodosLosHandlers(registro: RegistroIpc, deps: DependenciasHandlers): void {
@@ -44,7 +43,6 @@ export function registrarTodosLosHandlers(registro: RegistroIpc, deps: Dependenc
 
   registro.registrar('tarea:cancelar', ({ tareaId }) => ({ cancelada: deps.tareas.cancelar(tareaId) }));
 
-  registrarCanalesPlataforma(registro);
   registrarCanalesConfiguracion(registro);
   registrarCanalesInventario(registro);
   registrarCanalesDocumental(registro);

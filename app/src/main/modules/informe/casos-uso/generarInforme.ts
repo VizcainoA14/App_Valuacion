@@ -23,12 +23,14 @@ interface FilaEntidad {
   municipio: string;
   departamento: string;
   nombre_gerente: string;
+  nombre_contador: string | null;
+  tarjeta_profesional_contador: string | null;
   es_demostracion: number;
 }
 
 /** Reúne todo lo que el informe declara. Función de lectura: no escribe nada. */
 export function datosDelInforme(ctx: ContextoIpc, entidadId: string, ejercicioId: string): DatosInforme {
-  const entidad = ctx.sqlite.prepare('SELECT razon_social, nit, municipio, departamento, nombre_gerente, es_demostracion FROM entidad WHERE id = ?').get(entidadId) as FilaEntidad | undefined;
+  const entidad = ctx.sqlite.prepare('SELECT razon_social, nit, municipio, departamento, nombre_gerente, nombre_contador, tarjeta_profesional_contador, es_demostracion FROM entidad WHERE id = ?').get(entidadId) as FilaEntidad | undefined;
   if (entidad === undefined) throw new ErrorValidacion('ENTIDAD_INEXISTENTE', 'La entidad no existe.', { campo: 'entidadId' });
 
   const ejercicio = ctx.sqlite.prepare('SELECT nombre, fecha_corte, entidad_id, parametros_congelados_json AS j FROM ejercicio WHERE id = ?').get(ejercicioId) as
@@ -185,6 +187,8 @@ export function datosDelInforme(ctx: ContextoIpc, entidadId: string, ejercicioId
     municipio: entidad.municipio,
     departamento: entidad.departamento,
     gerente: entidad.nombre_gerente,
+    contador: entidad.nombre_contador,
+    tarjetaProfesionalContador: entidad.tarjeta_profesional_contador,
     esDemostracion: entidad.es_demostracion === 1,
     ejercicio: ejercicio.nombre,
     fechaCorte: ejercicio.fecha_corte,

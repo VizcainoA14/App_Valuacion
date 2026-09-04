@@ -60,14 +60,13 @@ async function escenario(opciones: { confirmarMetodo?: boolean } = {}): Promise<
   );
   const sede = valor(await a.registro.invocar('sede:crear', { entidadId: entidad.id, codigo: '01', nombre: 'Principal', direccion: 'Calle 1', municipio: 'Popayán', activa: true }));
   const servicio = valor(await a.registro.invocar('servicio:crear', { sedeId: sede.id, codigo: 'LAB', nombre: 'Laboratorio', tipo: 'asistencial', responsable: null, activo: true }));
-  const firmante = valor(await a.registro.invocar('responsable:crear', { entidadId: entidad.id, nombreCompleto: 'Ana Coordinadora', documentoIdentidad: '1', perfil: 'COORDINADOR', cargo: 'Líder' }));
 
   if (opciones.confirmarMetodo !== false) {
     const p = valor(await a.registro.invocar('parametros:obtener', { entidadId: entidad.id }));
     valor(await a.registro.invocar('parametros:actualizar', { entidadId: entidad.id, cambios: { ...p, metodo_conteo_meses_confirmado: true }, justificacion: 'Acta de comité con el contador' }));
   }
 
-  const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte 2025', fechaCorte: FECHA_CORTE, responsableId: firmante.id }));
+  const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte 2025', fechaCorte: FECHA_CORTE }));
   return { ...a, entidadId: entidad.id, ejercicioId: ejercicio.id, claseId: clase.id, claseNoDepreciableId: terreno.id, servicioId: servicio.id };
 }
 

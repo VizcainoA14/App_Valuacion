@@ -9,11 +9,10 @@
  */
 import { z } from 'zod';
 import { zUuid, zFechaIso, zTexto, zTextoNulable, zCatalogo, zSinEntrada } from '../esquemas/basicos';
-import { PERFIL_RESPONSABLE, NIVEL_COMPLEJIDAD, TIPO_SERVICIO } from '../enums/plataforma';
+import { NIVEL_COMPLEJIDAD, TIPO_SERVICIO } from '../enums/plataforma';
 import { ESTADO_ACTUAL, CONDICION_TENENCIA, ESTADO_REGISTRO, SEMAFORO, CAUSAL_BAJA, DESTINO_FINAL } from '../enums/catalogos';
 import { ESTADO_PROPUESTA_BAJA } from '../enums/estados';
 import { EsquemaParametrosCalculo, type ParametrosCalculo } from '../parametros/parametrosCalculo';
-import type { ResponsableDto } from '../dtos/responsable';
 import type {
   EntidadDto,
   SedeDto,
@@ -62,17 +61,6 @@ export interface EstadoAplicacion {
 
 // ── Esquemas reutilizados por varios canales y por los formularios (plan 2.5 §4) ──
 
-const camposResponsable = {
-  nombreCompleto: zTexto(150),
-  documentoIdentidad: zTexto(20),
-  perfil: zCatalogo(PERFIL_RESPONSABLE),
-  cargo: zTexto(150),
-  tarjetaProfesional: zTextoNulable(50),
-  registroRaa: zTextoNulable(50),
-  // Sin valor por defecto aquí: en el parcial de `actualizar` un default
-  // silencioso marcaría como interno a un perito al tocar cualquier otro campo.
-  esExterno: z.boolean(),
-};
 
 export const camposEntidad = {
   razonSocial: zTexto(200),
@@ -82,6 +70,8 @@ export const camposEntidad = {
   nivelComplejidad: zCatalogo(NIVEL_COMPLEJIDAD),
   nombreGerente: zTexto(150),
   actoNombramientoGerente: zTextoNulable(200),
+  nombreContador: zTextoNulable(150),
+  tarjetaProfesionalContador: zTextoNulable(50),
   direccion: zTexto(200),
   telefono: zTextoNulable(50),
   email: zTextoNulable(150),
@@ -160,28 +150,6 @@ export const contrato = {
     entrada: z.object({ tareaId: zUuid }),
     salida: salida<{ cancelada: boolean }>(),
     muta: false,
-  }),
-
-  // ── TR-12 · catálogo de responsables (T-B-07) ──
-  'responsable:listar': definir({
-    entrada: z.object({ entidadId: zUuid, incluirInactivos: z.boolean().default(false) }),
-    salida: salida<ResponsableDto[]>(),
-    muta: false,
-  }),
-  'responsable:crear': definir({
-    entrada: z.object({ entidadId: zUuid, ...camposResponsable, esExterno: z.boolean().default(false) }),
-    salida: salida<ResponsableDto>(),
-    muta: true,
-  }),
-  'responsable:actualizar': definir({
-    entrada: z.object({ id: zUuid, cambios: z.object(camposResponsable).partial(), justificacion: zTextoNulable(500) }),
-    salida: salida<ResponsableDto>(),
-    muta: true,
-  }),
-  'responsable:desactivar': definir({
-    entrada: z.object({ id: zUuid, justificacion: zTexto(500) }),
-    salida: salida<ResponsableDto>(),
-    muta: true,
   }),
 
   // ── Paso 01 · entidad (RF-01-01, RF-01-03, RF-01-09) ──
@@ -340,7 +308,6 @@ export const contrato = {
       nombre: zTexto(150),
       fechaCorte: zFechaIso,
       contratoNumero: zTextoNulable(50),
-      responsableId: zUuid,
     }),
     salida: salida<EjercicioDto>(),
     muta: true,
@@ -451,7 +418,6 @@ export const contrato = {
       valorReposicion: z.number().int().min(0).nullish(),
       valorSalvamento: z.number().int().min(0).nullish(),
       destinoFinalPropuesto: zCatalogo(DESTINO_FINAL).nullish(),
-      especialistaId: zUuid,
       fechaPropuesta: zFechaIso,
     }),
     salida: salida<PropuestaBajaDto>(),

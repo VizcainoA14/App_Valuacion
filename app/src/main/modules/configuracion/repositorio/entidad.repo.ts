@@ -17,6 +17,8 @@ function aDto(f: Fila): EntidadDto {
     nivelComplejidad: f.nivelComplejidad,
     nombreGerente: f.nombreGerente,
     actoNombramientoGerente: f.actoNombramientoGerente,
+    nombreContador: f.nombreContador,
+    tarjetaProfesionalContador: f.tarjetaProfesionalContador,
     direccion: f.direccion,
     telefono: f.telefono,
     email: f.email,

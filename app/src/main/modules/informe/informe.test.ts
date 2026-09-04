@@ -15,6 +15,8 @@ const BASE: DatosInforme = {
   municipio: 'Popayán',
   departamento: 'Cauca',
   gerente: 'Gerente Prueba',
+  contador: 'Carlos Contador',
+  tarjetaProfesionalContador: 'T.P. 12345-T',
   esDemostracion: false,
   ejercicio: 'Corte 2025',
   fechaCorte: '2025-06-30',

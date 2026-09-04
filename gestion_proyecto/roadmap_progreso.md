@@ -1,7 +1,7 @@
 # Roadmap de progreso
 
 **Sincronizado con:** `/plan_desarrollo` v1.1
-**Última actualización:** 2026-09-04 *(núcleo de ADR-026 completo; corregido el rechazo de clases en `PL-03`)*
+**Última actualización:** 2026-09-04 *(ADR-027: fuera el catálogo de responsables; verificación normativa en `/Normatividad`)*
 
 > **Regla de sincronización.** Este archivo debe reflejar siempre las fases y tareas definidas en
 > `/plan_desarrollo/FASE_5_IMPLEMENTACION/5.0_backlog_maestro.md`. Si el backlog cambia, este archivo

@@ -18,7 +18,6 @@ describe('demo:cargar', () => {
     expect(valor(await registro.invocar('sede:listar', { entidadId: demo.id }))).toHaveLength(2);
     expect(valor(await registro.invocar('servicio:listar', { entidadId: demo.id }))).toHaveLength(8);
     expect(valor(await registro.invocar('clase:listar', { entidadId: demo.id }))).toHaveLength(6);
-    expect(valor(await registro.invocar('responsable:listar', { entidadId: demo.id }))).toHaveLength(7);
 
     const ejercicios = valor(await registro.invocar('ejercicio:listar', { entidadId: demo.id }));
     expect(ejercicios).toHaveLength(1);

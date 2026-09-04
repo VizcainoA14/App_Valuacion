@@ -38,6 +38,8 @@ export function DatosEntidad(): JSX.Element {
             departamento: e.departamento,
             nivelComplejidad: e.nivelComplejidad,
             nombreGerente: e.nombreGerente,
+            nombreContador: e.nombreContador,
+            tarjetaProfesionalContador: e.tarjetaProfesionalContador,
             actoNombramientoGerente: e.actoNombramientoGerente,
             direccion: e.direccion,
             telefono: e.telefono,

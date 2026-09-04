@@ -55,6 +55,9 @@ export interface DatosInforme {
   readonly municipio: string;
   readonly departamento: string;
   readonly gerente: string;
+  /** ADR-027: los dos firmantes salen de los datos de la entidad. */
+  readonly contador: string | null;
+  readonly tarjetaProfesionalContador: string | null;
   readonly esDemostracion: boolean;
   readonly ejercicio: string;
   readonly fechaCorte: string;
@@ -300,8 +303,7 @@ export function construirInformeHtml(d: DatosInforme): string {
   <table class="firmas">
     <tr>
       <td><div class="linea">${esc(d.gerente)}<br>Gerente</div></td>
-      <td><div class="linea">Contador<br>T.P. ____________</div></td>
-      <td><div class="linea">Responsable del inventario</div></td>
+      <td><div class="linea">${esc(d.contador ?? '')}<br>Contador<br>T.P. ${esc(d.tarjetaProfesionalContador ?? '____________')}</div></td>
     </tr>
   </table>
 
