@@ -48,6 +48,8 @@ export interface InformeImportacion {
 
 export interface ResultadoImportacion {
   readonly plantilla: PlantillaImportable;
+  /** A qué entidad afectó. Con `PL-01` puede ser una que se acaba de crear. */
+  readonly entidadId: string | null;
   readonly creados: number;
   readonly actualizados: number;
   readonly omitidos: number;

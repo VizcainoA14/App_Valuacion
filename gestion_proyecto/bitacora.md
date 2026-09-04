@@ -32,6 +32,252 @@ Reglas:
 
 ---
 
+## 2026-09-04 · Claude · `npm run dev` compartía base con la app instalada: `dev:aislado`
+
+**Tareas:** herramienta de desarrollo (no abre tarea del backlog)
+
+**La pregunta que lo destapó:** «si ejecuto dev, ¿este guarda información?». Sí — y en el mismo
+directorio que la app instalada.
+
+**Comprobado, no supuesto.** Se ejecutó Electron con un `package.json` mínimo con el mismo
+`productName`:
+
+```
+getName()  = Valuación de Activos
+userData   = C:\Users\…\AppData\Roaming\Valuación de Activos
+```
+
+Electron deriva `userData` de `productName`, y ese campo vale `Valuación de Activos` tanto en
+`app/package.json` como en `electron-builder.yml`. Desarrollo e instalador abren **la misma**
+`valuacion.db`.
+
+**Por qué importa más de lo que parece.** El arranque aplica las migraciones pendientes. Trabajar en
+una rama con migraciones nuevas actualiza el esquema de la base real del hospital, y después el
+instalador —más viejo— puede no poder abrirla. Hay respaldo previo y respaldo diario, así que se
+recupera; pero es un susto evitable. (El bloqueo de instancia única también se comparte: con la app
+instalada abierta, `npm run dev` ni arranca, lo que parece que dev está roto.)
+
+**Hecho.** `npm run dev:aislado` → `scripts/dev-aislado.ts`: crea `app/.datos-dev` (ignorado por git)
+y arranca `electron-vite dev` pasando `--user-data`. Aísla la instalación entera —base, respaldos,
+registros y almacén— igual que los E2E. Acepta un nombre de escenario:
+`npm run dev:aislado -- mi-escenario`. Limpia `ELECTRON_RUN_AS_NODE`, que convierte el binario de
+Electron en un Node pelado y rompe el arranque (lo pisó este mismo entorno al probarlo).
+
+**Verificación.** Con dev aislado corriendo se creó `app/.datos-dev/valuacion.db` con sus propios
+`logs/` y `respaldos/`, y la base instalada quedó **intacta**: misma marca de tiempo (10:53:27) y
+mismo tamaño (806.912 bytes) antes y después.
+
+**Ampliación el mismo día — la instalación aislada es efímera.** A petición del propietario, cada
+ejecución empieza en blanco. **Se limpia al abrir, no al cerrar:** hacerlo al cerrar deja el
+directorio sucio en cuanto la ejecución termina de forma anómala —terminal matada, cuelgue, el
+`electron.exe` que queda colgado reteniendo el bloqueo de instancia única, cosa que ocurrió mientras
+se probaba esto— y entonces la garantía falla justo cuando se la cree cumplida. Limpiando al abrir,
+no depende de cómo terminó la vez anterior, y los registros de la sesión anterior siguen ahí para el
+post mortem. `-- --conservar` mantiene los datos; `-- <nombre>` da escenarios paralelos.
+
+Como el script borra directorios, el nombre de escenario se restringe a **un solo segmento**
+(`/^[A-Za-z0-9._-]+$/`) y se comprueba además que el destino esté bajo `.datos-dev`: sin eso, una
+errata como `../..` sería un borrado recursivo sobre cualquier carpeta del equipo. Ambas guardas
+probadas con `../../../fuera` y `C:/Windows`.
+
+**Verificado con el propio registro de la app:** arranque efímero → la base **nace de nuevo**
+(11:30:02 → 11:40:19), el log queda con 1 arranque en vez de 2 y vuelve a migrar (`migradaDesde: 0`,
+3 migraciones). Con `--conservar` → misma base (nacida 11:40:19) y `migradaDesde: 3, aplicadas: []`.
+
+**Siguiente:** sin cambios en el plan.
+
+---
+
+## 2026-09-04 · Claude · Defecto reportado: `PL-03` rechazaba 28 filas por una tilde y un guion
+
+**Tareas:** corrección de defecto sobre `T-C-07` (no abre tarea nueva)
+
+**Lo reportado.** Al importar `PL-03`, 28 de 41 filas fallaban con *«La clase no existe en el
+catálogo de la entidad (impórtela con PL-02 antes)»*.
+
+**Reproducción exacta antes de tocar nada.** Se contaron las clases del `PL-03` de
+`/Datos_de_prueba` y se simuló la normalización del importador contra el catálogo **sugerido**
+(el que se precarga al crear la entidad): `EQUIPO MEDICO CIENTIFICO` (23 filas) y
+`EQUIPO DE COMUNICACION Y COMPUTACION` (5) no casaban. 23 + 5 = **28**, el número reportado.
+
+**Causa.** `importarPl03.ts` comparaba con una clave que solo pasaba a mayúscula y colapsaba
+espacios. El catálogo sugerido de `/Teoria` §5 dice «Equipo médico-científico»; quien llena el
+formato escribe «EQUIPO MEDICO CIENTIFICO», en mayúscula sostenida y sin tildes, como se llena un
+formato en papel. **Una tilde y un guion tumbaban 23 bienes.**
+
+**Corrección.**
+
+1. **Índice doble** en clases, sedes y servicios: clave exacta y clave laxa (sin tildes, con la
+   puntuación como separador). La búsqueda prueba **primero la exacta**, así que una coincidencia
+   literal siempre gana y la tolerancia no puede robarle una fila a otra clase.
+2. **El error dice qué hay en el catálogo.** Antes mandaba a importar `PL-02` sin decir contra qué
+   se comparó; ahora enumera las clases (o sedes, o servicios) realmente registradas. La diferencia
+   entre un callejón sin salida y algo que se puede arreglar.
+3. **Los datos de prueba se alinearon** en el único nombre que de verdad difería: `COM` pasa de
+   `EQUIPO DE COMUNICACION Y COMPUTACION` a `EQUIPO DE COMUNICACION Y COMPUTO`, como el catálogo
+   sugerido. El corpus ya no depende del orden de importación para algo que no está enseñando.
+4. **El instructivo lo explica**: qué se perdona (mayúsculas, tildes, puntuación, y el código en vez
+   del nombre) y qué no.
+
+**Dónde está la frontera, y por qué se deja ahí.** La tolerancia llega a la ortografía, no al
+vocabulario: «cómputo» y «computación» son palabras distintas y esa fila **sigue siendo un error**.
+Adivinarla sería inventar a qué clase pertenece un bien —y con ella su vida útil y su depreciación—
+en un cálculo que después se firma. El test de regresión fija ese límite explícitamente.
+
+**Verificación.** `verificar:todo` en verde: **387 tests** (uno nuevo), typecheck, lint, 223 módulos
+sin violaciones de frontera. Sobre el corpus regenerado, las filas que fallarían contra el catálogo
+precargado pasan de **28 a 0**.
+
+**Siguiente:** sin cambios en el plan; sigue `T-C-03` (ficha editable del bien) como lo más útil.
+
+---
+
+## 2026-09-04 · Claude · Eliminar una entidad, con la frontera que impone la propia base
+
+**Tareas:** `RF-01-01` ampliado · canal `entidad:eliminar`
+
+Pedido del propietario. Antes de implementarlo hubo que decidir **hasta dónde llega**,
+porque este proyecto custodia evidencia contable y hay dos reglas que se cruzan:
+
+- `ejercicio.entidad_id` es **`restrict`**: la base ya impide borrar una entidad que tenga
+  ejercicios.
+- **`INT-03`** aborta el borrado de cualquier bien de una entidad real (`RN-09-09`); solo
+  exceptúa al hospital de demostración.
+
+Es decir: **borrar una entidad con inventario es imposible sin debilitar una regla de
+integridad documentada**, y eso sería un ADR nuevo, no una decisión de implementación
+(regla 9 del repositorio).
+
+### La frontera adoptada
+
+**Se puede eliminar mientras no exista ningún ejercicio.** Es una regla que se explica en
+una frase —"se borra mientras la valuación no haya empezado"— y cubre el caso frecuente y
+legítimo: la entidad creada con el NIT equivocado, la duplicada, la de una prueba que nunca
+se usó. En cuanto hay ejercicio hay trabajo y bitácora; y si alguno se cerró, es evidencia
+firmada.
+
+Cuando se rechaza, **el mensaje dice qué pasa y qué hacer**: nombra los ejercicios que lo
+impiden y recuerda que los datos de la entidad se **corrigen** desde su pantalla, con
+justificación y bitácora. Si hay ejercicios cerrados, lo dice aparte y cita ADR-017.
+
+### Decisiones de detalle
+
+- **La bitácora no se borra.** Que una entidad se eliminó también es historia: se registra
+  `ELIMINAR` con la razón social, el NIT y el motivo **antes** de borrar, porque después el
+  responsable ya no existe. Las filas quedan sin entidad viva, y está bien: un registro de
+  auditoría no se poda.
+- **Se exige un motivo** (mínimo 5 caracteres), que queda en la bitácora. Es la operación
+  irreversible que más lejos llega hoy en la aplicación.
+- El resto del catálogo —sedes, servicios, clases, parámetros, abreviaturas, convención y
+  responsables— se va con ella por `cascade`, que ya estaba declarado en el esquema.
+- **El hospital de demostración se rechaza** y se remite a su propio botón: ese sí arrastra
+  bienes y ejercicios porque son datos ficticios, y tiene su propia advertencia.
+- En la interfaz, el botón va **fuera del enlace** de la tarjeta: pulsar "eliminar" no puede
+  ser también "entrar".
+
+### Lo que esto NO resuelve
+
+Una entidad con inventario ya importado **no se puede borrar**. Para pruebas, lo práctico es
+usar el hospital de demostración (que sí se borra entero) o una instalación aparte con
+`--user-data`. Si el propietario quiere borrado total de entidades reales, es un ADR.
+
+**Estado:** 386 tests + 5 de rendimiento + **15 E2E**, en verde también sobre el paquete.
+Instalador: 108,1 MB · SHA-256 `841a8bc90e58890c05f11828390a2d7b4943a500a2810bc982f65a9ca7ac13bd`.
+
+---
+
+## 2026-09-04 · Claude · Instructivo de diligenciamiento: qué formatos llena el hospital
+
+**Tareas:** script `instructivo` (nuevo)
+
+El propietario va a **entregar los Excel a un funcionario para que los llene**, y preguntó
+si estaban todos. La pregunta correcta no era cuántos archivos generé, sino **cuáles de las
+28 plantillas hay que llenar hoy**. La respuesta, sacada del catálogo:
+
+| | Cuántas | Cuáles |
+|---|:-:|---|
+| La aplicación **las lee** | 5 | `PL-01`, `PL-02`, `PL-02b`, `PL-03`, `PL-05` |
+| **Las produce** la aplicación | 5 | `PL-04`, `PL-07`, `PL-08`, `PL-09`, `PL-14` |
+| Se diligencian, pero son de **etapas aún no construidas** | 18 | conciliación, valuación, inmuebles, Comité, entrega |
+
+Así que el juego de datos de prueba **sí estaba completo**: son exactamente las cinco que
+hoy tienen camino. Lo que faltaba no era un archivo, era **decir cuáles y cómo se llenan**.
+
+### `npm run instructivo`
+
+Genera `Datos_de_prueba/INSTRUCTIVO_DILIGENCIAMIENTO.md` **desde las definiciones reales
+del importador** (`PL_02`, `PL_02B`, `PL_03`, `PL_05`, `CLAVES_PL_01` y el catálogo de
+plantillas). No se escribe a mano a propósito: un instructivo desfasado hace que alguien
+llene mal 500 filas y lo descubra al importar.
+
+Sale columna por columna con el tipo, si es obligatoria, **los valores admitidos de cada
+lista cerrada** y una nota escrita para quien llena, no para quien programa. Incluye:
+
+- Las **tres reglas** que evitan casi todos los errores: no renombrar columnas, dejar
+  quieta la fila azul de ejemplo, y **lo que no se sabe se deja vacío, nunca en cero**.
+- Los errores más frecuentes de `PL-03`: código o placa repetidos, servicio que no
+  pertenece a la sede, y que la serie repetida sí se admite.
+- El **orden de trabajo**: descargar `PL-03` y `PL-05` **después** de cargar el catálogo,
+  porque solo entonces salen con las listas desplegables del hospital. Entregarlos antes
+  obliga al personal a escribir los nombres a mano y garantiza errores de digitación.
+
+**No cambió código de la aplicación**, así que el instalador sigue siendo el mismo.
+
+---
+
+## 2026-09-04 · Claude · La entidad se puede crear desde el PL-01 diligenciado
+
+**Tareas:** `RF-01-02` ampliado · corrección del `LEEME` de los datos de prueba
+
+El propietario reportó que al crear una entidad nueva no se podían importar sus datos.
+**Tenía razón, y mi propia documentación afirmaba lo contrario.** El `LEEME` de
+`/Datos_de_prueba` decía *"Nueva entidad. Puede teclear los datos o importarlos con
+PL-01"*, cuando el importador exigía una entidad **ya existente**: `PL-01` solo servía
+para actualizar, nunca para crear. Había que copiar a mano lo que ya estaba escrito en
+el Excel.
+
+### Lo que se hizo
+
+`PL-01` puede llegar **sin entidad y crearla**. Es el caso real: el hospital recibe el
+formato, lo devuelve lleno, y de ahí debe nacer todo.
+
+- **`ImportadorPlantilla` gana `requiereEntidad`** (por defecto `true`). Solo `PL-01` lo
+  pone en `false`. Las demás siguen exigiendo entidad y lo dicen con su propio código de
+  error: importar sedes o bienes «al aire» no significa nada.
+- **`aplicarPl01` reutiliza `crearEntidad`** en vez de duplicar la inserción. Así hereda
+  gratis el NIT único, la precarga del catálogo sugerido y la entrada en bitácora.
+- **La identificación obligatoria se valida en la previsualización**, no al confirmar: si
+  falta la razón social o el NIT, el usuario lo ve **antes** de decidir, con el nombre del
+  campo. Y si el NIT ya existe, se le dice que abra esa entidad en vez de duplicarla.
+- **El acta del contador no se hereda de un Excel.** Al crear desde plantilla,
+  `metodo_conteo_meses_confirmado` queda en falso: `VAL-01-07` exige un acta, y un archivo
+  no es un acta (CT-02).
+- `ResultadoImportacion` ahora dice **a qué entidad afectó**, que es lo que permite a la
+  interfaz llevar al usuario a la entidad recién creada.
+
+En la pantalla de *Nueva entidad* hay ahora dos caminos visibles: **Crear desde PL-01** o
+teclear. El diálogo de previsualización se extrajo a `InformeImportacionDialogo` para no
+duplicarlo: allí la importación es una vía de creación, no una acción sobre algo existente.
+
+### Detalle de implementación que conviene recordar
+
+Cuando la plantilla crea la entidad todavía no hay identificador, así que la copia del
+archivo original se guarda en `almacen/importaciones/_entidades_nuevas/` y la bitácora la
+enlaza después con la entidad ya creada. El orden importa: el archivo se conserva **antes**
+de escribir, porque la hoja `SIN_SOPORTE` de `PL-05` lo cita como evidencia.
+
+**Probado:** tres pruebas de integración (nace completa con sus parámetros; el NIT
+duplicado se avisa en la previsualización; las demás plantillas siguen exigiendo entidad) y
+un E2E que recorre la pantalla real con el `PL-01` del hospital ficticio y comprueba que
+los datos del Excel llegaron a los formularios.
+
+**Corregido también el `LEEME`**, que ahora describe lo que la aplicación hace de verdad.
+
+**Estado:** 383 tests + 5 de rendimiento + **14 E2E**, en verde también sobre el paquete.
+Instalador reconstruido: 108,1 MB · SHA-256 `e90740513c076390a71619bf7c03fbf1846ba8fadc49d0c09c8c09288e7ecbfa`.
+
+---
+
 ## 2026-09-03 · Claude · Tercer defecto de la CI: la UNC dejaba de serlo en Linux
 
 **Tareas:** `T-A-08` 🟡 (Windows en verde de punta a punta; Linux fallaba en el último paso)

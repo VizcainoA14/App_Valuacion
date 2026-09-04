@@ -1,7 +1,7 @@
 # Roadmap de progreso
 
 **Sincronizado con:** `/plan_desarrollo` v1.1
-**Última actualización:** 2026-09-03 *(núcleo de ADR-026 completo: bajas e informe)*
+**Última actualización:** 2026-09-04 *(núcleo de ADR-026 completo; corregido el rechazo de clases en `PL-03`)*
 
 > **Regla de sincronización.** Este archivo debe reflejar siempre las fases y tareas definidas en
 > `/plan_desarrollo/FASE_5_IMPLEMENTACION/5.0_backlog_maestro.md`. Si el backlog cambia, este archivo
@@ -134,7 +134,7 @@ verificación. El **orden** es el de esta sección.
 | `T-C-03` | CRUD y ficha editable de bienes + código institucional | ⬜ | `T-C-01`, `T-C-02` | |
 | `T-C-05` | Almacén de archivos y fotos | ⬜ | `T-C-03` | CT-14 |
 | `T-C-06` | Movimientos y actas de custodia | ⬜ | `T-C-03` | |
-| `T-C-07` | **Importador Excel genérico — CRÍTICA** | ✅ | `T-B-08` | 2026-09-02. Orquestación única en `infraestructura/documental/excel/orquestadorImportacion`; cada módulo registra su plantilla. `PL-03` (bienes) y `PL-05` (fecha y costo, mantenimientos, avalúo de reconocimiento inicial) con RN-02-01, RN-02-05, RN-03-01/02/04/06 y VAL-02-03, VAL-03-02. 10.000 altas en 0,66 s |
+| `T-C-07` | **Importador Excel genérico — CRÍTICA** | ✅ | `T-B-08` | 2026-09-02, corregido el 2026-09-04 (la clase se comparaba sin ignorar tildes ni puntuación: rechazaba 28 de 41 filas). Orquestación única en `infraestructura/documental/excel/orquestadorImportacion`; cada módulo registra su plantilla. `PL-03` (bienes) y `PL-05` (fecha y costo, mantenimientos, avalúo de reconocimiento inicial) con RN-02-01, RN-02-05, RN-03-01/02/04/06 y VAL-02-03, VAL-03-02. 10.000 altas en 0,66 s |
 | `T-C-08` | Probar el importador con los `.xlsx` reales | ✅ | `T-C-07` | 2026-09-02. Las 5 plantillas con definición (`PL-01`, `PL-02`, `PL-02b`, `PL-03`, `PL-05`) se prueban sobre el archivo real, no sobre uno sintético; incluye ida y vuelta descarga → diligenciar → importar |
 | `T-C-09` | **Paso 03 completo** (hojas de vida) | 🟡 | `T-C-05`, `T-C-07` | 2026-09-02: hecha la **parte económica** (importar `PL-05`, marcado automático de incompletos, mantenimientos, RN-03-04). Falta la ficha editable y el PDF de hoja de vida |
 

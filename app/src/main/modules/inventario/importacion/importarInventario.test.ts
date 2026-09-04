@@ -122,6 +122,46 @@ describe('PL-03 · toma de inventario físico', () => {
     expect(primero?.estadoRegistro).toBe('INCOMPLETO');
   });
 
+  /**
+   * Regresión reportada el 2026-09-04. El hospital creó la entidad con el
+   * catálogo sugerido precargado —«Equipo médico-científico»— y llenó PL-03 en
+   * mayúscula sostenida y sin tildes, como se llena un formato en papel. 23 de
+   * 41 bienes se rechazaban por una tilde y un guion.
+   *
+   * La tolerancia llega hasta la ortografía, no hasta el vocabulario: «cómputo»
+   * y «computación» son palabras distintas y esa fila sigue siendo un error.
+   */
+  it('acepta el nombre de clase sin tildes ni puntuación, pero no adivina otro nombre', async () => {
+    const a = await arnesPaso01({ rutaDatos: join(dir, 'datos') });
+    const entidad = valor(await a.registro.invocar('entidad:crear', { ...ENTIDAD_PRUEBA, precargarSemillas: true }));
+    const sede = valor(await a.registro.invocar('sede:crear', { entidadId: entidad.id, codigo: '01', nombre: 'Sede principal', direccion: 'Calle 1', municipio: 'Popayán', activa: true }));
+    valor(await a.registro.invocar('servicio:crear', { sedeId: sede.id, codigo: 'LAB', nombre: 'LABORATORIO CLINICO', tipo: 'asistencial', responsable: null, activo: true }));
+    const firmante = valor(
+      await a.registro.invocar('responsable:crear', { entidadId: entidad.id, nombreCompleto: 'Ana Coordinadora', documentoIdentidad: '1', perfil: 'COORDINADOR', cargo: 'Líder' }),
+    );
+    const ejercicio = valor(await a.registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Ejercicio 2026', fechaCorte: FECHA_CORTE, responsableId: firmante.id }));
+
+    a.seleccionarArchivo(
+      await rellenar('PL-03_toma_inventario_fisico.xlsx', {
+        INVENTARIO: [
+          filaPl03('SEM-01', 'P-1', { clase: 'EQUIPO MEDICO CIENTIFICO' }), // catálogo: «Equipo médico-científico»
+          filaPl03('SEM-02', 'P-2', { clase: 'MUEBLES ENSERES Y EQUIPO DE OFICINA' }), // catálogo: «Muebles, enseres y…»
+          filaPl03('SEM-03', 'P-3', { clase: 'EMC' }), // por código, como siempre
+          filaPl03('SEM-04', 'P-4', { clase: 'EQUIPO DE COMUNICACION Y COMPUTACION' }), // ≠ «cómputo»
+        ],
+      }),
+    );
+
+    const informe = valor(await a.registro.invocar('importacion:previsualizar', { entidadId: entidad.id, ejercicioId: ejercicio.id, plantilla: 'PL-03' }));
+    if (informe === null) throw new Error('sin informe');
+    expect(informe.hojas[0]).toMatchObject({ filasValidas: 3, filasConError: 1 });
+
+    // Lo que no se puede adivinar se explica: el error dice qué hay en el catálogo.
+    const fallo = informe.incidencias.find((i) => i.severidad === 'ERROR' && i.columna === 'clase_activo');
+    expect(fallo?.valorRecibido).toBe('EQUIPO DE COMUNICACION Y COMPUTACION');
+    expect(fallo?.motivo).toContain('Equipo de comunicación y cómputo');
+  });
+
   it('rechaza la fila cuya clase, sede o servicio no existe, y dice cuál falta', async () => {
     const a = await arnesConEjercicio();
     a.seleccionarArchivo(

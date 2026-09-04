@@ -3,8 +3,8 @@
 > **LEER ESTE ARCHIVO PRIMERO.** Es el punto de entrada obligatorio para cualquier persona o agente
 > que retome el trabajo. Ver `.claude/config_sesion.json` § *protocolo_inicio*.
 
-**Última actualización:** 2026-09-03
-**Actualizado por:** Claude (sesión de implementación — núcleo de ADR-026 completo)
+**Última actualización:** 2026-09-04
+**Actualizado por:** Claude (sesión de implementación — núcleo de ADR-026 completo + defecto de `PL-03`)
 **Versión del plan:** 1.1 + **ADR-026** · **Versión de `/Teoria`:** 2.1
 
 ---
@@ -15,7 +15,7 @@
 Un hospital configura la entidad, descarga sus formatos, importa el inventario, **calcula la
 depreciación y la obsolescencia**, propone y decide las bajas, y **se lleva su informe en PDF**. El
 motor reproduce las cifras de `ANEXO_C` al dígito y tarda 1,27 s en 20.000 bienes.
-**380 tests + 5 de rendimiento + 13 E2E**, también sobre el instalador. Lo que queda son las
+**386 tests + 5 de rendimiento + 15 E2E**, también sobre el instalador. Lo que queda son las
 **extensiones**, que ya no son el camino principal.
 
 > **El orden de trabajo lo fija ADR-026**, no el grafo de hitos A→H. Ver
@@ -25,10 +25,23 @@ motor reproduce las cifras de `ANEXO_C` al dígito y tarda 1,27 s en 20.000 bien
 
 ## 2. Última tarea realizada
 
-**Etapas 5 y 6 del núcleo (`T-F-01`, `T-F-02`, `T-D-07`, `T-D-10`, `T-G-03`)**, el 2026-09-03.
+**Defecto reportado en la importación de `PL-03`**, el 2026-09-04.
 
 | Qué | Dónde |
 |---|---|
+| **28 de 41 filas se rechazaban** | La clase se comparaba con una clave que solo pasaba a mayúscula. El catálogo sugerido dice «Equipo médico-científico» y quien llena el formato escribe «EQUIPO MEDICO CIENTIFICO». **Una tilde y un guion tumbaban 23 bienes** |
+| **Corrección** | `importarPl03.ts`: índice doble (clave exacta y clave laxa sin tildes ni puntuación). La exacta se prueba primero, así que la tolerancia nunca le roba una fila a otra clase |
+| **El error ahora es accionable** | Enumera las clases, sedes o servicios que sí están en el catálogo, en vez de mandar a importar `PL-02` sin decir contra qué se comparó |
+| **Dónde queda la frontera** | «cómputo» ≠ «computación»: eso sigue siendo error. Adivinar la clase es adivinar la vida útil y la depreciación de un bien que después se firma. El test de regresión fija ese límite |
+| **Corpus de prueba** | `COM` se alineó con el catálogo sugerido. Filas que fallarían contra el catálogo precargado: **de 28 a 0** |
+
+**Antes**, el 2026-09-03: **etapas 5 y 6 del núcleo (`T-F-01`, `T-F-02`, `T-D-07`, `T-D-10`, `T-G-03`)**.
+
+| Qué | Dónde |
+|---|---|
+| **Eliminar entidad** | `entidad:eliminar`, solo mientras **no exista ningún ejercicio** (`ejercicio.entidad_id` es `restrict` e `INT-03` protege los bienes). Exige motivo; la bitácora conserva el `ELIMINAR` |
+| **`PL-01` crea la entidad** | *Nueva entidad → Crear desde PL-01*: el formato diligenciado da razón social, NIT, gerente y parámetros. Las demás plantillas siguen exigiendo entidad existente |
+| **Instructivo para quien llena** | `npm run instructivo` → `Datos_de_prueba/INSTRUCTIVO_DILIGENCIAMIENTO.md`, generado desde las definiciones del importador: columna por columna, valores admitidos y errores frecuentes. **Solo 5 de las 28 plantillas se llenan hoy** |
 | **Datos de prueba** | `npm run datos:prueba` → `/Datos_de_prueba`: hospital ficticio con 41 bienes, y un segundo juego con defectos a propósito. Probado por `datosPrueba.test.ts` |
 | **Defecto de navegación corregido** | El `Layout` deducía la entidad solo de la URL; entrar en `/formatos` (que no lleva `:entidadId`) deshabilitaba las demás etapas. Ahora manda la ruta y, si no la trae, la última entidad elegida |
 | **Etapa 5 · bajas** | `compartido/motor/baja.ts` (RN-09-03 y RN-09-05) + `main/modules/bajas/`. Bandeja con los motivos del motor, justificación individual exigida (RN-09-06), recorrido de ANEXO_B §6.3, rechazo que devuelve el bien a ACTIVO. `renderer/features/bajas/` |
@@ -110,7 +123,7 @@ hito B completo (`T-B-01` … `T-B-11`).
 
 ## 3. Tarea actual en ejecución
 
-**Ninguna.** Checkpoint limpio: `verificar:todo` (380 tests), `test:rendimiento` (5), 13 E2E
+**Ninguna.** Checkpoint limpio: `verificar:todo` (387 tests), `test:rendimiento` (5), 13 E2E
 (también sobre el instalador) y `boundaries` en verde (223 módulos).
 
 > **La CI corrió por primera vez el 2026-09-03 y encontró dos defectos**, ya corregidos: el detector
@@ -183,6 +196,15 @@ Flecos del propietario: primer **push** (`T-A-08`); confirmar **CT-16**, **CT-17
    `leerYNormalizar`, añadir reglas de negocio con `rechazarFila` y un aplicador en transacción.
 8. Los E2E usan `--user-data=<tmp>`; los selectores por rol (el asterisco de "obligatorio" está en
    la etiqueta, fuera del nombre accesible). `ELECTRON_RUN_AS_NODE` se limpia en `_lanzar.ts`.
+8b. **`npm run dev` escribe en la MISMA base que la app instalada.** Electron deriva `userData` de
+    `productName`, y ese nombre es idéntico en desarrollo y en el instalador: los dos abren
+    `%APPDATA%/Valuación de Activos/valuacion.db`. Desarrollar así aplica las migraciones de la rama
+    a la base real, y el instalador —más viejo— puede quedarse sin poder abrirla. Usar
+    **`npm run dev:aislado`** (`scripts/dev-aislado.ts`), que da una instalación propia en
+    `app/.datos-dev` y **empieza en blanco cada vez** (`-- --conservar` para mantenerla;
+    `-- <nombre>` para escenarios paralelos). La limpieza es **al abrir, no al cerrar**: un cierre
+    brusco se saltaría la de cierre y la ejecución siguiente arrancaría con restos. Con la app
+    instalada abierta, `npm run dev` ni arranca: comparte también el bloqueo de instancia única.
 9. Puerta de calidad: `npm run verificar:todo`; E2E: `npx electron-vite build && npx playwright test`;
    **al cerrar un hito**, además `npx electron-builder --dir && PROBAR_PAQUETE=1 npx playwright test`.
 10. **Una validación nueva** = entrada en `compartido/reglas/validaciones.ts` + predicado en el
@@ -223,7 +245,7 @@ Flecos del propietario: primer **push** (`T-A-08`); confirmar **CT-16**, **CT-17
 | 3 · Stack | ✅ | ✅ | Congelado; librerías de interfaz añadidas con versión exacta |
 | 4 · Inicialización | ✅ | ✅ | |
 | 5 · Implementación | ✅ | 🟡 | **Núcleo ADR-026: 6 de 6 etapas ✅** · 34/64 tareas |
-| 6 · Testing | ✅ | 🟡 | 380 unit/integración + 5 de rendimiento + 13 E2E (también sobre el paquete) |
+| 6 · Testing | ✅ | 🟡 | 386 unit/integración + 5 de rendimiento + 15 E2E (también sobre el paquete) |
 | 7 · Seguridad | ✅ | 🟡 | CSP, sandbox, lista blanca IPC, P-1 (el main abre los diálogos), triggers |
 | 8 · Build | ✅ | 🟡 | Instalador regenerado con la interfaz nueva; firma pendiente (hito H) |
 | 9 · Validación | ✅ | ❌ | — |

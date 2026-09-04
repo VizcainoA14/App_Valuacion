@@ -13,21 +13,32 @@
 | Fecha de corte | 2025-12-31 |
 | Bienes | 41 en 2 sedes y 8 servicios |
 
+> **¿Va a entregar los formatos a alguien para que los llene?** Léase primero
+> [INSTRUCTIVO_DILIGENCIAMIENTO.md](INSTRUCTIVO_DILIGENCIAMIENTO.md): dice **cuáles
+> de las 28 plantillas hay que llenar hoy** (son 5), columna por columna, con los
+> valores admitidos y los errores que más se cometen.
+
 ---
 
 ## Cómo usarlo
 
 ### 1. Cree la entidad y el ejercicio (etapa 1)
 
-En la aplicación: **Nueva entidad**. Puede teclear los datos o importarlos con
-`01_caso_limpio/PL-01_parametros_entidad.xlsx` desde *Datos de la entidad*.
+En la aplicación: **Nueva entidad → Crear desde PL-01**, y elija
+`01_caso_limpio/PL-01_parametros_entidad.xlsx`. La entidad nace del formato con
+razón social, NIT, gerente y los parámetros de cálculo, sin teclear nada. Verá la
+previsualización antes de que se cree.
+
+(También puede teclear los datos a mano en el mismo asistente, y más tarde
+importar el PL-01 desde *Entidad* para actualizarlos.)
 
 Después, en el paso 01:
 
 1. **Clases de activo** → importar `PL-02_clases_vida_util.xlsx`.
 2. **Sedes y servicios** → importar `PL-02b_sedes_servicios.xlsx`.
-3. **Parámetros de cálculo** → marcar **"método de conteo confirmado por acta"**.
-   Sin eso la aplicación se niega a calcular, y hace bien: es `VAL-01-07`.
+3. **Parámetros** → marcar **"método de conteo confirmado por acta"**. Sin eso la
+   aplicación se niega a calcular, y hace bien: es `VAL-01-07`. El acta no se
+   hereda de un Excel.
 4. **Ejercicio** → crearlo con fecha de corte **2025-12-31**.
 
 > Al importar PL-01 verá una advertencia sobre `fecha_corte_ejercicio`: la fecha

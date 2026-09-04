@@ -128,6 +128,61 @@ describe('01_caso_limpio · el hospital ficticio entra sin un solo error', () =>
   });
 });
 
+describe('PL-01 crea la entidad, no solo la actualiza', () => {
+  it('desde el formato diligenciado nace la entidad completa, con sus parámetros', async () => {
+    const a = await arnesPaso01({ hoy: '2026-01-15' });
+    expect(valor(await a.registro.invocar('entidad:listar', undefined))).toHaveLength(0);
+
+    a.seleccionarArchivo(join(limpio, 'PL-01_parametros_entidad.xlsx'));
+    const informe = valor(await a.registro.invocar('importacion:previsualizar', { entidadId: null, plantilla: 'PL-01', ejercicioId: null }));
+    if (informe === null) throw new Error('sin informe');
+    expect(informe.errores).toBe(0);
+
+    const r = valor(await a.registro.invocar('importacion:confirmar', { token: informe.token, aceptarConErrores: false }));
+    expect(r.entidadId).not.toBeNull();
+
+    const entidades = valor(await a.registro.invocar('entidad:listar', undefined));
+    expect(entidades).toHaveLength(1);
+    expect(entidades[0]?.razonSocial).toBe('E.S.E. HOSPITAL SANTA ANA DE GUARNE');
+    expect(entidades[0]?.nit).toBe('890905137-4');
+    expect(entidades[0]?.nivelComplejidad).toBe('II');
+    expect(entidades[0]?.esDemostracion).toBe(false);
+
+    // Los parámetros de cálculo de la plantilla también entraron…
+    const p = valor(await a.registro.invocar('parametros:obtener', { entidadId: r.entidadId as string }));
+    expect(p.metodo_conteo_meses).toBe('dias_exactos');
+    expect(p.umbral_reparacion_baja_pct).toBe(50);
+    // …pero el acta con el contador sigue haciendo falta: no se hereda del Excel (CT-02).
+    expect(p.metodo_conteo_meses_confirmado).toBe(false);
+
+    // Y el catálogo sugerido quedó precargado, igual que al crearla a mano.
+    expect(valor(await a.registro.invocar('clase:listar', { entidadId: r.entidadId as string })).length).toBeGreaterThan(0);
+  });
+
+  it('no crea dos entidades con el mismo NIT: lo dice en la previsualización', async () => {
+    const a = await arnesPaso01({ hoy: '2026-01-15' });
+    a.seleccionarArchivo(join(limpio, 'PL-01_parametros_entidad.xlsx'));
+    const primera = valor(await a.registro.invocar('importacion:previsualizar', { entidadId: null, plantilla: 'PL-01', ejercicioId: null }));
+    if (primera === null) throw new Error('sin informe');
+    valor(await a.registro.invocar('importacion:confirmar', { token: primera.token, aceptarConErrores: false }));
+
+    a.seleccionarArchivo(join(limpio, 'PL-01_parametros_entidad.xlsx'));
+    const segunda = valor(await a.registro.invocar('importacion:previsualizar', { entidadId: null, plantilla: 'PL-01', ejercicioId: null }));
+    if (segunda === null) throw new Error('sin informe');
+    expect(segunda.importable).toBe(false);
+    expect(segunda.incidencias.some((i) => i.columna === 'nit' && i.motivo.includes('Ya existe'))).toBe(true);
+  });
+
+  it('las demás plantillas siguen exigiendo una entidad: importarlas al aire no significa nada', async () => {
+    const a = await arnesPaso01({ hoy: '2026-01-15' });
+    for (const plantilla of ['PL-02', 'PL-02b', 'PL-03', 'PL-05'] as const) {
+      const r = await a.registro.invocar('importacion:previsualizar', { entidadId: null, plantilla, ejercicioId: null });
+      expect(r.ok, plantilla).toBe(false);
+      if (!r.ok) expect(r.error.codigo).toBe('ENTIDAD_REQUERIDA');
+    }
+  });
+});
+
 describe('02_caso_con_problemas · la aplicación informa cada defecto, fila por fila', () => {
   it('PL-03: 3 filas válidas, 7 con error, y las advertencias no bloquean', async () => {
     if (!existsSync(conProblemas)) throw new Error('Faltan los datos de prueba. Ejecute: npm run datos:prueba');

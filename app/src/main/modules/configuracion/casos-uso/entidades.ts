@@ -77,6 +77,57 @@ export function crearEntidad(e: EntradaValidadaDe<'entidad:crear'>, ctx: Context
   return creada;
 }
 
+/**
+ * RF-01-01 — Eliminar una entidad **antes de que empiece la valuación**.
+ *
+ * La frontera no es caprichosa: `ejercicio.entidad_id` es `restrict` y `INT-03`
+ * impide borrar bienes de una entidad real. En cuanto hay un ejercicio hay
+ * trabajo, bitácora y —si se cerró— evidencia contable firmada. Lo que se
+ * resuelve aquí es el caso frecuente y legítimo: la entidad que se creó con el
+ * NIT equivocado, la duplicada, la de una prueba que nunca se usó.
+ *
+ * Si ya hay ejercicio, el camino no es borrar sino **corregir**: los datos de la
+ * entidad se editan con justificación, y todo queda en bitácora.
+ */
+export function eliminarEntidad(e: EntradaValidadaDe<'entidad:eliminar'>, ctx: ContextoIpc): { razonSocial: string } {
+  const entidad = exigirEntidad(ctx, e.id);
+
+  if (entidad.esDemostracion) {
+    throw new ErrorReglaNegocio(
+      'ES_DEMOSTRACION',
+      'El hospital de demostración se borra con su propio botón, en la banda amarilla: ese sí arrastra bienes y ejercicios porque son datos ficticios.',
+    );
+  }
+
+  const ejercicios = (ctx.sqlite.prepare('SELECT nombre, estado FROM ejercicio WHERE entidad_id = ? ORDER BY fecha_corte').all(e.id) as { nombre: string; estado: string }[]);
+  if (ejercicios.length > 0) {
+    const cerrados = ejercicios.filter((x) => x.estado === 'CERRADO').length;
+    throw new ErrorReglaNegocio(
+      'ENTIDAD_CON_EJERCICIOS',
+      cerrados > 0
+        ? `No se puede eliminar: la entidad tiene ${cerrados} ejercicio(s) CERRADO(S), que son evidencia contable inmutable (ADR-017).`
+        : `No se puede eliminar: la valuación ya empezó (${ejercicios.length} ejercicio(s): ${ejercicios.map((x) => x.nombre).join(', ')}). Si los datos de la entidad están mal, corríjalos desde su pantalla; todo cambio queda en bitácora.`,
+    );
+  }
+
+  // La bitácora NO se borra: que una entidad se eliminó también es historia. Se
+  // deja el registro ANTES, porque después el responsable ya no existirá.
+  ctx.bitacora.registrar({
+    entidadAfectada: TABLA,
+    registroId: e.id,
+    accion: 'ELIMINAR',
+    valorAnterior: `${entidad.razonSocial} (NIT ${entidad.nit})`,
+    justificacion: e.justificacion,
+  });
+
+  // El resto del catálogo cuelga de la entidad con `cascade`: sedes y sus
+  // servicios, clases, parámetros, abreviaturas, convención y responsables.
+  const borradas = ctx.sqlite.prepare('DELETE FROM entidad WHERE id = ?').run(e.id).changes;
+  if (borradas === 0) throw new ErrorReglaNegocio('ENTIDAD_NO_ELIMINADA', 'La entidad no se pudo eliminar.');
+
+  return { razonSocial: entidad.razonSocial };
+}
+
 export function actualizarEntidad(e: EntradaValidadaDe<'entidad:actualizar'>, ctx: ContextoIpc): EntidadDto {
   const actual = exigirEntidad(ctx, e.id);
   const presentes = Object.fromEntries(Object.entries(e.cambios).filter(([, v]) => v !== undefined));

@@ -118,7 +118,7 @@ async function generarPl01(carpeta: string): Promise<void> {
 const CLASES: readonly Fila[] = [
   ['EMC', 'EQUIPO MEDICO CIENTIFICO', '166002', 'SI', 180, 15, 'SI', 'SI', 'INGENIERO BIOMEDICO', 'SI'],
   ['MEO', 'MUEBLES, ENSERES Y EQUIPO DE OFICINA', '166501', 'SI', 120, 10, 'NO', 'NO', 'ALMACENISTA', 'SI'],
-  ['COM', 'EQUIPO DE COMUNICACION Y COMPUTACION', '167002', 'SI', 60, 5, 'NO', 'NO', 'INGENIERO DE SISTEMAS', 'SI'],
+  ['COM', 'EQUIPO DE COMUNICACION Y COMPUTO', '167002', 'SI', 60, 5, 'NO', 'NO', 'INGENIERO DE SISTEMAS', 'SI'],
   ['MAQ', 'MAQUINARIA Y EQUIPO', '165501', 'SI', 120, 10, 'SI', 'NO', 'JEFE DE MANTENIMIENTO', 'SI'],
   ['TRA', 'EQUIPO DE TRANSPORTE TERRESTRE', '167501', 'SI', 120, 10, 'SI', 'NO', 'JEFE DE MANTENIMIENTO', 'SI'],
   ['TER', 'TERRENOS', '160501', 'NO', null, null, 'NO', 'NO', 'GESTION PREDIAL', 'SI'],
@@ -202,14 +202,14 @@ const BIENES: readonly Bien[] = [
   { codigo: 'HSA01AIR0024', placa: '166501003', descripcion: 'AIRE ACONDICIONADO MINISPLIT 12000 BTU', clase: 'MAQUINARIA Y EQUIPO', marca: 'LG', modelo: 'Dual Inverter', servicio: 'FARMACIA', sede: '01', estado: 'BUENO', custodio: 'REGENTE DE FARMACIA', adquisicion: '2023-07-14', costo: 2400000 },
 
   // ── Administración ──
-  { codigo: 'HSA01COM0025', placa: '167002001', descripcion: 'COMPUTADOR DE ESCRITORIO CORE I5', clase: 'EQUIPO DE COMUNICACION Y COMPUTACION', marca: 'LENOVO', modelo: 'ThinkCentre M70q', servicio: 'ADMINISTRACION', sede: '01', estado: 'BUENO', custodio: 'SUBGERENTE ADMINISTRATIVO', adquisicion: '2023-11-09', costo: 3600000 },
-  { codigo: 'HSA01COM0026', placa: '167002002', descripcion: 'COMPUTADOR DE ESCRITORIO CORE I3', clase: 'EQUIPO DE COMUNICACION Y COMPUTACION', marca: 'HP', modelo: 'ProDesk 400', servicio: 'ADMINISTRACION', sede: '01', estado: 'REGULAR', custodio: 'SUBGERENTE ADMINISTRATIVO', adquisicion: '2019-02-26', costo: 2800000 },
-  { codigo: 'HSA01COM0027', placa: '167002003', descripcion: 'COMPUTADOR PORTATIL', clase: 'EQUIPO DE COMUNICACION Y COMPUTACION', marca: 'DELL', modelo: 'Latitude 3420', servicio: 'ADMINISTRACION', sede: '01', estado: 'MALO', custodio: 'SUBGERENTE ADMINISTRATIVO', adquisicion: '2017-05-08', costo: 3200000 },
-  { codigo: 'HSA01IMP0028', placa: '167002004', descripcion: 'IMPRESORA MULTIFUNCIONAL LASER', clase: 'EQUIPO DE COMUNICACION Y COMPUTACION', marca: 'BROTHER', modelo: 'DCP-L2540DW', servicio: 'ADMINISTRACION', sede: '01', estado: 'REGULAR', custodio: 'SUBGERENTE ADMINISTRATIVO', adquisicion: '2018-10-30', costo: 1600000 },
+  { codigo: 'HSA01COM0025', placa: '167002001', descripcion: 'COMPUTADOR DE ESCRITORIO CORE I5', clase: 'EQUIPO DE COMUNICACION Y COMPUTO', marca: 'LENOVO', modelo: 'ThinkCentre M70q', servicio: 'ADMINISTRACION', sede: '01', estado: 'BUENO', custodio: 'SUBGERENTE ADMINISTRATIVO', adquisicion: '2023-11-09', costo: 3600000 },
+  { codigo: 'HSA01COM0026', placa: '167002002', descripcion: 'COMPUTADOR DE ESCRITORIO CORE I3', clase: 'EQUIPO DE COMUNICACION Y COMPUTO', marca: 'HP', modelo: 'ProDesk 400', servicio: 'ADMINISTRACION', sede: '01', estado: 'REGULAR', custodio: 'SUBGERENTE ADMINISTRATIVO', adquisicion: '2019-02-26', costo: 2800000 },
+  { codigo: 'HSA01COM0027', placa: '167002003', descripcion: 'COMPUTADOR PORTATIL', clase: 'EQUIPO DE COMUNICACION Y COMPUTO', marca: 'DELL', modelo: 'Latitude 3420', servicio: 'ADMINISTRACION', sede: '01', estado: 'MALO', custodio: 'SUBGERENTE ADMINISTRATIVO', adquisicion: '2017-05-08', costo: 3200000 },
+  { codigo: 'HSA01IMP0028', placa: '167002004', descripcion: 'IMPRESORA MULTIFUNCIONAL LASER', clase: 'EQUIPO DE COMUNICACION Y COMPUTO', marca: 'BROTHER', modelo: 'DCP-L2540DW', servicio: 'ADMINISTRACION', sede: '01', estado: 'REGULAR', custodio: 'SUBGERENTE ADMINISTRATIVO', adquisicion: '2018-10-30', costo: 1600000 },
   { codigo: 'HSA01ESC0029', placa: '166501004', descripcion: 'ESCRITORIO EN L CON ARCHIVADOR', clase: 'MUEBLES, ENSERES Y EQUIPO DE OFICINA', marca: 'GENERICA', modelo: 'Melamina', servicio: 'ADMINISTRACION', sede: '01', estado: 'BUENO', custodio: 'SUBGERENTE ADMINISTRATIVO', adquisicion: '2020-06-18', costo: 1350000 },
   { codigo: 'HSA01SIL0030', placa: '166501005', descripcion: 'SILLA ERGONOMICA GIRATORIA', clase: 'MUEBLES, ENSERES Y EQUIPO DE OFICINA', marca: 'GENERICA', modelo: 'Ejecutiva', servicio: 'ADMINISTRACION', sede: '01', estado: 'REGULAR', custodio: 'SUBGERENTE ADMINISTRATIVO', adquisicion: '2014-09-03', costo: 620000 },
   { codigo: 'HSA01ARC0031', placa: '166501006', descripcion: 'ARCHIVADOR RODANTE DE 4 CUERPOS', clase: 'MUEBLES, ENSERES Y EQUIPO DE OFICINA', marca: 'GENERICA', modelo: 'Metalico', servicio: 'ADMINISTRACION', sede: '01', estado: 'BUENO', custodio: 'SUBGERENTE ADMINISTRATIVO', adquisicion: '2012-01-16', costo: 4200000 },
-  { codigo: 'HSA01UPS0032', placa: '167002005', descripcion: 'UPS DE 3 KVA PARA SERVIDOR', clase: 'EQUIPO DE COMUNICACION Y COMPUTACION', marca: 'APC', modelo: 'Smart-UPS 3000', servicio: 'ADMINISTRACION', sede: '01', estado: 'BUENO', custodio: 'INGENIERO DE SISTEMAS', adquisicion: null, costo: null },
+  { codigo: 'HSA01UPS0032', placa: '167002005', descripcion: 'UPS DE 3 KVA PARA SERVIDOR', clase: 'EQUIPO DE COMUNICACION Y COMPUTO', marca: 'APC', modelo: 'Smart-UPS 3000', servicio: 'ADMINISTRACION', sede: '01', estado: 'BUENO', custodio: 'INGENIERO DE SISTEMAS', adquisicion: null, costo: null },
 
   // ── Mantenimiento ──
   { codigo: 'HSA01PLA0033', placa: '165501001', descripcion: 'PLANTA ELECTRICA DIESEL 60 KVA', clase: 'MAQUINARIA Y EQUIPO', marca: 'CUMMINS', modelo: 'C60D5', servicio: 'MANTENIMIENTO', sede: '01', estado: 'BUENO', custodio: 'JEFE DE MANTENIMIENTO', adquisicion: '2019-12-11', costo: 78000000 },
@@ -393,21 +393,32 @@ function generarLeeme(): void {
 | Fecha de corte | ${HOSPITAL.fechaCorte} |
 | Bienes | ${BIENES.length} en 2 sedes y 8 servicios |
 
+> **¿Va a entregar los formatos a alguien para que los llene?** Léase primero
+> [INSTRUCTIVO_DILIGENCIAMIENTO.md](INSTRUCTIVO_DILIGENCIAMIENTO.md): dice **cuáles
+> de las 28 plantillas hay que llenar hoy** (son 5), columna por columna, con los
+> valores admitidos y los errores que más se cometen.
+
 ---
 
 ## Cómo usarlo
 
 ### 1. Cree la entidad y el ejercicio (etapa 1)
 
-En la aplicación: **Nueva entidad**. Puede teclear los datos o importarlos con
-\`01_caso_limpio/PL-01_parametros_entidad.xlsx\` desde *Datos de la entidad*.
+En la aplicación: **Nueva entidad → Crear desde PL-01**, y elija
+\`01_caso_limpio/PL-01_parametros_entidad.xlsx\`. La entidad nace del formato con
+razón social, NIT, gerente y los parámetros de cálculo, sin teclear nada. Verá la
+previsualización antes de que se cree.
+
+(También puede teclear los datos a mano en el mismo asistente, y más tarde
+importar el PL-01 desde *Entidad* para actualizarlos.)
 
 Después, en el paso 01:
 
 1. **Clases de activo** → importar \`PL-02_clases_vida_util.xlsx\`.
 2. **Sedes y servicios** → importar \`PL-02b_sedes_servicios.xlsx\`.
-3. **Parámetros de cálculo** → marcar **"método de conteo confirmado por acta"**.
-   Sin eso la aplicación se niega a calcular, y hace bien: es \`VAL-01-07\`.
+3. **Parámetros** → marcar **"método de conteo confirmado por acta"**. Sin eso la
+   aplicación se niega a calcular, y hace bien: es \`VAL-01-07\`. El acta no se
+   hereda de un Excel.
 4. **Ejercicio** → crearlo con fecha de corte **${HOSPITAL.fechaCorte}**.
 
 > Al importar PL-01 verá una advertencia sobre \`fecha_corte_ejercicio\`: la fecha

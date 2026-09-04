@@ -197,6 +197,15 @@ export const contrato = {
     salida: salida<EntidadDto>(),
     muta: true,
   }),
+  /**
+   * Solo mientras la valuación no haya empezado: en cuanto existe un ejercicio,
+   * la entidad tiene trabajo asociado y `ejercicio.entidad_id` es `restrict`.
+   */
+  'entidad:eliminar': definir({
+    entrada: z.object({ id: zUuid, justificacion: zTexto(500) }),
+    salida: salida<{ razonSocial: string }>(),
+    muta: true,
+  }),
   'entidad:clonarParametrizacion': definir({
     entrada: z.object({
       origenId: zUuid,
@@ -494,7 +503,9 @@ export const contrato = {
   // ── TR-02 · importación (RF-01-02 paso 01; RF-02-07 paso 02; RF-03-03 paso 03) ──
   // `ejercicioId` solo lo exigen las plantillas que traen bienes (PL-03, PL-05).
   'importacion:previsualizar': definir({
-    entrada: z.object({ entidadId: zUuid, plantilla: zPlantillaImportable, ejercicioId: zUuid.nullish() }),
+    // `entidadId` nulo solo lo admite PL-01, y significa "crear la entidad desde
+    // la plantilla": es como llega un hospital que recibió el formato diligenciado.
+    entrada: z.object({ entidadId: zUuid.nullish(), plantilla: zPlantillaImportable, ejercicioId: zUuid.nullish() }),
     salida: salida<InformeImportacion | null>(),
     muta: false,
   }),

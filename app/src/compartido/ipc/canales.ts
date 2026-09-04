@@ -19,6 +19,7 @@ export const CANALES_PERMITIDOS = [
   'entidad:crear',
   'entidad:actualizar',
   'entidad:clonarParametrizacion',
+  'entidad:eliminar',
   'sede:listar',
   'sede:crear',
   'sede:actualizar',

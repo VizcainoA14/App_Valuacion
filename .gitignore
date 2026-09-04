@@ -11,6 +11,8 @@ build/Release/
 .env.*.local
 
 # ── Datos locales de la aplicación (nunca se versionan) ──────────────
+# .datos-dev/ es la instalación aislada de `npm run dev:aislado`.
+app/.datos-dev/
 *.db
 *.db-wal
 *.db-shm

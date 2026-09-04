@@ -19,15 +19,20 @@ import { nuevoId } from '../../db/identificadores';
 import type { LecturaNormalizada } from './importador';
 import type { FormatoFechaRegional } from './normalizador';
 
-/** A qué entidad —y, cuando la plantilla trae bienes, a qué ejercicio— se importa. */
+/**
+ * A qué entidad —y, cuando la plantilla trae bienes, a qué ejercicio— se importa.
+ * `entidadId` nulo significa que la plantilla **crea** la entidad: hoy solo PL-01.
+ */
 export interface AmbitoImportacion {
-  readonly entidadId: string;
+  readonly entidadId: string | null;
   readonly ejercicioId: string | null;
 }
 
 export interface ResultadoAplicacion {
   readonly creados: number;
   readonly actualizados: number;
+  /** La entidad afectada; obligatorio cuando la plantilla la crea. */
+  readonly entidadId?: string;
 }
 
 /**
@@ -46,6 +51,11 @@ export interface ImportadorPlantilla {
   readonly codigo: PlantillaImportable;
   /** Las plantillas que traen bienes escriben dentro de un ejercicio abierto. */
   readonly requiereEjercicio: boolean;
+  /**
+   * `false` = la plantilla puede llegar sin entidad y crearla (PL-01). Por defecto
+   * se exige una entidad existente: importar sedes o bienes «al aire» no significa nada.
+   */
+  readonly requiereEntidad?: boolean;
   leer(archivo: string, formatoFecha: FormatoFechaRegional): Promise<LecturaNormalizada>;
   /** Reglas que cruzan hojas o consultan la base; retira filas con `rechazarFila`. */
   validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, ctx: ContextoIpc): void;
@@ -89,7 +99,11 @@ function exigirImportador(plantilla: PlantillaImportable): ImportadorPlantilla {
  * Comprobación de ámbito con SQL directo: la orquestación es infraestructura y no
  * debe depender de los repositorios de un módulo concreto.
  */
-function resolverAmbito(ctx: ContextoIpc, entidadId: string, ejercicioId: string | null, importador: ImportadorPlantilla): AmbitoImportacion {
+function resolverAmbito(ctx: ContextoIpc, entidadId: string | null, ejercicioId: string | null, importador: ImportadorPlantilla): AmbitoImportacion {
+  if (entidadId === null) {
+    if (importador.requiereEntidad === false) return { entidadId: null, ejercicioId: null };
+    throw new ErrorValidacion('ENTIDAD_REQUERIDA', `${importador.codigo} se importa sobre una entidad existente; seleccione una antes.`, { campo: 'entidadId' });
+  }
   const entidad = ctx.sqlite.prepare('SELECT id FROM entidad WHERE id = ?').get(entidadId) as { id: string } | undefined;
   if (entidad === undefined) throw new ErrorValidacion('ENTIDAD_INEXISTENTE', 'La entidad no existe.', { campo: 'entidadId' });
 
@@ -117,11 +131,11 @@ function vistaPrevia(lectura: LecturaNormalizada): InformeImportacion['vistaPrev
 }
 
 export async function previsualizarImportacion(
-  e: { entidadId: string; plantilla: PlantillaImportable; ejercicioId?: string | null | undefined },
+  e: { entidadId?: string | null | undefined; plantilla: PlantillaImportable; ejercicioId?: string | null | undefined },
   ctx: ContextoIpc,
 ): Promise<InformeImportacion | null> {
   const importador = exigirImportador(e.plantilla);
-  const ambito = resolverAmbito(ctx, e.entidadId, e.ejercicioId ?? null, importador);
+  const ambito = resolverAmbito(ctx, e.entidadId ?? null, e.ejercicioId ?? null, importador);
 
   const archivo = await ctx.dialogos.elegirArchivoExcel(`Seleccione el archivo ${e.plantilla}`);
   if (archivo === null) return null;
@@ -151,14 +165,17 @@ export async function previsualizarImportacion(
 }
 
 /** ANEXO_A §3.3 regla 6: el archivo que se importó se conserva tal cual llegó. */
-function conservarArchivo(ctx: ContextoIpc, entidadId: string, plantilla: PlantillaImportable, origen: string): string {
+function conservarArchivo(ctx: ContextoIpc, entidadId: string | null, plantilla: PlantillaImportable, origen: string): string {
   if (ctx.rutaDatos === '') return origen;
-  const dir = join(ctx.rutaDatos, 'almacen', 'importaciones', entidadId);
+  // Cuando la plantilla crea la entidad todavía no hay identificador: el archivo
+  // se guarda aparte y la bitácora lo enlaza con la entidad recién creada.
+  const carpetaEntidad = entidadId ?? '_entidades_nuevas';
+  const dir = join(ctx.rutaDatos, 'almacen', 'importaciones', carpetaEntidad);
   mkdirSync(dir, { recursive: true });
   const marca = ctx.ahoraIso().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
   const destino = join(dir, `${marca}_${plantilla}_${basename(origen)}`);
   copyFileSync(origen, destino);
-  return join('almacen', 'importaciones', entidadId, basename(destino));
+  return join('almacen', 'importaciones', carpetaEntidad, basename(destino));
 }
 
 export function confirmarImportacion(e: { token: string; aceptarConErrores: boolean }, ctx: ContextoIpc): ResultadoImportacion {
@@ -180,14 +197,17 @@ export function confirmarImportacion(e: { token: string; aceptarConErrores: bool
   };
   const r = importador.aplicar(p.ambito, p.lectura, ctx, archivo);
   const omitidos = p.lectura.resumen.reduce((acc, h) => acc + h.filasConError, 0);
+  const entidadAfectada = r.entidadId ?? p.ambito.entidadId;
 
-  ctx.bitacora.registrar({
-    entidadAfectada: 'entidad',
-    registroId: p.ambito.entidadId,
-    accion: 'IMPORTAR',
-    campo: p.plantilla,
-    valorNuevo: `${basename(p.archivo)} → ${r.creados} creados, ${r.actualizados} actualizados, ${omitidos} omitidos. Copia: ${conservado}`,
-  });
+  if (entidadAfectada !== null) {
+    ctx.bitacora.registrar({
+      entidadAfectada: 'entidad',
+      registroId: entidadAfectada,
+      accion: 'IMPORTAR',
+      campo: p.plantilla,
+      valorNuevo: `${basename(p.archivo)} → ${r.creados} creados, ${r.actualizados} actualizados, ${omitidos} omitidos. Copia: ${conservado}`,
+    });
+  }
   previsualizaciones.delete(e.token);
-  return { plantilla: p.plantilla, creados: r.creados, actualizados: r.actualizados, omitidos, archivoConservado: conservado };
+  return { plantilla: p.plantilla, entidadId: entidadAfectada, creados: r.creados, actualizados: r.actualizados, omitidos, archivoConservado: conservado };
 }

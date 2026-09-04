@@ -36,7 +36,6 @@ export function ImportarPlantilla({
   const [informe, setInforme] = useState<InformeImportacion | null>(null);
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [aceptarConErrores, setAceptarConErrores] = useState(false);
   const [resultado, setResultado] = useState<string | null>(null);
   const confirmar = useMutacion('importacion:confirmar', [...invalida, ...EFECTOS_PASO_01]);
 
@@ -46,10 +45,7 @@ export function ImportarPlantilla({
     setResultado(null);
     try {
       const r = await cliente().invocar('importacion:previsualizar', { entidadId, plantilla, ejercicioId: ejercicioId ?? null });
-      if (r !== null) {
-        setInforme(r);
-        setAceptarConErrores(false);
-      }
+      if (r !== null) setInforme(r);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -57,10 +53,10 @@ export function ImportarPlantilla({
     }
   }
 
-  async function ejecutar(): Promise<void> {
+  async function ejecutar(conErrores: boolean): Promise<void> {
     if (informe === null) return;
     try {
-      const r = await confirmar.mutateAsync({ token: informe.token, aceptarConErrores });
+      const r = await confirmar.mutateAsync({ token: informe.token, aceptarConErrores: conErrores });
       setResultado(`${r.creados} creados, ${r.actualizados} actualizados, ${r.omitidos} omitidos. Copia guardada en ${r.archivoConservado}.`);
       setInforme(null);
     } catch (e) {
@@ -83,29 +79,59 @@ export function ImportarPlantilla({
           {resultado}
         </Aviso>
       )}
-      <Dialogo
-        abierto={informe !== null}
-        onCambioAbierto={(abierto) => {
-          if (!abierto) setInforme(null);
-        }}
-        titulo={`Previsualización · ${NOMBRE[plantilla]}`}
-        descripcion={informe === null ? undefined : `${informe.archivo} · ${informe.errores} error(es) · ${informe.advertencias} advertencia(s)`}
-        ancho="xl"
-        pie={
-          informe === null ? undefined : (
-            <>
-              {!informe.importable && <Casilla etiqueta="Importar solo las filas válidas y omitir las que tienen error" checked={aceptarConErrores} onChange={(e) => setAceptarConErrores(e.target.checked)} />}
-              <Boton onClick={() => setInforme(null)}>Cancelar</Boton>
-              <Boton variante="primario" cargando={confirmar.isPending} disabled={!informe.importable && !aceptarConErrores} onClick={() => void ejecutar()}>
-                Confirmar importación
-              </Boton>
-            </>
-          )
-        }
-      >
-        {informe !== null && <CuerpoInforme informe={informe} />}
-      </Dialogo>
+      <InformeImportacionDialogo
+        informe={informe}
+        plantilla={plantilla}
+        onCerrar={() => setInforme(null)}
+        confirmando={confirmar.isPending}
+        onConfirmar={(conErrores) => void ejecutar(conErrores)}
+      />
     </>
+  );
+}
+
+/**
+ * El diálogo de previsualización, aparte del botón: la pantalla de nueva entidad
+ * lo usa sin botón propio, porque allí la importación es una de dos vías para
+ * crear la entidad, no una acción sobre una que ya existe.
+ */
+export function InformeImportacionDialogo({
+  informe,
+  plantilla,
+  onCerrar,
+  onConfirmar,
+  confirmando,
+}: {
+  informe: InformeImportacion | null;
+  plantilla: PlantillaImportable;
+  onCerrar: () => void;
+  onConfirmar: (aceptarConErrores: boolean) => void;
+  confirmando: boolean;
+}): JSX.Element {
+  const [soloValidas, setSoloValidas] = useState(false);
+  return (
+    <Dialogo
+      abierto={informe !== null}
+      onCambioAbierto={(abierto) => {
+        if (!abierto) onCerrar();
+      }}
+      titulo={`Previsualización · ${NOMBRE[plantilla]}`}
+      descripcion={informe === null ? undefined : `${informe.archivo} · ${informe.errores} error(es) · ${informe.advertencias} advertencia(s)`}
+      ancho="xl"
+      pie={
+        informe === null ? undefined : (
+          <>
+            {!informe.importable && <Casilla etiqueta="Importar solo las filas válidas y omitir las que tienen error" checked={soloValidas} onChange={(e) => setSoloValidas(e.target.checked)} />}
+            <Boton onClick={onCerrar}>Cancelar</Boton>
+            <Boton variante="primario" cargando={confirmando} disabled={!informe.importable && !soloValidas} onClick={() => onConfirmar(soloValidas)}>
+              Confirmar importación
+            </Boton>
+          </>
+        )
+      }
+    >
+      {informe !== null && <CuerpoInforme informe={informe} />}
+    </Dialogo>
   );
 }
 

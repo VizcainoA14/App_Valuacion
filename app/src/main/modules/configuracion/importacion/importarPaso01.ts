@@ -14,6 +14,7 @@ import type { AmbitoImportacion, ImportadorPlantilla, ResultadoAplicacion } from
 import { nuevoId } from '../../../infraestructura/db/identificadores';
 import { PL_01_HOJA, PL_02, PL_02B, CLAVES_PL_01 } from './plantillas';
 import { entidadRepo } from '../repositorio/entidad.repo';
+import { crearEntidad } from '../casos-uso/entidades';
 import { sedeRepo } from '../repositorio/sede.repo';
 import { servicioRepo } from '../repositorio/servicio.repo';
 import { claseRepo, aniosAX10k } from '../repositorio/clase.repo';
@@ -64,6 +65,12 @@ async function leerPl01(archivo: string, formatoFecha: FormatoFechaRegional): Pr
     incidencias,
     normalizaciones,
   };
+}
+
+/** PL-02 y PL-02b siempre llegan con entidad; el orquestador ya lo garantiza. */
+function exigirEntidad(ambito: AmbitoImportacion): string {
+  if (ambito.entidadId === null) throw new ErrorValidacion('ENTIDAD_REQUERIDA', 'Esta plantilla se importa sobre una entidad existente.', { campo: 'entidadId' });
+  return ambito.entidadId;
 }
 
 function texto(v: ValorNormalizado | undefined): string | null {
@@ -135,7 +142,17 @@ function aplicarPl02(ctx: ContextoIpc, entidadId: string, lectura: LecturaNormal
   return { creados, actualizados };
 }
 
-function aplicarPl01(ctx: ContextoIpc, entidadId: string, lectura: LecturaNormalizada): ResultadoAplicacion {
+/** Lo mínimo que ANEXO_B §2.1 exige para que una entidad exista. */
+const IDENTIFICACION_OBLIGATORIA: readonly string[] = ['razon_social', 'nit', 'municipio', 'departamento', 'nivel_complejidad', 'nombre_gerente', 'direccion'];
+
+function faltantesDeIdentificacion(datos: FilaDatos): string[] {
+  return IDENTIFICACION_OBLIGATORIA.filter((c) => {
+    const v = datos[c];
+    return v === undefined || v === null || String(v).trim() === '';
+  });
+}
+
+function aplicarPl01(ctx: ContextoIpc, ambito: AmbitoImportacion, lectura: LecturaNormalizada): ResultadoAplicacion {
   const datos: FilaDatos = lectura.hojas['PARAMETROS']?.[0]?.datos ?? {};
   const cambiosEntidad: Record<string, string> = {};
   const cambiosParametros: Record<string, ValorNormalizado> = {};
@@ -146,6 +163,43 @@ function aplicarPl01(ctx: ContextoIpc, entidadId: string, lectura: LecturaNormal
     if (def.destino === 'parametro') cambiosParametros[def.campo] = v;
   }
   const ahora = ctx.ahoraIso();
+
+  // ── Sin entidad: la plantilla la CREA ──
+  // Es como llega un hospital que recibió el formato diligenciado y todavía no
+  // ha tecleado nada. Se reutiliza el caso de uso de creación para no duplicar
+  // ni el NIT único, ni las semillas, ni la bitácora.
+  if (ambito.entidadId === null) {
+    const creada = crearEntidad(
+      {
+        razonSocial: cambiosEntidad['razonSocial'] ?? '',
+        nit: cambiosEntidad['nit'] ?? '',
+        municipio: cambiosEntidad['municipio'] ?? '',
+        departamento: cambiosEntidad['departamento'] ?? '',
+        nivelComplejidad: (cambiosEntidad['nivelComplejidad'] ?? 'I') as 'I' | 'II' | 'III',
+        nombreGerente: cambiosEntidad['nombreGerente'] ?? '',
+        actoNombramientoGerente: cambiosEntidad['actoNombramientoGerente'] ?? null,
+        direccion: cambiosEntidad['direccion'] ?? '',
+        telefono: cambiosEntidad['telefono'] ?? null,
+        email: cambiosEntidad['email'] ?? null,
+        // El catálogo sugerido se precarga igual que al crearla a mano; después
+        // PL-02 lo reemplaza con el del hospital si lo trae.
+        precargarSemillas: true,
+      },
+      ctx,
+    );
+    let aplicados = Object.keys(cambiosEntidad).length;
+    if (Object.keys(cambiosParametros).length > 0) {
+      const actuales = parametroRepo.obtener(ctx.db, creada.id);
+      const nuevos: ParametrosCalculo = EsquemaParametrosCalculo.parse({ ...actuales, ...cambiosParametros });
+      // Recién creada, el método nunca está confirmado por acta (CT-02).
+      nuevos.metodo_conteo_meses_confirmado = false;
+      parametroRepo.guardar(ctx.db, creada.id, nuevos, ahora);
+      aplicados += Object.keys(cambiosParametros).length;
+    }
+    return { creados: aplicados, actualizados: 0, entidadId: creada.id };
+  }
+
+  const entidadId = ambito.entidadId;
   let actualizados = 0;
   if (Object.keys(cambiosEntidad).length > 0) {
     const actual = entidadRepo.porId(ctx.db, entidadId);
@@ -162,7 +216,7 @@ function aplicarPl01(ctx: ContextoIpc, entidadId: string, lectura: LecturaNormal
     parametroRepo.guardar(ctx.db, entidadId, nuevos, ahora);
     actualizados += Object.keys(cambiosParametros).length;
   }
-  return { creados: 0, actualizados };
+  return { creados: 0, actualizados, entidadId };
 }
 
 // ── Los tres importadores del paso 01 ────────────────────────────────────────
@@ -171,9 +225,25 @@ export const IMPORTADORES_PASO_01: readonly ImportadorPlantilla[] = [
   {
     codigo: 'PL-01',
     requiereEjercicio: false,
+    // Única plantilla que puede llegar sin entidad: la crea.
+    requiereEntidad: false,
     leer: leerPl01,
-    validarNegocio(_ambito: AmbitoImportacion, lectura: LecturaNormalizada): void {
+    validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, ctx: ContextoIpc): void {
       const datos = lectura.hojas['PARAMETROS']?.[0]?.datos ?? {};
+
+      // Crear la entidad exige la identificación completa: sin ella no hay
+      // encabezado para las resoluciones. Se avisa AQUÍ, en la previsualización,
+      // y no al confirmar: el usuario debe verlo antes de decidir.
+      if (ambito.entidadId === null) {
+        for (const campo of faltantesDeIdentificacion(datos)) {
+          lectura.incidencias.push({ hoja: 'PARAMETROS', fila: 0, columna: campo, valorRecibido: null, motivo: `Para crear la entidad desde la plantilla, "${campo}" es obligatorio (ANEXO_B §2.1).`, severidad: 'ERROR' });
+        }
+        const nit = datos['nit'];
+        if (typeof nit === 'string' && nit.trim() !== '' && entidadRepo.porNit(ctx.db, nit) !== null) {
+          lectura.incidencias.push({ hoja: 'PARAMETROS', fila: 0, columna: 'nit', valorRecibido: nit, motivo: 'Ya existe una entidad con este NIT. Ábrala y actualícela desde su pantalla de datos.', severidad: 'ERROR' });
+        }
+      }
+
       const parcial: Record<string, ValorNormalizado> = {};
       for (const [clave, def] of Object.entries(CLAVES_PL_01)) if (def.destino === 'parametro' && datos[clave] !== undefined) parcial[def.campo] = datos[clave];
       const r = EsquemaParametrosCalculo.partial().safeParse(parcial);
@@ -184,14 +254,14 @@ export const IMPORTADORES_PASO_01: readonly ImportadorPlantilla[] = [
         lectura.incidencias.push({ hoja: 'PARAMETROS', fila: 0, columna: 'fecha_corte_ejercicio', valorRecibido: String(datos['fecha_corte_ejercicio']), motivo: 'La fecha de corte se aplica al crear el ejercicio (RF-01-05); aquí solo se muestra', severidad: 'ADVERTENCIA' });
       }
     },
-    aplicar: (ambito, lectura, ctx) => aplicarPl01(ctx, ambito.entidadId, lectura),
+    aplicar: (ambito, lectura, ctx) => aplicarPl01(ctx, ambito, lectura),
   },
   {
     codigo: 'PL-02',
     requiereEjercicio: false,
     leer: (archivo, formatoFecha) => leerYNormalizar(archivo, PL_02, formatoFecha),
     validarNegocio: () => undefined,
-    aplicar: (ambito, lectura, ctx) => aplicarPl02(ctx, ambito.entidadId, lectura),
+    aplicar: (ambito, lectura, ctx) => aplicarPl02(ctx, exigirEntidad(ambito), lectura),
   },
   {
     codigo: 'PL-02b',
@@ -199,7 +269,7 @@ export const IMPORTADORES_PASO_01: readonly ImportadorPlantilla[] = [
     leer: (archivo, formatoFecha) => leerYNormalizar(archivo, PL_02B, formatoFecha),
     validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, ctx: ContextoIpc): void {
       const sedesArchivo = new Set((lectura.hojas['SEDES'] ?? []).map((f) => String(f.datos['codigo_sede']).toUpperCase()));
-      const sedesBase = new Set(sedeRepo.listar(ctx.db, ambito.entidadId, true).map((s) => s.codigo.toUpperCase()));
+      const sedesBase = new Set(sedeRepo.listar(ctx.db, exigirEntidad(ambito), true).map((s) => s.codigo.toUpperCase()));
       for (const f of [...(lectura.hojas['SERVICIOS'] ?? [])]) {
         const cod = String(f.datos['codigo_sede']).toUpperCase();
         if (!sedesArchivo.has(cod) && !sedesBase.has(cod)) {
@@ -207,6 +277,6 @@ export const IMPORTADORES_PASO_01: readonly ImportadorPlantilla[] = [
         }
       }
     },
-    aplicar: (ambito, lectura, ctx) => aplicarPl02b(ctx, ambito.entidadId, lectura),
+    aplicar: (ambito, lectura, ctx) => aplicarPl02b(ctx, exigirEntidad(ambito), lectura),
   },
 ];

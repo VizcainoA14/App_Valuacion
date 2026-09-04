@@ -1,5 +1,5 @@
 import type { RegistroIpc } from '../../../ipc/registroIpc';
-import { listarEntidades, entidadPorId, crearEntidad, actualizarEntidad, clonarParametrizacion } from '../casos-uso/entidades';
+import { listarEntidades, entidadPorId, crearEntidad, actualizarEntidad, eliminarEntidad, clonarParametrizacion } from '../casos-uso/entidades';
 import { listarSedes, crearSede, actualizarSede, listarServicios, crearServicio, actualizarServicio } from '../casos-uso/sedesServicios';
 import { listarClases, crearClase, actualizarClase, precargarSugeridas } from '../casos-uso/clases';
 import { obtenerParametros, actualizarParametros } from '../casos-uso/parametros';
@@ -13,6 +13,7 @@ export function registrarCanalesConfiguracion(registro: RegistroIpc): void {
   registro.registrar('entidad:porId', entidadPorId);
   registro.registrar('entidad:crear', crearEntidad);
   registro.registrar('entidad:actualizar', actualizarEntidad);
+  registro.registrar('entidad:eliminar', eliminarEntidad);
   registro.registrar('entidad:clonarParametrizacion', clonarParametrizacion);
 
   registro.registrar('sede:listar', listarSedes);

@@ -106,6 +106,55 @@ describe('convención de codificación (RN-01-02, RF-01-04)', () => {
   });
 });
 
+describe('eliminar entidad', () => {
+  it('borra la entidad y todo su catálogo mientras la valuación no haya empezado', async () => {
+    const { registro, entidad, sqlite } = await configuracionCompleta();
+    expect(valor(await registro.invocar('sede:listar', { entidadId: entidad.id }))).toHaveLength(1);
+
+    const r = valor(await registro.invocar('entidad:eliminar', { id: entidad.id, justificacion: 'Creada con el NIT equivocado' }));
+    expect(r.razonSocial).toBe(entidad.razonSocial);
+    expect(valor(await registro.invocar('entidad:listar', undefined))).toHaveLength(0);
+
+    // Sedes, servicios, clases, parámetros y responsables se van con ella (cascade).
+    for (const tabla of ['sede', 'clase_activo', 'parametro_calculo', 'responsable', 'abreviatura_tipo'] as const) {
+      expect((sqlite.prepare(`SELECT COUNT(*) AS n FROM ${tabla}`).get() as { n: number }).n, tabla).toBe(0);
+    }
+    expect((sqlite.prepare('SELECT COUNT(*) AS n FROM servicio').get() as { n: number }).n).toBe(0);
+
+    // Pero la bitácora NO: que se eliminó también es historia, con su motivo.
+    const fila = sqlite.prepare(`SELECT accion, valor_anterior, justificacion FROM bitacora WHERE accion = 'ELIMINAR'`).get() as {
+      accion: string;
+      valor_anterior: string | null;
+      justificacion: string | null;
+    };
+    expect(fila.valor_anterior).toContain(entidad.nit);
+    expect(fila.justificacion).toBe('Creada con el NIT equivocado');
+  });
+
+  it('se niega en cuanto existe un ejercicio, y dice por qué', async () => {
+    const { registro, entidad, coordinadora } = await configuracionCompleta();
+    valor(await registro.invocar('ejercicio:crear', { entidadId: entidad.id, nombre: 'Corte 2025', fechaCorte: '2025-06-30', responsableId: coordinadora.id }));
+
+    const r = await registro.invocar('entidad:eliminar', { id: entidad.id, justificacion: 'Ya no la quiero' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) {
+      expect(r.error.codigo).toBe('ENTIDAD_CON_EJERCICIOS');
+      expect(r.error.mensaje).toContain('Corte 2025');
+      expect(r.error.mensaje).toContain('corríjalos');
+    }
+    // Y sigue ahí.
+    expect(valor(await registro.invocar('entidad:listar', undefined))).toHaveLength(1);
+  });
+
+  it('el hospital de demostración tiene su propio botón; este canal no lo borra', async () => {
+    const { registro } = await arnesPaso01();
+    const demo = valor(await registro.invocar('demo:cargar', undefined));
+    const r = await registro.invocar('entidad:eliminar', { id: demo.id, justificacion: 'Limpiando pruebas' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.error.codigo).toBe('ES_DEMOSTRACION');
+  });
+});
+
 describe('ejercicio (RF-01-05, RN-01-01, RN-01-06)', () => {
   it('congela los parámetros vigentes y rechaza fechas futuras o responsables ajenos', async () => {
     const { registro, entidad, coordinadora } = await configuracionCompleta();

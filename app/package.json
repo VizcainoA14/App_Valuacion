@@ -14,6 +14,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "dev:watch": "electron-vite dev --watch",
+    "dev:aislado": "tsx scripts/dev-aislado.ts",
     "typecheck": "tsc -p tsconfig.compartido.json --noEmit && tsc -p tsconfig.main.json --noEmit && tsc -p tsconfig.preload.json --noEmit && tsc -p tsconfig.renderer.json --noEmit && tsc -p tsconfig.node.json --noEmit",
     "build": "npm run typecheck && electron-vite build",
     "pack": "npm run build && electron-builder --dir",
@@ -33,7 +34,8 @@
     "trazabilidad": "tsx scripts/trazabilidad.ts",
     "verificar:versiones": "tsx scripts/verificar-versiones.ts",
     "verificar:todo": "npm run typecheck && npm run lint && npm run boundaries && npm run test && npm run trazabilidad",
-    "datos:prueba": "tsx scripts/generar-datos-prueba.ts"
+    "datos:prueba": "tsx scripts/generar-datos-prueba.ts",
+    "instructivo": "tsx scripts/generar-instructivo.ts"
   },
   "dependencies": {
     "better-sqlite3": "13.0.3",
