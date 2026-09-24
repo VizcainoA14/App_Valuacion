@@ -102,7 +102,7 @@ export const movimientoBien = sqliteTable(
       .references(() => servicio.id, { onDelete: 'restrict' }),
     fecha: fecha('fecha').notNull(),
     motivo: texto('motivo').notNull(),
-    /** `usuario_id` en /Teoria; sin login pasa a responsable opcional (C-09). */
+    /** `usuario_id` en /especificacion/teoria; sin login pasa a responsable opcional (C-09). */
     responsableId: uuid('responsable_id').references(() => responsable.id, {
       onDelete: 'set null',
     }),
@@ -121,7 +121,7 @@ export const actaCustodia = sqliteTable(
     servicioId: uuid('servicio_id')
       .notNull()
       .references(() => servicio.id, { onDelete: 'restrict' }),
-    /** Nombre del custodio que firma; texto libre como en /Teoria. */
+    /** Nombre del custodio que firma; texto libre como en /especificacion/teoria. */
     responsable: texto('responsable').notNull(),
     fecha: fecha('fecha').notNull(),
     documentoUrl: texto('documento_url'),

@@ -3,7 +3,7 @@
  * parametrizadas con los catálogos de la entidad**: listas desplegables con las
  * clases, sedes y servicios reales del hospital, y el membrete con su razón social.
  *
- * Se parte de los libros reales de `Plantillas_Valuacion_Activos` (verificados con
+ * Se parte de los libros reales de `especificacion/plantillas` (verificados con
  * 0 errores de fórmula) en vez de regenerarlos: `PL-08`, `PL-09`, `PL-10` y `PL-11`
  * llevan el motor de cálculo embebido en fórmulas y reescribirlas sería rehacer un
  * trabajo ya hecho y probado.
@@ -160,11 +160,11 @@ export function rutaPlantillas(empaquetada: boolean, resourcesPath: string, raiz
   const candidatas = empaquetada
     ? [join(resourcesPath, 'plantillas')]
     : [
-        join(raizProyecto, '..', 'Plantillas_Valuacion_Activos'),
-        join(raizProyecto, '..', '..', 'Plantillas_Valuacion_Activos'),
-        join(raizProyecto, '..', '..', '..', 'Plantillas_Valuacion_Activos'),
-        join(process.cwd(), '..', 'Plantillas_Valuacion_Activos'),
-        join(process.cwd(), 'Plantillas_Valuacion_Activos'),
+        join(raizProyecto, '..', 'especificacion', 'plantillas'),
+        join(raizProyecto, '..', '..', 'especificacion', 'plantillas'),
+        join(raizProyecto, '..', '..', '..', 'especificacion', 'plantillas'),
+        join(process.cwd(), '..', 'especificacion', 'plantillas'),
+        join(process.cwd(), 'especificacion', 'plantillas'),
         join(resourcesPath, 'plantillas'),
       ];
   return candidatas.find((c) => existsSync(join(c, 'excel'))) ?? candidatas[0] ?? '';

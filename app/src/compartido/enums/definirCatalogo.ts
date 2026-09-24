@@ -9,7 +9,7 @@
 export interface Catalogo<V extends string> {
   /** Nombre `snake_case`, idéntico al de `ANEXO_B`. */
   readonly nombre: string;
-  /** Dónde lo define `/Teoria`. */
+  /** Dónde lo define `/especificacion/teoria`. */
   readonly fuente: string;
   readonly valores: readonly V[];
   readonly etiquetas: Readonly<Record<V, string>>;

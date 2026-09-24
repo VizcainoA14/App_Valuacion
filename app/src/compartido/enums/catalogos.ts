@@ -1,7 +1,7 @@
 /**
  * Los 15 catálogos canónicos de `ANEXO_B`: los 14 de la tabla §5 más
  * `estado_registro` (§6.2), que el propio anexo declara "enum canónico" (CT-06).
- * Los valores son literalmente los de `/Teoria`; NUNCA se renombran ni se inventan.
+ * Los valores son literalmente los de `/especificacion/teoria`; NUNCA se renombran ni se inventan.
  */
 import { definirCatalogo, type ValoresDe } from './definirCatalogo';
 

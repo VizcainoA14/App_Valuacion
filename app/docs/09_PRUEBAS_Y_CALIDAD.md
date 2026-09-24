@@ -92,7 +92,7 @@ donde corría.** Desconfíe de cualquier uso de `node:path` sin plataforma expl�
 
 ## Trazabilidad
 
-`npm run trazabilidad` extrae los códigos de `/Teoria` y comprueba que `docs/trazabilidad.csv` los
+`npm run trazabilidad` extrae los códigos de `/especificacion/teoria` y comprueba que `docs/trazabilidad.csv` los
 cubra todos. **380 requisitos**: 102 `RF`, 79 `RN`, 108 `VAL`, 70 `EN`, 11 `EN-G`, 10 `INT`.
 
 Estado actual: 110 implementados, 10 parciales, 3 no implementados, 257 pendientes.

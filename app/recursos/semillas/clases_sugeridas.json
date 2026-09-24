@@ -1,5 +1,5 @@
 {
-  "_fuente": "Teoria/01_PARAMETRIZACION_DE_LA_ENTIDAD.md §5 (PL-02, valores de referencia). Son SUGERENCIAS editables: cada entidad las valida contra su Manual de Políticas Contables (RF-01-03).",
+  "_fuente": "especificacion/teoria/01_PARAMETRIZACION_DE_LA_ENTIDAD.md §5 (PL-02, valores de referencia). Son SUGERENCIAS editables: cada entidad las valida contra su Manual de Políticas Contables (RF-01-03).",
   "clases": [
     { "codigo": "EMC", "nombre": "Equipo médico-científico", "subcuentaContable": "1660", "vidaUtilContableMeses": 180, "vidaUtilTecnicaAnios": 15, "esDepreciable": true, "requiereHojaVida": true, "requiereInvima": true, "responsableTecnico": "ESPECIALISTA_BIOMEDICO" },
     { "codigo": "MEO", "nombre": "Muebles, enseres y equipo de oficina", "subcuentaContable": "1665", "vidaUtilContableMeses": 180, "vidaUtilTecnicaAnios": 15, "esDepreciable": true, "requiereHojaVida": false, "requiereInvima": false, "responsableTecnico": "ESPECIALISTA_FISICOS" },

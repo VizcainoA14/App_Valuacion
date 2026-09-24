@@ -1,5 +1,5 @@
 /**
- * Casos de `RN-09-03` y `RN-09-05`, con los valores tomados de `/Teoria` paso 09.
+ * Casos de `RN-09-03` y `RN-09-05`, con los valores tomados de `/especificacion/teoria` paso 09.
  * Como el resto del motor: ningún valor esperado se ajusta al código (`RG-01`).
  */
 import { describe, expect, it } from 'vitest';

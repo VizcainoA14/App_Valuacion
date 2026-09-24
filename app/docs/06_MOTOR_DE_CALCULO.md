@@ -37,7 +37,7 @@ firma**, y además afirmaría algo falso: que la depreciación es cero.
 
 > Esta decisión, tomada por prudencia de ingeniería, resultó estar **alineada con la norma**. La
 > Guía de Aplicación 003 de la CGN dice que *«el deterioro se reconoce solo cuando existen
-> indicios»*. Un cero habría sido afirmar que no hay deterioro. Ver `/Normatividad`, ficha 04.
+> indicios»*. Un cero habría sido afirmar que no hay deterioro. Ver `/especificacion/normatividad`, ficha 04.
 
 La interfaz los muestra **por separado**, nunca sumados.
 
@@ -90,7 +90,7 @@ Valor residual configurable, **0 % por defecto** (`ANEXO_C` §210).
 
 > **CT-20.** El parámetro `umbral_semaforo_naranja` existía en `ANEXO_B`, pero `ANEXO_C` §2.6 usaba
 > un `1,0` literal. Se resolvió a favor del parámetro y quedó documentado como contradicción.
-> **`/Teoria` no se modificó.**
+> **`/especificacion/teoria` no se modificó.**
 
 ## Bajas
 

@@ -39,7 +39,7 @@ const ctx: ContextoIpc = {
   bitacora: crearBitacora(sqlite, 'siembra', ahoraIso),
   ahoraIso,
   rutaDatos: dirname(ruta),
-  rutaPlantillas: join(raiz, '..', 'Plantillas_Valuacion_Activos'),
+  rutaPlantillas: join(raiz, '..', 'especificacion', 'plantillas'),
   dialogos: dialogosNulos(),
 };
 

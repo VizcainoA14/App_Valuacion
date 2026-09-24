@@ -82,7 +82,7 @@ const ETAPAS: readonly Etapa[] = [
   },
 ];
 
-/** Pasos de `/Teoria` fuera del núcleo (ADR-026). Se listan para que se sepa que existen. */
+/** Pasos de `/especificacion/teoria` fuera del núcleo (ADR-026). Se listan para que se sepa que existen. */
 const EXTENSIONES: readonly { nombre: string; paso: string }[] = [
   { nombre: 'Conciliación con contabilidad', paso: 'paso 04' },
   { nombre: 'Valuación técnica de muebles', paso: 'paso 07' },

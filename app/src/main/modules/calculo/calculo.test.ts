@@ -2,7 +2,7 @@
  * T-D-03 / T-D-05 — el motor aplicado sobre la base: qué se persiste, qué se
  * excluye y qué NO se pisa al recalcular.
  *
- * La aritmética ya está probada contra `/Teoria` en `compartido/motor/calculo.test.ts`.
+ * La aritmética ya está probada contra `/especificacion/teoria` en `compartido/motor/calculo.test.ts`.
  * Aquí se comprueba el camino: parámetros congelados, exclusiones con motivo,
  * conservación del juicio humano e inmutabilidad del ejercicio cerrado.
  */

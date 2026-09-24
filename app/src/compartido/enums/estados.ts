@@ -42,7 +42,7 @@ export type EstadoActoAdministrativo = ValoresDe<typeof ESTADO_ACTO_ADMINISTRATI
 
 /**
  * `ValuacionMueble.estado_aprobacion` figura como enum en ANEXO_B §4.4 pero
- * /Teoria no enumera sus valores. Provisional según CT-16 (plan 1.4), a
+ * /especificacion/teoria no enumera sus valores. Provisional según CT-16 (plan 1.4), a
  * confirmar por el propietario antes del hito E.
  */
 export const ESTADO_APROBACION_VALUACION = definirCatalogo(

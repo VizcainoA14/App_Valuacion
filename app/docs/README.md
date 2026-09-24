@@ -3,9 +3,9 @@
 Cómo está construida la aplicación. Escrito el **2026-09-04** leyendo el código, no de memoria.
 
 > **Qué manda sobre qué.** Esta carpeta describe **cómo** está hecha la aplicación. **Qué** debe
-> hacer lo dice `/Teoria` (v2.1), y en el motor de cálculo manda `ANEXO_C`. Si esta documentación
-> contradice a `/Teoria`, la equivocada es esta. Las decisiones técnicas cerradas están en
-> `/plan_desarrollo/DECISIONES` (27 ADR) y el estado del trabajo en `/gestion_proyecto`.
+> hacer lo dice `/especificacion/teoria` (v2.1), y en el motor de cálculo manda `ANEXO_C`. Si esta documentación
+> contradice a `/especificacion/teoria`, la equivocada es esta. Las decisiones técnicas cerradas están en
+> `/proyecto/plan/DECISIONES` (27 ADR) y el estado del trabajo en `/proyecto/gestion`.
 
 ## Índice
 
@@ -22,14 +22,14 @@ Cómo está construida la aplicación. Escrito el **2026-09-04** leyendo el cód
 | [09_PRUEBAS_Y_CALIDAD.md](09_PRUEBAS_Y_CALIDAD.md) | 379 tests, 15 E2E, la puerta de calidad y la CI |
 | [10_CONSTRUIR_Y_DISTRIBUIR.md](10_CONSTRUIR_Y_DISTRIBUIR.md) | Scripts, empaquetado, instalador y desarrollo aislado |
 | [decisiones-runtime.md](decisiones-runtime.md) | Versiones congeladas (`T-A-01`) — ya existía |
-| [trazabilidad.csv](trazabilidad.csv) | 380 requisitos de `/Teoria` y su estado — generado |
+| [trazabilidad.csv](trazabilidad.csv) | 380 requisitos de `/especificacion/teoria` y su estado — generado |
 
 ## Si acabas de llegar
 
 Lee [01_PANORAMA.md](01_PANORAMA.md) y luego [02_ARQUITECTURA.md](02_ARQUITECTURA.md). Con eso
 entiendes dónde va cada cosa. Después, el documento del área que vayas a tocar.
 
-Antes de escribir código, lee `gestion_proyecto/estado_actual.md`: dice en qué punto está el trabajo
+Antes de escribir código, lee `proyecto/gestion/estado_actual.md`: dice en qué punto está el trabajo
 y qué es lo siguiente. Es obligatorio y está ahí por una razón — sin él se duplica o se destruye
 trabajo ajeno.
 
@@ -37,7 +37,7 @@ trabajo ajeno.
 
 Están en `/CLAUDE.md` y se repiten aquí porque son las que más caro cuesta romper:
 
-1. **`/Teoria` manda**, y `ANEXO_C` prevalece en el motor de cálculo.
+1. **`/especificacion/teoria` manda**, y `ANEXO_C` prevalece en el motor de cálculo.
 2. **El dinero nunca es un `number` de pesos.** Enteros de centavos en la base, `decimal.js` en el
    motor (ADR-006).
 3. **El motor de cálculo es dominio puro.** No importa `fs`, `electron`, `sqlite`, `react` ni `Date`.

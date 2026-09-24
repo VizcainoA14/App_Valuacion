@@ -3,7 +3,7 @@
  *
  * Este caso de uso NO contiene aritmética: lee la base, llama al motor puro y
  * persiste lo que devuelve. Toda fórmula vive en `compartido/motor`, que es lo
- * único cubierto por los casos de verificación de `/Teoria` (`RG-01`).
+ * único cubierto por los casos de verificación de `/especificacion/teoria` (`RG-01`).
  *
  * El motor lee SIEMPRE los parámetros **congelados** del ejercicio (RN-01-01),
  * nunca el catálogo vigente: si alguien cambia el valor residual hoy, un ejercicio

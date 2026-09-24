@@ -1,6 +1,6 @@
 /**
  * T-B-02 — Fechas: ANEXO_C §3.3 (tres métodos de conteo) y aritmética sin Date.
- * Los valores esperados vienen de /Teoria v2.1; no se cambian sin bitácora (RG-01).
+ * Los valores esperados vienen de /especificacion/teoria v2.1; no se cambian sin bitácora (RG-01).
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';

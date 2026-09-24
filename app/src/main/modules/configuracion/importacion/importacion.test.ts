@@ -1,6 +1,6 @@
 /**
  * RF-01-02 — importación de PL-01, PL-02 y PL-02b usando las PLANTILLAS REALES de
- * Plantillas_Valuacion_Activos/excel (fila 6 encabezados, fila 7 ejemplo en azul).
+ * especificacion/plantillas/excel (fila 6 encabezados, fila 7 ejemplo en azul).
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import ExcelJS from 'exceljs';
@@ -12,7 +12,7 @@ import { arnesPaso01, ENTIDAD_PRUEBA, valor } from '../pruebas';
 import { limpiarPrevisualizaciones } from '../../../infraestructura/documental/excel/orquestadorImportacion';
 
 const raizRepo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..', '..');
-const plantillas = join(raizRepo, 'Plantillas_Valuacion_Activos', 'excel');
+const plantillas = join(raizRepo, 'especificacion', 'plantillas', 'excel');
 
 let dir: string;
 beforeEach(() => {

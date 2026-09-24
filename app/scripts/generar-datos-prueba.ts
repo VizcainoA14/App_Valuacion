@@ -1,6 +1,6 @@
 /**
  * Genera un juego de datos de prueba para un hospital ficticio, partiendo de las
- * PLANTILLAS REALES de `Plantillas_Valuacion_Activos/excel`.
+ * PLANTILLAS REALES de `especificacion/plantillas/excel`.
  *
  * Se parte de los archivos reales a propósito: así las columnas, la fila de
  * encabezados y la fila de ejemplo son exactamente las que la aplicación espera,
@@ -19,8 +19,8 @@ import { fileURLToPath } from 'node:url';
 
 const raizApp = join(dirname(fileURLToPath(import.meta.url)), '..');
 const raizRepo = join(raizApp, '..');
-const plantillas = join(raizRepo, 'Plantillas_Valuacion_Activos', 'excel');
-const salida = join(raizRepo, 'Datos_de_prueba');
+const plantillas = join(raizRepo, 'especificacion', 'plantillas', 'excel');
+const salida = join(raizRepo, 'datos_de_prueba');
 
 /** La fila 7 de cada plantilla es el ejemplo (azul); los datos empiezan en la 8. */
 const PRIMERA_FILA = 8;
@@ -382,7 +382,7 @@ function generarLeeme(): void {
 
 > **Hospital ficticio.** Ningún dato de esta carpeta corresponde a una entidad real.
 > Se genera con \`npm run datos:prueba\` desde \`/app\`, a partir de las plantillas
-> reales de \`Plantillas_Valuacion_Activos/excel\`.
+> reales de \`especificacion/plantillas/excel\`.
 
 | Dato | Valor |
 |---|---|

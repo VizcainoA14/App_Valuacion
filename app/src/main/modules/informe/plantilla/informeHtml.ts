@@ -4,7 +4,7 @@
  * Función pura: datos → cadena. Se puede probar sin Electron, y es la misma
  * maqueta que ve el usuario en pantalla y la que sale en el PDF.
  *
- * Dos exigencias de `/Teoria` mandan sobre el diseño:
+ * Dos exigencias de `/especificacion/teoria` mandan sobre el diseño:
  *   RF-06-08  el método de depreciación aplicado va **en el encabezado**
  *   ANEXO_C   lo no calculado se declara con su motivo, nunca como un cero
  */

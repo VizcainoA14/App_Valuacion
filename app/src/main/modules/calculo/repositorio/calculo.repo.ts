@@ -30,7 +30,7 @@ export interface EntradaBien {
 }
 
 /**
- * Un correctivo "fallido" es aquel cuyo resultado no fue satisfactorio. `/Teoria`
+ * Un correctivo "fallido" es aquel cuyo resultado no fue satisfactorio. `/especificacion/teoria`
  * no fija el catálogo de `mantenimiento.resultado` (CT-17: texto libre), así que
  * se reconoce por lo que la plantilla `PL-05` sugiere y se descarta lo demás.
  */

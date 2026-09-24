@@ -37,7 +37,7 @@ export function esCandidatoBaja(e: EntradaCandidatoBaja): ResultadoCandidatoBaja
   if (indice !== null && indice.gte(1)) {
     motivos.push(`Superó su vida útil técnica: índice de obsolescencia ${indice.toFixed(4)}.`);
   }
-  // /Teoria escribe "≥ 0,81" frente a un umbral amarillo de 0,80. Con índices de
+  // /especificacion/teoria escribe "≥ 0,81" frente a un umbral amarillo de 0,80. Con índices de
   // cuatro decimales eso deja fuera el tramo 0,8001–0,8099, que es el mismo hueco
   // que corrigió CT-04: se lee como "por encima del umbral amarillo".
   if (indice !== null && indice.gt(e.umbralAmarillo) && ESTADOS_QUE_JUSTIFICAN_BAJA.includes(e.estadoActual)) {

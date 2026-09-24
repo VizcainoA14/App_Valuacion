@@ -1,5 +1,5 @@
 /**
- * Los datos de prueba del hospital ficticio (`/Datos_de_prueba`) se importan
+ * Los datos de prueba del hospital ficticio (`/datos_de_prueba`) se importan
  * de verdad, con el mismo camino que usaría un hospital.
  *
  * Sin esto, el juego de datos y su LEEME serían una promesa: se generan con un
@@ -15,8 +15,8 @@ import { limpiarPrevisualizaciones } from '../../../infraestructura/documental/e
 import type { InformeImportacion, PlantillaImportable } from '../../../../compartido/dtos/importacion';
 
 const raizRepo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..', '..');
-const limpio = join(raizRepo, 'Datos_de_prueba', '01_caso_limpio');
-const conProblemas = join(raizRepo, 'Datos_de_prueba', '02_caso_con_problemas');
+const limpio = join(raizRepo, 'datos_de_prueba', '01_caso_limpio');
+const conProblemas = join(raizRepo, 'datos_de_prueba', '02_caso_con_problemas');
 
 const FECHA_CORTE = '2025-12-31';
 const BIENES_ESPERADOS = 41;

@@ -12,7 +12,7 @@ description: >-
 
 Este proyecto se desarrolla a lo largo de muchas sesiones, posiblemente por personas y agentes
 distintos. La continuidad **no** depende de la memoria de nadie: depende de tres archivos en
-`/gestion_proyecto`. Esta skill define cómo leerlos y cómo mantenerlos.
+`/proyecto/gestion`. Esta skill define cómo leerlos y cómo mantenerlos.
 
 Configuración legible por máquina: `.claude/config_sesion.json`.
 
@@ -24,7 +24,7 @@ Configuración legible por máquina: `.claude/config_sesion.json`.
 
 ### Paso 1 · Recuperar el contexto (siempre)
 
-Leer `gestion_proyecto/estado_actual.md`. Contiene:
+Leer `proyecto/gestion/estado_actual.md`. Contiene:
 - La última tarea realizada.
 - La tarea actual en ejecución.
 - El siguiente paso inmediato.
@@ -32,19 +32,19 @@ Leer `gestion_proyecto/estado_actual.md`. Contiene:
 
 ### Paso 2 · Ver el progreso (siempre)
 
-Leer `gestion_proyecto/roadmap_progreso.md`: qué está completado, en curso, pendiente o bloqueado.
+Leer `proyecto/gestion/roadmap_progreso.md`: qué está completado, en curso, pendiente o bloqueado.
 
 ### Paso 3 · Entender lo reciente (siempre)
 
-Leer las **2 o 3 entradas más recientes** de `gestion_proyecto/bitacora.md`. No el archivo entero.
+Leer las **2 o 3 entradas más recientes** de `proyecto/gestion/bitacora.md`. No el archivo entero.
 
 ### Paso 4 · Según la tarea
 
 | Si la tarea toca… | Leer también |
 |---|---|
-| Arquitectura, stack o dependencias | `plan_desarrollo/DECISIONES/README.md` — **las 25 decisiones están cerradas, no se reabren** |
-| Motor de cálculo, importación o responsables | `plan_desarrollo/FASE_1_ANALISIS/1.4_contradicciones_teoria.md` — consultar la resolución adoptada. Las 15 `CT-*` están **resueltas** y `/Teoria` está en la versión **2.1** |
-| Cualquier implementación | `plan_desarrollo/FASE_5_IMPLEMENTACION/5.0_backlog_maestro.md` — localizar la tarea, sus dependencias y su criterio de verificación |
+| Arquitectura, stack o dependencias | `proyecto/plan/DECISIONES/README.md` — **las 25 decisiones están cerradas, no se reabren** |
+| Motor de cálculo, importación o responsables | `proyecto/plan/FASE_1_ANALISIS/1.4_contradicciones_teoria.md` — consultar la resolución adoptada. Las 15 `CT-*` están **resueltas** y `/especificacion/teoria` está en la versión **2.1** |
+| Cualquier implementación | `proyecto/plan/FASE_5_IMPLEMENTACION/5.0_backlog_maestro.md` — localizar la tarea, sus dependencias y su criterio de verificación |
 | Interfaz de usuario | Invocar la skill `apple-design` |
 | Procesos de Electron, IPC, empaquetado | Invocar la skill `electron` |
 
@@ -70,10 +70,10 @@ duplicado o destruido.
 
 ### Qué actualizar
 
-**1. `gestion_proyecto/estado_actual.md`** — las cuatro secciones: última tarea, tarea actual,
+**1. `proyecto/gestion/estado_actual.md`** — las cuatro secciones: última tarea, tarea actual,
 siguiente paso, bloqueos. Y la fecha y el autor.
 
-**2. `gestion_proyecto/roadmap_progreso.md`** — el estado de las tareas afectadas, la tabla de
+**2. `proyecto/gestion/roadmap_progreso.md`** — el estado de las tareas afectadas, la tabla de
 resumen y la tabla de tareas bloqueadas.
 
 | Símbolo | Estado |
@@ -84,7 +84,7 @@ resumen y la tabla de tareas bloqueadas.
 | 🔵 | Bloqueado |
 | ⏭️ | Omitido (requiere justificación en la bitácora) |
 
-**3. `gestion_proyecto/bitacora.md`** — una entrada nueva **arriba**:
+**3. `proyecto/gestion/bitacora.md`** — una entrada nueva **arriba**:
 
 ```markdown
 ## AAAA-MM-DD · <quién> · <título en una línea>
@@ -113,12 +113,12 @@ resumen y la tabla de tareas bloqueadas.
 
 ## 3. Sincronización con el plan
 
-`roadmap_progreso.md` debe reflejar siempre las fases y tareas de `/plan_desarrollo`.
+`roadmap_progreso.md` debe reflejar siempre las fases y tareas de `/proyecto/plan`.
 
 - Si cambia el backlog maestro, se actualiza el roadmap **en la misma sesión**.
 - Los identificadores `T-*` son estables: no se renumeran. Una tarea cancelada se marca Omitida, no
   se borra.
-- Los códigos de `/Teoria` (`RF-`, `RN-`, `VAL-`, `EN-`, `IN-`, `PL-`, `INT-`) **nunca** se renumeran
+- Los códigos de `/especificacion/teoria` (`RF-`, `RN-`, `VAL-`, `EN-`, `IN-`, `PL-`, `INT-`) **nunca** se renumeran
   ni se inventan.
 - Verificación antes de cerrar sesión: el número de tareas del roadmap coincide con el del backlog.
 
@@ -129,18 +129,18 @@ resumen y la tabla de tareas bloqueadas.
 ### Precedencia documental
 
 ```
-1. /Teoria/ANEXO_C_FORMULAS_Y_REGLAS.md   ← manda en el motor de cálculo
-2. /Teoria/*                              ← especificación funcional
-3. /plan_desarrollo/*                     ← cómo construirlo
-4. /gestion_proyecto/*                    ← dónde vamos
+1. /especificacion/teoria/ANEXO_C_FORMULAS_Y_REGLAS.md   ← manda en el motor de cálculo
+2. /especificacion/teoria/*                              ← especificación funcional
+3. /proyecto/plan/*                     ← cómo construirlo
+4. /proyecto/gestion/*                    ← dónde vamos
 ```
 
-### Nunca contradecir `/Teoria`
+### Nunca contradecir `/especificacion/teoria`
 
-La versión vigente es la **2.1**. Cuando `/Teoria` se contradice a sí misma, se documenta como una
+La versión vigente es la **2.1**. Cuando `/especificacion/teoria` se contradice a sí misma, se documenta como una
 `CT-*` nueva en `1.4_contradicciones_teoria.md`, con severidad y resolución propuesta. Si la
-resolución exige **corregir** `/Teoria`, se aplica con nota al pie fechada en el documento afectado y
-entrada en `/Teoria/CORRECCIONES.md`. **Nunca se corrige en silencio.**
+resolución exige **corregir** `/especificacion/teoria`, se aplica con nota al pie fechada en el documento afectado y
+entrada en `/especificacion/teoria/CORRECCIONES.md`. **Nunca se corrige en silencio.**
 
 ### Las decisiones cerradas no se reabren
 
@@ -174,11 +174,11 @@ Decididas el 2026-09-01. **No se re-discuten.**
 
 Al 2026-09-01:
 
-- **Planificación completa.** `/plan_desarrollo` con 9 fases, 25 ADR y 64 tareas.
-- **Las 15 contradicciones de `/Teoria`, resueltas.** `/Teoria` corregida a la versión **2.1**.
+- **Planificación completa.** `/proyecto/plan` con 9 fases, 25 ADR y 64 tareas.
+- **Las 15 contradicciones de `/especificacion/teoria`, resueltas.** `/especificacion/teoria` corregida a la versión **2.1**.
 - **Ninguna tarea bloqueada.**
 - **Implementación no iniciada.** El directorio `/app` no existe.
 - **Siguiente acción: `T-A-01`** (congelar versiones).
 
-Para el detalle, leer `gestion_proyecto/estado_actual.md`. Este resumen puede quedar desactualizado;
+Para el detalle, leer `proyecto/gestion/estado_actual.md`. Este resumen puede quedar desactualizado;
 ese archivo, no.

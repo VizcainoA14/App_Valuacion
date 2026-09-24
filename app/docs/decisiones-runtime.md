@@ -3,10 +3,10 @@
 **Tarea:** `T-A-01` · **Fecha de congelación:** 2026-09-02 · **Verificado contra:** registro público de npm y
 `https://electronjs.org/headers/index.json`
 
-> Este archivo **sustituye** la línea base propuesta en `plan_desarrollo/FASE_3_STACK/3.1_stack_y_versiones.md`
+> Este archivo **sustituye** la línea base propuesta en `proyecto/plan/FASE_3_STACK/3.1_stack_y_versiones.md`
 > (así lo ordena ese mismo documento, §1). Todas las versiones se fijan **exactas** en `package.json`
 > (sin `^` ni `~`) con `package-lock.json` versionado. Cambiar cualquiera de estas versiones exige una
-> entrada en `/gestion_proyecto/bitacora.md` y, si es la major de Electron, el procedimiento de ADR-002.
+> entrada en `/proyecto/gestion/bitacora.md` y, si es la major de Electron, el procedimiento de ADR-002.
 >
 > Para re-verificar: `npm run verificar:versiones`.
 

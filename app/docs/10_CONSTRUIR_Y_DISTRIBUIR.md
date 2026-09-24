@@ -11,7 +11,7 @@
 | `npm run dist:win` | **El instalador** → `dist/*.exe` |
 | `npm run verificar:todo` | La puerta de calidad |
 | `npm run test:e2e` | Playwright |
-| `npm run datos:prueba` | Genera el hospital ficticio en `/Datos_de_prueba` |
+| `npm run datos:prueba` | Genera el hospital ficticio en `/datos_de_prueba` |
 | `npm run instructivo` | Genera el manual de diligenciamiento |
 | `npm run db:generar` | Migración nueva desde el esquema (drizzle-kit) |
 | `npm run db:migrar` | Aplica migraciones desde consola |

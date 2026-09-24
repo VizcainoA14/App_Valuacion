@@ -1,6 +1,6 @@
 # Piso de compatibilidad R-05 (4 años desde 2026-09 = septiembre de 2022).
 # Entorno por defecto: aplica al código compartido, al CSS SIEMPRE, y a un
-# eventual despliegue en navegador. Ver plan_desarrollo/FASE_3_STACK/3.2 §2-3.
+# eventual despliegue en navegador. Ver proyecto/plan/FASE_3_STACK/3.2 §2-3.
 [production]
 chrome >= 105
 edge >= 105

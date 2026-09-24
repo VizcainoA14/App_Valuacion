@@ -1,7 +1,7 @@
 /**
  * TR-03 (ADR-026 etapa 2) — la aplicación entrega sus plantillas ya parametrizadas
  * con los catálogos del hospital (ANEXO_A §6.1). Se comprueba contra los libros
- * reales de `Plantillas_Valuacion_Activos`.
+ * reales de `especificacion/plantillas`.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import ExcelJS from 'exceljs';

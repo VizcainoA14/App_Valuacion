@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { componerCodigo, validarSegmentos, CONVENCION_GENERICA, LONGITUD_CONSECUTIVO_GENERICA } from './codigoInstitucional';
 
 describe('componerCodigo', () => {
-  it('reproduce el ejemplo de /Teoria: HSV · 01 · AGM · 01 → HSV01AGM01', () => {
+  it('reproduce el ejemplo de /especificacion/teoria: HSV · 01 · AGM · 01 → HSV01AGM01', () => {
     const codigo = componerCodigo(
       [{ tipo: 'PREFIJO_ENTIDAD', valor: 'HSV' }, { tipo: 'CODIGO_SEDE' }, { tipo: 'ABREVIATURA_TIPO' }, { tipo: 'CONSECUTIVO' }],
       2,

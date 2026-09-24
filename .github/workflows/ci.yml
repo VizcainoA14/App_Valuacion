@@ -52,7 +52,7 @@ jobs:
       - name: Presupuesto de rendimiento (20.000 bienes)
         run: npm run test:rendimiento
 
-      - name: Trazabilidad /Teoria (RG-15)
+      - name: Trazabilidad /especificacion/teoria (RG-15)
         run: npm run trazabilidad
 
       - name: Empaquetar (RG-06)

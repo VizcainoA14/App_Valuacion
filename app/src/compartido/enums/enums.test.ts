@@ -1,6 +1,6 @@
 /**
  * T-B-01 — Prueba de exhaustividad de los enums.
- * El oráculo es la tabla literal de ANEXO_B §5 (+ §6.2): si /Teoria cambia un
+ * El oráculo es la tabla literal de ANEXO_B §5 (+ §6.2): si /especificacion/teoria cambia un
  * valor, este test falla antes de que lo haga una resolución firmada.
  */
 import { describe, expect, it } from 'vitest';
@@ -54,7 +54,7 @@ describe('los 15 catálogos canónicos de ANEXO_B', () => {
   });
 
   it.each(CATALOGOS_CANONICOS.map((c) => [c.nombre, c] as const))(
-    '%s tiene exactamente los valores de /Teoria, en su orden',
+    '%s tiene exactamente los valores de /especificacion/teoria, en su orden',
     (nombre, catalogo) => {
       expect([...catalogo.valores]).toEqual(ANEXO_B_5[nombre]);
     },

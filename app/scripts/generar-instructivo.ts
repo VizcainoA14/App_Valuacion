@@ -17,7 +17,7 @@ import { PL_05 } from '../src/main/modules/hojas-vida/importacion/plantillaPl05'
 import { PLANTILLAS as CATALOGO_PLANTILLAS } from '../src/main/infraestructura/documental/excel/catalogoPlantillas';
 import type { ColumnaPlantilla, DefinicionPlantilla } from '../src/main/infraestructura/documental/excel/importador';
 
-const salida = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Datos_de_prueba');
+const salida = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'datos_de_prueba');
 
 const TIPO_LEGIBLE: Readonly<Record<string, string>> = {
   texto: 'Texto',

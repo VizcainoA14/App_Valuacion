@@ -10,35 +10,35 @@
     "pasos": [
       {
         "orden": 1,
-        "archivo": "gestion_proyecto/estado_actual.md",
+        "archivo": "proyecto/gestion/estado_actual.md",
         "motivo": "Recuperar el contexto: última tarea, tarea actual, siguiente paso, bloqueos."
       },
       {
         "orden": 2,
-        "archivo": "gestion_proyecto/roadmap_progreso.md",
+        "archivo": "proyecto/gestion/roadmap_progreso.md",
         "motivo": "Saber qué tareas están completadas, en curso, pendientes o bloqueadas."
       },
       {
         "orden": 3,
-        "archivo": "gestion_proyecto/bitacora.md",
+        "archivo": "proyecto/gestion/bitacora.md",
         "motivo": "Leer las 2 o 3 entradas más recientes para entender qué se decidió y por qué.",
         "alcance": "Solo las entradas recientes, no el archivo completo."
       },
       {
         "orden": 4,
-        "archivo": "plan_desarrollo/DECISIONES/README.md",
+        "archivo": "proyecto/plan/DECISIONES/README.md",
         "motivo": "Conocer las 25 decisiones ya cerradas. NO volver a proponerlas ni discutirlas.",
         "condicion": "Si la tarea toca arquitectura, stack o dependencias."
       },
       {
         "orden": 5,
-        "archivo": "plan_desarrollo/FASE_1_ANALISIS/1.4_contradicciones_teoria.md",
-        "motivo": "Consultar la resolucion adoptada para cada contradiccion. Las 15 estan RESUELTAS desde el 2026-09-01; /Teoria fue corregida a la version 2.1.",
+        "archivo": "proyecto/plan/FASE_1_ANALISIS/1.4_contradicciones_teoria.md",
+        "motivo": "Consultar la resolucion adoptada para cada contradiccion. Las 15 estan RESUELTAS desde el 2026-09-01; /especificacion/teoria fue corregida a la version 2.1.",
         "condicion": "Si la tarea toca el motor de cálculo, la importación o el modelo de usuarios."
       },
       {
         "orden": 6,
-        "archivo": "plan_desarrollo/FASE_5_IMPLEMENTACION/5.0_backlog_maestro.md",
+        "archivo": "proyecto/plan/FASE_5_IMPLEMENTACION/5.0_backlog_maestro.md",
         "motivo": "Localizar la tarea concreta, sus dependencias y su criterio de verificación."
       }
     ],
@@ -58,7 +58,7 @@
     ],
     "acciones": [
       {
-        "archivo": "gestion_proyecto/estado_actual.md",
+        "archivo": "proyecto/gestion/estado_actual.md",
         "actualizar": [
           "Última tarea realizada",
           "Tarea actual en ejecución",
@@ -68,7 +68,7 @@
         ]
       },
       {
-        "archivo": "gestion_proyecto/roadmap_progreso.md",
+        "archivo": "proyecto/gestion/roadmap_progreso.md",
         "actualizar": [
           "Estado de las tareas afectadas (Pendiente / En curso / Completado / Bloqueado / Omitido)",
           "Tabla de resumen con los conteos",
@@ -76,7 +76,7 @@
         ]
       },
       {
-        "archivo": "gestion_proyecto/bitacora.md",
+        "archivo": "proyecto/gestion/bitacora.md",
         "actualizar": [
           "Añadir una entrada nueva ARRIBA, con el formato documentado en el propio archivo"
         ]
@@ -86,7 +86,7 @@
         "actualizar": [
           "Marcar como IMPLEMENTADO los requisitos que la tarea cubre"
         ],
-        "condicion": "Si la tarea implementó requisitos de /Teoria y el archivo ya existe."
+        "condicion": "Si la tarea implementó requisitos de /especificacion/teoria y el archivo ya existe."
       }
     ],
     "prohibido": [
@@ -98,27 +98,27 @@
   },
   "sincronizacion": {
     "obligatorio": true,
-    "descripcion": "roadmap_progreso.md debe coincidir siempre con las fases y tareas de /plan_desarrollo.",
+    "descripcion": "roadmap_progreso.md debe coincidir siempre con las fases y tareas de /proyecto/plan.",
     "reglas": [
-      "Si se añade, elimina o renombra una tarea en plan_desarrollo/FASE_5_IMPLEMENTACION/5.0_backlog_maestro.md, se actualiza roadmap_progreso.md en la MISMA sesión.",
+      "Si se añade, elimina o renombra una tarea en proyecto/plan/FASE_5_IMPLEMENTACION/5.0_backlog_maestro.md, se actualiza roadmap_progreso.md en la MISMA sesión.",
       "Si se añade una fase al plan, se añade su fila a la tabla de fases del roadmap.",
       "Los identificadores de tarea (T-*) son estables: no se renumeran. Una tarea cancelada se marca como Omitida, no se borra.",
-      "Los códigos de /Teoria (RF-, RN-, VAL-, EN-, IN-, PL-, INT-) NUNCA se renumeran ni se inventan."
+      "Los códigos de /especificacion/teoria (RF-, RN-, VAL-, EN-, IN-, PL-, INT-) NUNCA se renumeran ni se inventan."
     ],
     "verificacion": "Antes de cerrar la sesión, comprobar que el número de tareas del roadmap coincide con el del backlog maestro."
   },
   "reglas_de_trabajo": {
     "precedencia_documental": [
-      "1. /Teoria/ANEXO_C_FORMULAS_Y_REGLAS.md — manda en todo lo relativo al motor de cálculo, por encima de cualquier documento de paso.",
-      "2. /Teoria/* — especificación funcional autoritativa.",
-      "3. /plan_desarrollo/* — cómo construirlo.",
-      "4. /gestion_proyecto/* — dónde vamos."
+      "1. /especificacion/teoria/ANEXO_C_FORMULAS_Y_REGLAS.md — manda en todo lo relativo al motor de cálculo, por encima de cualquier documento de paso.",
+      "2. /especificacion/teoria/* — especificación funcional autoritativa.",
+      "3. /proyecto/plan/* — cómo construirlo.",
+      "4. /proyecto/gestion/* — dónde vamos."
     ],
-    "nunca_contradecir_teoria": "El plan y el codigo no contradicen /Teoria (version vigente: 2.1). Cuando /Teoria se contradice a si misma, la discrepancia se documenta en plan_desarrollo/FASE_1_ANALISIS/1.4_contradicciones_teoria.md como una CT-* nueva, con resolucion propuesta y severidad. Si la resolucion exige corregir /Teoria, se aplica CON nota al pie en el documento afectado y entrada en /Teoria/CORRECCIONES.md. Nunca se corrige en silencio.",
-    "decisiones_cerradas": "Las 25 decisiones de plan_desarrollo/DECISIONES/ están cerradas. No se reabren. Si aparece información nueva que las invalide, se abre un ADR NUEVO que sustituye al anterior; el original no se edita.",
+    "nunca_contradecir_teoria": "El plan y el codigo no contradicen /especificacion/teoria (version vigente: 2.1). Cuando /especificacion/teoria se contradice a si misma, la discrepancia se documenta en proyecto/plan/FASE_1_ANALISIS/1.4_contradicciones_teoria.md como una CT-* nueva, con resolucion propuesta y severidad. Si la resolucion exige corregir /especificacion/teoria, se aplica CON nota al pie en el documento afectado y entrada en /especificacion/teoria/CORRECCIONES.md. Nunca se corrige en silencio.",
+    "decisiones_cerradas": "Las 25 decisiones de proyecto/plan/DECISIONES/ están cerradas. No se reabren. Si aparece información nueva que las invalide, se abre un ADR NUEVO que sustituye al anterior; el original no se edita.",
     "tareas_bloqueadas": "Actualmente NO hay tareas bloqueadas. Si una tarea se bloquea en el futuro, no se ejecuta hasta resolver la causa; si el bloqueo se ignora por presion de tiempo, debe quedar registrado en la bitacora como deuda asumida.",
     "motor_de_calculo": "Regla especial: ningún valor esperado en los tests del motor de cálculo se modifica sin una entrada en la bitácora que lo justifique. Es la mitigación del riesgo RG-01 (validar el motor contra cifras erróneas).",
-    "idioma": "El código, los nombres de tabla, los enums y la documentación están en español, igual que /Teoria. Excepciones: las APIs de las librerías y las palabras clave del lenguaje.",
+    "idioma": "El código, los nombres de tabla, los enums y la documentación están en español, igual que /especificacion/teoria. Excepciones: las APIs de las librerías y las palabras clave del lenguaje.",
     "restricciones_de_producto": [
       "La aplicacion es de ESCRITORIO, MONOUSUARIO y SIN INICIO DE SESION. Los 10 perfiles de ANEXO_B 7.2 son un catalogo de Responsable para atribuir firmas en documentos, NO cuentas de acceso. Ver ADR-016.",
       "El inventario entra SOLO por importacion de PL-03. No hay captura en campo, ni camara, ni escaner, ni app movil. RF-02-01 y RF-02-02 estan NO IMPLEMENTADOS. Ver ADR-015.",
@@ -133,18 +133,18 @@
       "ruta": ".claude/skills/electron-skill/SKILL.md",
       "usar_para": "Arquitectura main/preload/renderer, IPC seguro, empaquetado, actualizaciones.",
       "aplicada_en": [
-        "plan_desarrollo/FASE_2_ARQUITECTURA/2.2_procesos_electron.md",
-        "plan_desarrollo/FASE_2_ARQUITECTURA/2.3_contrato_ipc.md",
-        "plan_desarrollo/FASE_7_SEGURIDAD/7.1_seguridad.md",
-        "plan_desarrollo/FASE_8_BUILD/8.1_build_y_distribucion.md"
+        "proyecto/plan/FASE_2_ARQUITECTURA/2.2_procesos_electron.md",
+        "proyecto/plan/FASE_2_ARQUITECTURA/2.3_contrato_ipc.md",
+        "proyecto/plan/FASE_7_SEGURIDAD/7.1_seguridad.md",
+        "proyecto/plan/FASE_8_BUILD/8.1_build_y_distribucion.md"
       ]
     },
     "apple-design-skill": {
       "ruta": ".claude/skills/apple-design-skill/SKILL.md",
       "usar_para": "Revisión de UI/UX, accesibilidad, convenciones de escritorio, modo oscuro.",
       "aplicada_en": [
-        "plan_desarrollo/FASE_2_ARQUITECTURA/2.5_estado_renderer.md",
-        "plan_desarrollo/FASE_9_VALIDACION/9.1_checklist_final.md (sección G)"
+        "proyecto/plan/FASE_2_ARQUITECTURA/2.5_estado_renderer.md",
+        "proyecto/plan/FASE_9_VALIDACION/9.1_checklist_final.md (sección G)"
       ],
       "nota": "Invocar esta skill al diseñar o revisar cualquiera de las 52 pantallas."
     },
@@ -160,7 +160,7 @@
     },
     {
       "codigo": "ADV-02",
-      "texto": "RESUELTA el 2026-09-01. Las 15 contradicciones CT-* estan resueltas y /Teoria fue corregida a la version 2.1 (ver /Teoria/CORRECCIONES.md). NO quedan tareas bloqueadas."
+      "texto": "RESUELTA el 2026-09-01. Las 15 contradicciones CT-* estan resueltas y /especificacion/teoria fue corregida a la version 2.1 (ver /especificacion/teoria/CORRECCIONES.md). NO quedan tareas bloqueadas."
     },
     {
       "codigo": "ADV-03",
@@ -168,7 +168,7 @@
     },
     {
       "codigo": "ADV-04",
-      "texto": "Al leer /Teoria, tener presente que la version vigente es la 2.1. Los documentos corregidos llevan una nota al pie fechada el 2026-09-01 que apunta a /Teoria/CORRECCIONES.md. Si se encuentra una cifra sin esa nota que parezca incorrecta, verificarla antes de codificar contra ella."
+      "texto": "Al leer /especificacion/teoria, tener presente que la version vigente es la 2.1. Los documentos corregidos llevan una nota al pie fechada el 2026-09-01 que apunta a /especificacion/teoria/CORRECCIONES.md. Si se encuentra una cifra sin esa nota que parezca incorrecta, verificarla antes de codificar contra ella."
     }
   ]
 }

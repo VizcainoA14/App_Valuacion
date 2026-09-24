@@ -2,7 +2,7 @@
  * T-D-01 — Casos de prueba del motor, ESCRITOS ANTES QUE EL MOTOR.
  *
  * Mitigación de `RG-01`: todos los valores esperados de este archivo salen de
- * `/Teoria` (`ANEXO_C` §2.3, §2.4, §2.6, §2.7, §3.3, §3.4, §4 y la tabla de §11),
+ * `/especificacion/teoria` (`ANEXO_C` §2.3, §2.4, §2.6, §2.7, §3.3, §3.4, §4 y la tabla de §11),
  * NUNCA de ejecutar el código. Si un valor esperado se ajusta al resultado del
  * motor, el motor queda validado contra sí mismo y sus errores llegan a
  * resoluciones firmadas por el Gerente de una entidad pública.
@@ -19,7 +19,7 @@ import { calcularDeterioro } from './deterioro';
 import { esCandidatoBaja } from './candidatoBaja';
 
 const f = (iso: string): FechaIso => comoFechaIso(iso);
-/** Los importes de `/Teoria` están en pesos; la base y el motor usan centavos. */
+/** Los importes de `/especificacion/teoria` están en pesos; la base y el motor usan centavos. */
 const pesos = (v: number): Centavos => comoCentavos(Math.round(v * 100));
 
 /** Los umbrales por defecto de ANEXO_B §2.5. */
@@ -197,7 +197,7 @@ describe('ANEXO_C §3.3 · los tres métodos de conteo sobre el mismo bien', () 
     expect(c.valor.metodoConteoAplicado).toBe('fraccion_anual');
   });
 
-  it('la diferencia entre métodos es la que publica /Teoria: 14.623,79', () => {
+  it('la diferencia entre métodos es la que publica /especificacion/teoria: 14.623,79', () => {
     const completo = calcularDepreciacion({ ...BIEN_3_3, parametros: { ...PARAMETROS, metodoConteoMeses: 'mes_completo' } });
     const exactos = calcularDepreciacion({ ...BIEN_3_3, parametros: PARAMETROS });
     if (completo.estado !== 'CALCULADO' || exactos.estado !== 'CALCULADO') throw new Error('se esperaba CALCULADO');

@@ -1,6 +1,6 @@
 /**
  * T-C-07 — importación de PL-03 y PL-05 sobre las PLANTILLAS REALES de
- * Plantillas_Valuacion_Activos/excel. Es la etapa 3 de ADR-026: lo que llena la
+ * especificacion/plantillas/excel. Es la etapa 3 de ADR-026: lo que llena la
  * base con lo que el motor de cálculo necesita.
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -14,7 +14,7 @@ import { limpiarPrevisualizaciones } from '../../../infraestructura/documental/e
 import { TIPO_SOPORTE_RECONOCIMIENTO_INICIAL } from '../../hojas-vida';
 
 const raizRepo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..', '..');
-const plantillas = join(raizRepo, 'Plantillas_Valuacion_Activos', 'excel');
+const plantillas = join(raizRepo, 'especificacion', 'plantillas', 'excel');
 
 let dir: string;
 beforeEach(() => {

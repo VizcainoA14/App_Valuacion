@@ -1,6 +1,6 @@
 /**
  * Definiciones de PL-01, PL-02 y PL-02b tal como existen en
- * Plantillas_Valuacion_Activos/excel (fila 6 encabezados, fila 7 ejemplo).
+ * especificacion/plantillas/excel (fila 6 encabezados, fila 7 ejemplo).
  * Los nombres de columna son los del archivo real; el lector normaliza tildes
  * (PL-01 trae `dirección`/`teléfono`, CT-18).
  */

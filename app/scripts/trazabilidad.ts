@@ -1,10 +1,10 @@
 /**
- * T-A-06 — Matriz de trazabilidad /Teoria → docs/trazabilidad.csv (riesgo RG-15).
+ * T-A-06 — Matriz de trazabilidad /especificacion/teoria → docs/trazabilidad.csv (riesgo RG-15).
  *
- * 1. Recorre los .md de /Teoria y extrae todos los códigos RF-, RN-, VAL-, EN-,
+ * 1. Recorre los .md de /especificacion/teoria y extrae todos los códigos RF-, RN-, VAL-, EN-,
  *    EN-G- e INT- (únicos).
  * 2. Compara los conteos contra la tabla de FASE_1_ANALISIS/1.1 §1. Si difieren,
- *    FALLA: significa que /Teoria cambió y hay que actualizar el análisis.
+ *    FALLA: significa que /especificacion/teoria cambió y hay que actualizar el análisis.
  * 3. Genera/actualiza docs/trazabilidad.csv CONSERVANDO el estado ya registrado
  *    (un requisito marcado IMPLEMENTADO no vuelve a PENDIENTE al regenerar).
  *
@@ -15,12 +15,13 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const raizApp = join(dirname(fileURLToPath(import.meta.url)), '..');
-const dirTeoria = join(raizApp, '..', 'Teoria');
+const dirTeoria = join(raizApp, '..', 'especificacion', 'teoria');
 const rutaCsv = join(raizApp, 'docs', 'trazabilidad.csv');
 const rutaAnalisis = join(
   raizApp,
   '..',
-  'plan_desarrollo',
+  'proyecto',
+  'plan',
   'FASE_1_ANALISIS',
   '1.1_requerimientos.md',
 );
@@ -74,7 +75,7 @@ for (const [familia, esperado] of Object.entries(esperados)) {
 }
 if (fallo) {
   console.error(
-    '\nFALLO (RG-15): /Teoria y el análisis de la Fase 1 divergen. O cambió /Teoria ' +
+    '\nFALLO (RG-15): /especificacion/teoria y el análisis de la Fase 1 divergen. O cambió /especificacion/teoria ' +
       '(actualizar 1.1 §1 y registrar en bitácora) o la extracción encontró códigos mal formados.',
   );
   process.exit(1);
@@ -122,7 +123,7 @@ const filas: Fila[] = ordenados.map((codigo) => {
 const desaparecidos = [...previas.keys()].filter((c) => !codigos.has(c));
 if (desaparecidos.length > 0) {
   console.error(
-    `\nFALLO (RG-15): ${desaparecidos.length} código(s) del CSV ya no existen en /Teoria: ` +
+    `\nFALLO (RG-15): ${desaparecidos.length} código(s) del CSV ya no existen en /especificacion/teoria: ` +
       `${desaparecidos.join(', ')}. Un código nunca se renumera ni se borra en silencio.`,
   );
   process.exit(1);

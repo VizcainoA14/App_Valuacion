@@ -4,7 +4,7 @@ El inventario **solo** entra por aquí (ADR-015). No hay captura en campo.
 
 ## Las 28 plantillas viajan dentro
 
-Las plantillas de `Plantillas_Valuacion_Activos/` se empaquetan en el instalador con
+Las plantillas de `especificacion/plantillas/` se empaquetan en el instalador con
 `extraResources`, así que el hospital **no tiene que buscarlas en ningún correo**. La etapa 2 las
 entrega, y al descargarlas se les inyectan los catálogos de la entidad como **listas desplegables**:
 las clases, sedes y servicios que ese hospital registró.
@@ -70,7 +70,7 @@ Cada catálogo se indexa **dos veces**, y este detalle tiene historia:
 Se prueba **primero el exacto**, así que una coincidencia literal siempre gana y la tolerancia nunca
 puede robarle una fila a otra clase.
 
-> **Por qué existe el índice laxo.** El catálogo sugerido de `/Teoria` §5 dice
+> **Por qué existe el índice laxo.** El catálogo sugerido de `/especificacion/teoria` §5 dice
 > «Equipo médico-científico»; quien llena el formato escribe «EQUIPO MEDICO CIENTIFICO», en mayúscula
 > sostenida y sin tildes, como se llena un formato en papel. **Una tilde y un guion rechazaban 23 de
 > 41 bienes** (reportado el 2026-09-04).
@@ -112,6 +112,6 @@ Para `PL-01` sin entidad todavía, se guarda bajo `_entidades_nuevas`.
 
 ## Datos de prueba
 
-`npm run datos:prueba` genera en `/Datos_de_prueba` un hospital ficticio completo: 41 bienes, 6
+`npm run datos:prueba` genera en `/datos_de_prueba` un hospital ficticio completo: 41 bienes, 6
 clases, 2 sedes, 8 servicios, y un segundo juego **con defectos puestos a propósito** para ver cómo
 se comporta el rechazo. Un test comprueba que ese corpus sigue importando limpio.

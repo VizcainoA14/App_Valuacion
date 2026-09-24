@@ -1,7 +1,7 @@
 /**
  * TR-01 — Catálogo declarativo de validaciones (metadatos). Los predicados viven
  * en el main junto a cada módulo (necesitan la base); aquí está lo que comparten
- * main y renderer: código, paso, severidad y texto de /Teoria, literal.
+ * main y renderer: código, paso, severidad y texto de /especificacion/teoria, literal.
  * Añadir una validación es una entrada aquí + su predicado, no un `if` disperso.
  */
 import type { SeveridadValidacion } from '../dtos/configuracion';
@@ -10,7 +10,7 @@ export interface DefinicionValidacion {
   readonly codigo: string;
   readonly paso: number;
   readonly severidad: SeveridadValidacion;
-  /** Texto literal de /Teoria §8 del paso. */
+  /** Texto literal de /especificacion/teoria §8 del paso. */
   readonly mensaje: string;
 }
 

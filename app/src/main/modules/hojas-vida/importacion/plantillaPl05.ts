@@ -1,5 +1,5 @@
 /**
- * Definición de `PL-05_hoja_de_vida.xlsx` (Plantillas_Valuacion_Activos/excel):
+ * Definición de `PL-05_hoja_de_vida.xlsx` (especificacion/plantillas/excel):
  * hojas HOJA_VIDA, MANTENIMIENTOS y SIN_SOPORTE; encabezados en la fila 6.
  *
  * `fecha_adquisicion` y `costo_adquisicion` son OPCIONALES en el archivo a

@@ -1,6 +1,6 @@
 /**
  * Definición de `PL-03_toma_inventario_fisico.xlsx` tal como existe en
- * Plantillas_Valuacion_Activos/excel: hoja INVENTARIO, encabezados en la fila 6
+ * especificacion/plantillas/excel: hoja INVENTARIO, encabezados en la fila 6
  * y ejemplo en la 7. Los nombres de columna son literalmente los del archivo.
  *
  * `clase_activo`, `sede` y `servicio_ubicacion` llegan como TEXTO —lo que la

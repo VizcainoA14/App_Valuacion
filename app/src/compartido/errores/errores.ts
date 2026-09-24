@@ -3,7 +3,7 @@
  *
  * Un `Error` de JS pierde su clase al cruzar el IPC (plan 2.3 §5), así que toda
  * clase sabe convertirse en `DtoError` serializable. Los códigos son los de
- * /Teoria (`VAL-nn-nn`, `RN-nn-nn`, `INT-nn`) o un identificador técnico en
+ * /especificacion/teoria (`VAL-nn-nn`, `RN-nn-nn`, `INT-nn`) o un identificador técnico en
  * MAYUSCULAS_CON_GUIONES.
  *
  * El motor de cálculo NO lanza estas excepciones para casos de negocio: devuelve

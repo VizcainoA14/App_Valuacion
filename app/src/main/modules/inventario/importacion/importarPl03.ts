@@ -49,7 +49,7 @@ function clave(v: unknown): string {
  * Clave tolerante para comparar nombres de catálogo escritos por personas:
  * ignora tildes y trata la puntuación como separador.
  *
- * No es un capricho. El catálogo sugerido de `/Teoria` §5 dice
+ * No es un capricho. El catálogo sugerido de `/especificacion/teoria` §5 dice
  * «Equipo médico-científico» y el hospital escribe «EQUIPO MEDICO CIENTIFICO»
  * en mayúscula sostenida, como se llena un formato en papel. Sin esto, 23 de 41
  * bienes se rechazaban por una tilde y un guion (reportado el 2026-09-04).

@@ -13,7 +13,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { lanzarApp, raizApp } from './_lanzar';
 
-const PL_01 = join(raizApp, '..', 'Datos_de_prueba', '01_caso_limpio', 'PL-01_parametros_entidad.xlsx');
+const PL_01 = join(raizApp, '..', 'datos_de_prueba', '01_caso_limpio', 'PL-01_parametros_entidad.xlsx');
 
 test('la entidad nace del PL-01 diligenciado, sin teclear nada', async () => {
   test.setTimeout(120_000);

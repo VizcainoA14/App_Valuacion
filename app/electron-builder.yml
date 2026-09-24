@@ -36,7 +36,7 @@ electronLanguages:
 # ANEXO_A §6.1: la aplicación entrega sus propias plantillas. Van fuera del asar
 # para poder leerlas y copiarlas como archivos normales (ADR-026).
 extraResources:
-  - from: ../Plantillas_Valuacion_Activos
+  - from: ../especificacion/plantillas
     to: plantillas
     filter:
       - excel/**
