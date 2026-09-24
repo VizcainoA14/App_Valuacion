@@ -5,22 +5,22 @@ import type { AbreviaturaDto, ConvencionCodigoDto } from '../../../../compartido
 import { ErrorValidacion } from '../../../../compartido/errores';
 import { componerCodigo, validarSegmentos } from '../../../../compartido/reglas/codigoInstitucional';
 import { abreviaturaRepo, convencionRepo } from '../repositorio/convencion.repo';
-import { exigirEntidad } from './entidades';
+import { exigirProceso } from './procesos';
 
 export function obtenerConvencion(e: EntradaValidadaDe<'convencion:obtener'>, ctx: ContextoIpc): ConvencionCodigoDto {
-  exigirEntidad(ctx, e.entidadId);
-  return convencionRepo.obtener(ctx.db, e.entidadId);
+  exigirProceso(ctx, e.procesoId);
+  return convencionRepo.obtener(ctx.db, e.procesoId);
 }
 
 export function guardarConvencion(e: EntradaValidadaDe<'convencion:guardar'>, ctx: ContextoIpc): ConvencionCodigoDto {
-  exigirEntidad(ctx, e.entidadId);
+  exigirProceso(ctx, e.procesoId);
   const problema = validarSegmentos(e.segmentos);
   if (problema !== null) throw new ErrorValidacion('CONVENCION_INVALIDA', problema, { campo: 'segmentos' });
-  const anterior = convencionRepo.obtener(ctx.db, e.entidadId);
-  const guardada = convencionRepo.guardar(ctx.db, e.entidadId, e.segmentos, e.longitudConsecutivo, ctx.ahoraIso());
+  const anterior = convencionRepo.obtener(ctx.db, e.procesoId);
+  const guardada = convencionRepo.guardar(ctx.db, e.procesoId, e.segmentos, e.longitudConsecutivo, ctx.ahoraIso());
   ctx.bitacora.registrar({
     entidadAfectada: 'convencion_codigo',
-    registroId: e.entidadId,
+    registroId: e.procesoId,
     accion: anterior.definida ? 'ACTUALIZAR' : 'CREAR',
     campo: 'segmentos',
     valorAnterior: anterior.definida ? JSON.stringify(anterior.segmentos) : null,
@@ -36,18 +36,18 @@ export function previsualizarCodigo(e: EntradaValidadaDe<'convencion:previsualiz
 }
 
 export function listarAbreviaturas(e: EntradaValidadaDe<'abreviatura:listar'>, ctx: ContextoIpc): AbreviaturaDto[] {
-  return abreviaturaRepo.listar(ctx.db, e.entidadId);
+  return abreviaturaRepo.listar(ctx.db, e.procesoId);
 }
 
 export function guardarAbreviaturas(e: EntradaValidadaDe<'abreviatura:guardar'>, ctx: ContextoIpc): AbreviaturaDto[] {
-  exigirEntidad(ctx, e.entidadId);
+  exigirProceso(ctx, e.procesoId);
   const vistas = new Set<string>();
   for (const a of e.abreviaturas) {
     const clave = a.abreviatura.toUpperCase();
     if (vistas.has(clave)) throw new ErrorValidacion('ABREVIATURA_DUPLICADA', `La abreviatura ${clave} está repetida.`, { campo: 'abreviaturas' });
     vistas.add(clave);
   }
-  const resultado = abreviaturaRepo.reemplazar(ctx.db, e.entidadId, e.abreviaturas);
-  ctx.bitacora.registrar({ entidadAfectada: 'abreviatura_tipo', registroId: e.entidadId, accion: 'ACTUALIZAR', valorNuevo: `${resultado.length} abreviaturas` });
+  const resultado = abreviaturaRepo.reemplazar(ctx.db, e.procesoId, e.abreviaturas);
+  ctx.bitacora.registrar({ entidadAfectada: 'abreviatura_tipo', registroId: e.procesoId, accion: 'ACTUALIZAR', valorNuevo: `${resultado.length} abreviaturas` });
   return resultado;
 }

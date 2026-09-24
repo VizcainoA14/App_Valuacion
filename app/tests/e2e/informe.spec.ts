@@ -1,5 +1,5 @@
 /**
- * ADR-026 etapa 6 — la entrega. Genera el PDF de verdad con `printToPDF`
+ * La entrega: el informe del proceso. Genera el PDF de verdad con `printToPDF`
  * (TR-05, T-G-03) y comprueba que el archivo existe y es un PDF.
  *
  * El diálogo de guardado es nativo y Playwright no lo puede conducir, así que se
@@ -10,7 +10,7 @@ import { test, expect } from '@playwright/test';
 import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { lanzarApp } from './_lanzar';
+import { lanzarApp, seccion } from './_lanzar';
 
 test('generar el informe de valuación en PDF', async () => {
   test.setTimeout(180_000);
@@ -26,18 +26,17 @@ test('generar el informe de valuación en PDF', async () => {
     }, destino);
 
     const pagina = await app.firstWindow();
-    await pagina.getByRole('button', { name: 'Cargar hospital de demostración' }).click();
+    await pagina.getByRole('button', { name: 'Cargar proceso de demostración' }).click();
     await pagina.getByRole('link', { name: /HOSPITAL DE DEMOSTRACIÓN/ }).click();
 
-    // Sin cálculo, la etapa 6 lo dice y no ofrece generar nada.
-    await pagina.getByRole('link', { name: /^6. Informe/ }).click();
+    // Sin cálculo, el informe lo dice y no ofrece generar nada.
+    await seccion(pagina, 'Informe').click();
     await expect(pagina.getByText('Todavía no hay nada que informar')).toBeVisible();
-
-    await pagina.getByRole('link', { name: 'Ir al cálculo' }).click();
-    await pagina.getByRole('button', { name: 'Calcular', exact: true }).click();
-    await expect(pagina.getByRole('button', { name: 'Recalcular' })).toBeVisible();
-
-    await pagina.getByRole('link', { name: /^6. Informe/ }).click();
+    await pagina.getByRole('link', { name: 'Ir a calcular' }).click();
+    await pagina.getByRole('button', { name: 'Calcular 50 bienes al 30/06/2025' }).click();
+    await expect(pagina.locator('[data-prueba="calculo-hecho"]')).toBeVisible();
+    // Desde el cálculo se llega a su informe.
+    await pagina.getByRole('link', { name: 'Informe', exact: true }).click();
     await expect(pagina.getByRole('heading', { name: 'Informe de valuación' })).toBeVisible();
     await expect(pagina.getByText('50 bienes en el anexo', { exact: false })).toBeVisible();
 
@@ -46,6 +45,9 @@ test('generar el informe de valuación en PDF', async () => {
     await expect(previa.getByRole('heading', { name: 'Informe de valuación de activos fijos' })).toBeVisible();
     await expect(previa.getByText('EJEMPLO — SIN VALIDEZ')).toBeVisible();
     await expect(previa.getByRole('heading', { name: '1. Método aplicado' })).toBeVisible();
+    await expect(previa.getByRole('heading', { name: '5. Candidatos a baja' })).toBeVisible();
+    // Sin bloque de firmas: es el soporte de cálculo, no el acto que lo adopta.
+    await expect(previa.getByText('T.P.')).toHaveCount(0);
 
     await pagina.getByRole('button', { name: 'Guardar en PDF' }).click();
     await expect(pagina.getByText('Informe generado')).toBeVisible({ timeout: 60_000 });

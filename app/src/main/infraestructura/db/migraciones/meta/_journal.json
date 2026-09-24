@@ -5,29 +5,22 @@
     {
       "idx": 0,
       "version": "6",
-      "when": 1788364142542,
+      "when": 1790284625104,
       "tag": "0000_esquema_inicial",
       "breakpoints": true
     },
     {
       "idx": 1,
       "version": "6",
-      "when": 1788364191815,
+      "when": 1790284627206,
       "tag": "0001_indices_fts",
       "breakpoints": true
     },
     {
       "idx": 2,
       "version": "6",
-      "when": 1788364622283,
+      "when": 1790284629225,
       "tag": "0002_triggers_integridad",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "6",
-      "when": 1788548102391,
-      "tag": "0003_firmantes_entidad",
       "breakpoints": true
     }
   ]

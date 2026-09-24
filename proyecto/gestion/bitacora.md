@@ -32,6 +32,86 @@ Reglas:
 
 ---
 
+## 2026-09-24 · Claude · ADR-029: el proceso de valuación es lo principal, y cada uno es independiente
+
+**Tareas:** ADR-029 (nuevo) · RF-01-09 clonar parametrización ⏭️
+
+- **Pedido del propietario:** quitar la entidad; lo primero que se ve es iniciar o continuar un
+  proceso, y los procesos son independientes. Decidió: hospital dentro de cada proceso, botón
+  «Finalizar», una fecha de corte por proceso (recalcular reemplaza), inventario de cero.
+- **Modelo:** `entidad` → `proceso` (nombre, fecha de corte, estado, datos del hospital); un corte por
+  proceso (`ux_corte_proceso`); cambiar la fecha descarta el cálculo; `proceso:finalizar` exige
+  cálculo. Canales `corte:listar`/`corte:eliminar` y la clonación, retirados.
+- **Solo lectura por la base:** el generador emite 50 disparadores de finalización y **exige** que
+  cada tabla declare cómo llega a su proceso; una tabla sin ruta rompe `db:triggers`. 68 en total.
+- **Corrección propia a mitad del trabajo:** se había retirado `INT-03` para poder borrar procesos
+  con inventario. Al contrastarlo con `ANEXO_B` («un bien nunca se elimina físicamente», RN-09-09)
+  se restauró: un proceso solo se elimina en curso y **sin inventario** (`PROCESO_CON_INVENTARIO`).
+- **`RG-01`: ningún valor esperado cambió.** Las pruebas de `calculo.test.ts` crean el proceso con la
+  fecha 2025-06-30 y reproducen las mismas cifras (1.135.672.423 centavos, 474.785.600). Lo que se
+  reescribió fueron los caminos: «varios cortes» pasó a «recalcular reemplaza», y se añadieron casos
+  de finalización, independencia entre procesos y fecha futura.
+- **Interfaz:** inicio = procesos (en curso / finalizados); `/proceso/:id` con Resumen y Finalizar;
+  banda de solo lectura; Calcular y Recalcular en una pantalla. Sin «proceso activo» recordado.
+- **Verificado:** `verificar:todo` (369), rendimiento (5), 16 E2E sobre `out/` y sobre el paquete, con capturas revisadas.
+  Las capturas destaparon dos detalles corregidos: el nombre por defecto mostraba la fecha ISO, y un
+  proceso finalizado sugería «recalcule».
+
+**Siguiente:** commit de ADR-028 + ADR-029; después `T-C-03` (ficha editable del bien).
+
+---
+
+## 2026-09-24 · Claude · ADR-028: inventario vivo, cálculo por cortes y sin trámites externos
+
+**Tareas:** ADR-028 (nuevo) · `T-F-02` flujo del Comité ⏭️ · extensiones de ADR-026 ⏭️
+
+- **Pedido del propietario:** que el responsable del hospital haga el barrido y la app calcule, sin
+  que nada externo la determine. Decidió: ningún hospital tiene la app, borrar extensiones, informe
+  al final sin firmas. Registrado en ADR-028 (`adr_producto.md`).
+- **Modelo nuevo:** el bien es de la entidad; cada `PL-03` es un barrido que agrega, actualiza y marca
+  NO_ENCONTRADO (solo en los servicios que recorre); cada cálculo es un corte inmutable con sus
+  parámetros, resultados y exclusiones; las bajas se registran y se anulan, no se tramitan.
+- **Retirado:** ejercicio, `responsable`, contador, confirmación por acta del método (`VAL-01-07`),
+  propuestas de baja, deterioro, 26 tablas de extensiones, 51 validaciones, 23 plantillas del
+  instalador. Migraciones regeneradas desde cero: 18 tablas, 16 disparadores.
+- **Motor intacto** (`compartido/motor` sin cambios) y **ningún valor esperado modificado** (`RG-01`):
+  las cifras de `ANEXO_C` §3.3 se reproducen igual a través de cortes.
+- **Tests reescritos donde cambió el camino, no los valores:** `calculo`, `bajas`, `integridad`,
+  `importarInventario` (casos nuevos de barrido), `validaciones`, E2E. `paso01.spec` pasa a
+  `configuracion.spec`.
+- **Defecto encontrado por la medición:** un barrido de 10.000 bienes tardaba 17 s en actualizar; el
+  trigger FTS5 se disparaba por nombrar la columna. Ahora 0,28 s.
+- **Intermitente, anterior y ajeno a este cambio:** la propiedad fast-check de `fechas.test.ts`
+  (*mes_completo nunca supera a dias_exactos…*) falló 1 vez en ~20 corridas; no se reprodujo en 17
+  más. No se tocó el motor. Queda anotado para investigarlo con la semilla del fallo.
+- **Trazabilidad:** 214 requisitos `FUERA_DE_ALCANCE (ADR-028)`; `/especificacion/teoria` no se
+  modificó.
+
+- **Instalador y recorrido real:** `npm run pack` y los E2E sobre el paquete, en verde. E2E nuevo
+  `datosDePrueba.spec.ts` recorre el hospital ficticio de PL-01 al PDF; revisado con capturas.
+  Corrigió dos defectos de presentación: el aviso de importación desbordaba la cabecera de la
+  sección, y el informe mostraba las horas en UTC en vez de la hora del equipo.
+- **Tamaño:** `win-unpacked` pesa 365 MB (Electron incluido); el comentario de `electron-builder.yml`
+  habla de un presupuesto de 350 MB. Las plantillas empaquetadas pasaron de 28 archivos a 5 (108 kB); no se midió el tamaño anterior del paquete.
+
+**Siguiente:** commit de ADR-028; después `T-C-03` (ficha editable del bien).
+
+---
+
+## 2026-09-24 · Claude · Cuatro skills de terceros añadidas al proyecto
+
+**Tareas:** mantenimiento del repositorio (no abre tarea del backlog)
+
+- Con `find-skills` se buscó en skills.sh según las dependencias reales de `app/package.json`.
+- Se añadieron a `.claude/skills/`, como carpetas reales para que viajen con el repositorio:
+  `vercel-react-best-practices` y `web-design-guidelines` (Vercel), `vitest` (antfu) y
+  `playwright-best-practices` (Currents). Enlazadas en la tabla de skills de `CLAUDE.md`.
+- `web-design-guidelines` descarga sus reglas de GitHub en cada uso: su contenido puede cambiar.
+- Descartadas: ninguna skill de SQLite/better-sqlite3 ni de Electron superaba el umbral de calidad.
+- No toca código de la app; no se corrió `verificar:todo`.
+
+**Siguiente:** sin cambios respecto de `estado_actual.md` §4.
+
 ## 2026-09-24 · Claude · Reorganización de carpetas del repositorio
 
 **Tareas:** mantenimiento del repositorio (no abre tarea del backlog)

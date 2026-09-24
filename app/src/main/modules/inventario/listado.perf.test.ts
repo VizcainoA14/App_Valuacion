@@ -19,24 +19,22 @@ const POR_CODIGO: OrdenBien = { columna: 'codigoInstitucional', ascendente: true
 async function conInventario(bienes: number) {
   const arnes = await arnesPaso01();
   const demo = valor(await arnes.registro.invocar('demo:cargar', undefined));
-  const ejercicio = valor(await arnes.registro.invocar('ejercicio:listar', { entidadId: demo.id }))[0];
-  if (ejercicio === undefined) throw new Error('sin ejercicio');
-  const siembra = sembrarBienes(arnes.sqlite, ejercicio.id, { bienes });
-  return { ...arnes, entidadId: demo.id, ejercicioId: ejercicio.id, siembra };
+  const siembra = sembrarBienes(arnes.sqlite, demo.id, { bienes });
+  return { ...arnes, procesoId: demo.id, siembra };
 }
 
 describe('rendimiento con 20.000 bienes (RNF-01, RNF-02)', () => {
   it('lista 200 filas con cualquier filtro y orden dentro del presupuesto', async () => {
-    const { sqlite, ejercicioId, siembra } = await conInventario(20_000);
+    const { sqlite, procesoId, siembra } = await conInventario(20_000);
     expect(siembra.bienes).toBe(20_000);
-    expect(bienRepo.listar(sqlite, ejercicioId, {}, POR_CODIGO, 0, 1).total).toBe(20_050);
+    expect(bienRepo.listar(sqlite, procesoId, {}, POR_CODIGO, 0, 1).total).toBe(20_050);
 
     /** Mediana de 5 ejecuciones: descarta el ruido de una medición suelta. */
     const medir = (filtros: FiltrosBien, orden: OrdenBien): number => {
       const tiempos: number[] = [];
       for (let i = 0; i < 6; i++) {
         const t0 = performance.now();
-        const p = bienRepo.listar(sqlite, ejercicioId, filtros, orden, 0, 200);
+        const p = bienRepo.listar(sqlite, procesoId, filtros, orden, 0, 200);
         const ms = performance.now() - t0;
         expect(p.filas.length).toBeLessThanOrEqual(200);
         if (i > 0) tiempos.push(ms); // la primera compila el SQL; luego entra la caché de sentencias
@@ -58,19 +56,19 @@ describe('rendimiento con 20.000 bienes (RNF-01, RNF-02)', () => {
   });
 
   it('el cuadro de cobertura de 8 servicios se resuelve en menos de 50 ms', async () => {
-    const { sqlite, entidadId, ejercicioId } = await conInventario(20_000);
-    bienRepo.cobertura(sqlite, entidadId, ejercicioId);
+    const { sqlite, procesoId } = await conInventario(20_000);
+    bienRepo.cobertura(sqlite, procesoId);
     const t0 = performance.now();
-    const c = bienRepo.cobertura(sqlite, entidadId, ejercicioId);
+    const c = bienRepo.cobertura(sqlite, procesoId);
     const ms = performance.now() - t0;
     expect(c.totalBienes).toBe(20_050);
     expect(ms, `${ms.toFixed(1)} ms`).toBeLessThan(PRESUPUESTO_MS);
   });
 
   it('seleccionar todo el filtro sobre 20.000 bienes no supera medio segundo', async () => {
-    const { sqlite, ejercicioId } = await conInventario(20_000);
+    const { sqlite, procesoId } = await conInventario(20_000);
     const t0 = performance.now();
-    const ids = bienRepo.idsDelFiltro(sqlite, ejercicioId, {});
+    const ids = bienRepo.idsDelFiltro(sqlite, procesoId, {});
     const ms = performance.now() - t0;
     expect(ids).toHaveLength(20_050);
     expect(ms, `${ms.toFixed(1)} ms`).toBeLessThan(500);

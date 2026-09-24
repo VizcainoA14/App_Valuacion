@@ -8,7 +8,7 @@ import { existsSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { arnesPaso01, ENTIDAD_PRUEBA, valor } from '../pruebas';
+import { arnesPaso01, PROCESO_PRUEBA, valor } from '../pruebas';
 import { limpiarPrevisualizaciones } from '../../../infraestructura/documental/excel/orquestadorImportacion';
 
 const raizRepo = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', '..', '..');
@@ -43,15 +43,15 @@ async function rellenar(plantilla: string, hojas: Record<string, unknown[][]>): 
   return destino;
 }
 
-async function arnesConEntidad() {
+async function arnesConProceso() {
   const arnes = await arnesPaso01({ rutaDatos: join(dir, 'datos') });
-  const entidad = valor(await arnes.registro.invocar('entidad:crear', { ...ENTIDAD_PRUEBA, precargarSemillas: false }));
+  const entidad = valor(await arnes.registro.invocar('proceso:crear', { ...PROCESO_PRUEBA, precargarSemillas: false }));
   return { ...arnes, entidad };
 }
 
 describe('PL-02b · sedes y servicios', () => {
   it('previsualiza fila por fila: omite el ejemplo, normaliza listas, detecta duplicados y sedes inexistentes', async () => {
-    const a = await arnesConEntidad();
+    const a = await arnesConProceso();
     a.seleccionarArchivo(await rellenar('PL-02b_sedes_servicios.xlsx', {
       SEDES: [
         ['01', 'Sede principal', 'Calle 5 # 4-20', 'Popayán', 'SI'],
@@ -66,7 +66,7 @@ describe('PL-02b · sedes y servicios', () => {
       ],
     }));
 
-    const informe = valor(await a.registro.invocar('importacion:previsualizar', { entidadId: a.entidad.id, plantilla: 'PL-02b' }));
+    const informe = valor(await a.registro.invocar('importacion:previsualizar', { procesoId: a.entidad.id, plantilla: 'PL-02b' }));
     if (informe === null) throw new Error('sin informe');
 
     expect(informe.hojas).toEqual([
@@ -84,7 +84,7 @@ describe('PL-02b · sedes y servicios', () => {
   });
 
   it('con errores no importa sin confirmación explícita; al aceptar, importa solo las válidas y conserva el archivo', async () => {
-    const a = await arnesConEntidad();
+    const a = await arnesConProceso();
     a.seleccionarArchivo(await rellenar('PL-02b_sedes_servicios.xlsx', {
       SEDES: [['01', 'Sede principal', 'Calle 5', 'Popayán', 'SI']],
       SERVICIOS: [
@@ -92,15 +92,15 @@ describe('PL-02b · sedes y servicios', () => {
         ['LAB', 'Laboratorio', '99', 'ASISTENCIAL', null, 'SI'],
       ],
     }));
-    const informe = valor(await a.registro.invocar('importacion:previsualizar', { entidadId: a.entidad.id, plantilla: 'PL-02b' }));
+    const informe = valor(await a.registro.invocar('importacion:previsualizar', { procesoId: a.entidad.id, plantilla: 'PL-02b' }));
     if (informe === null) throw new Error('sin informe');
 
     expect(await a.registro.invocar('importacion:confirmar', { token: informe.token })).toMatchObject({ ok: false, error: { codigo: 'IMPORTACION_CON_ERRORES' } });
 
     const r = valor(await a.registro.invocar('importacion:confirmar', { token: informe.token, aceptarConErrores: true }));
     expect(r).toMatchObject({ plantilla: 'PL-02b', creados: 2, actualizados: 0, omitidos: 1 });
-    expect(valor(await a.registro.invocar('sede:listar', { entidadId: a.entidad.id }))).toHaveLength(1);
-    expect(valor(await a.registro.invocar('servicio:listar', { entidadId: a.entidad.id }))).toMatchObject([{ codigo: 'URG', tipo: 'asistencial' }]);
+    expect(valor(await a.registro.invocar('sede:listar', { procesoId: a.entidad.id }))).toHaveLength(1);
+    expect(valor(await a.registro.invocar('servicio:listar', { procesoId: a.entidad.id }))).toMatchObject([{ codigo: 'URG', tipo: 'asistencial' }]);
 
     const carpeta = join(dir, 'datos', 'almacen', 'importaciones', a.entidad.id);
     expect(existsSync(carpeta)).toBe(true);
@@ -110,21 +110,21 @@ describe('PL-02b · sedes y servicios', () => {
     expect(bit.valor_nuevo).toContain('2 creados');
 
     // Reimportar el mismo archivo actualiza en vez de duplicar.
-    const informe2 = valor(await a.registro.invocar('importacion:previsualizar', { entidadId: a.entidad.id, plantilla: 'PL-02b' }));
+    const informe2 = valor(await a.registro.invocar('importacion:previsualizar', { procesoId: a.entidad.id, plantilla: 'PL-02b' }));
     const r2 = valor(await a.registro.invocar('importacion:confirmar', { token: informe2?.token ?? '', aceptarConErrores: true }));
     expect(r2).toMatchObject({ creados: 0, actualizados: 2 });
   });
 
   it('el usuario cancela el diálogo → null, sin previsualización', async () => {
-    const a = await arnesConEntidad();
+    const a = await arnesConProceso();
     a.seleccionarArchivo(null);
-    expect(valor(await a.registro.invocar('importacion:previsualizar', { entidadId: a.entidad.id, plantilla: 'PL-02b' }))).toBeNull();
+    expect(valor(await a.registro.invocar('importacion:previsualizar', { procesoId: a.entidad.id, plantilla: 'PL-02b' }))).toBeNull();
   });
 });
 
 describe('PL-02 · clases', () => {
   it('importa clases con vida técnica decimal y SI/NO', async () => {
-    const a = await arnesConEntidad();
+    const a = await arnesConProceso();
     a.seleccionarArchivo(await rellenar('PL-02_clases_vida_util.xlsx', {
       CLASES: [
         ['EMC', 'Equipo médico científico', '1660', 'SI', 180, 15, 'SI', 'SI', 'ESPECIALISTA_BIOMEDICO', 'SI'],
@@ -132,10 +132,10 @@ describe('PL-02 · clases', () => {
         ['COM', 'Cómputo', '1670', 'SI', 60, '5,5', 'SI', 'NO', 'ESPECIALISTA_SISTEMAS', 'SI'],
       ],
     }));
-    const informe = valor(await a.registro.invocar('importacion:previsualizar', { entidadId: a.entidad.id, plantilla: 'PL-02' }));
+    const informe = valor(await a.registro.invocar('importacion:previsualizar', { procesoId: a.entidad.id, plantilla: 'PL-02' }));
     expect(informe?.importable).toBe(true);
     valor(await a.registro.invocar('importacion:confirmar', { token: informe?.token ?? '' }));
-    const clases = valor(await a.registro.invocar('clase:listar', { entidadId: a.entidad.id }));
+    const clases = valor(await a.registro.invocar('clase:listar', { procesoId: a.entidad.id }));
     expect(clases.map((c) => [c.codigo, c.vidaUtilContableMeses, c.vidaUtilTecnicaAnios, c.esDepreciable])).toEqual([
       ['COM', 60, 5.5, true],
       ['EMC', 180, 15, true],
@@ -144,9 +144,9 @@ describe('PL-02 · clases', () => {
   });
 });
 
-describe('PL-01 · parámetros de la entidad (clave/valor)', () => {
-  it('actualiza la entidad y los parámetros; tolera tildes en las claves y reporta la fecha de corte', async () => {
-    const a = await arnesConEntidad();
+describe('PL-01 · el hospital y los parámetros del proceso (clave/valor)', () => {
+  it('actualiza el hospital y los parámetros; tolera tildes en las claves; una fecha de corte distinta solo se advierte', async () => {
+    const a = await arnesConProceso();
     const libro = new ExcelJS.Workbook();
     await libro.xlsx.readFile(join(plantillas, 'PL-01_parametros_entidad.xlsx'));
     const hoja = libro.getWorksheet('PARAMETROS');
@@ -160,7 +160,7 @@ describe('PL-01 · parámetros de la entidad (clave/valor)', () => {
       nombre_gerente: 'Gerente Importado',
       dirección: 'Avenida 3N # 45-10',
       teléfono: '3001234567',
-      fecha_corte_ejercicio: '30/06/2025',
+      fecha_corte_ejercicio: '31/12/2025',
       metodo_conteo_meses: 'MES_COMPLETO',
       deprecia_mes_adquisicion: 'NO',
       umbral_semaforo_verde: 0.45,
@@ -174,16 +174,18 @@ describe('PL-01 · parámetros de la entidad (clave/valor)', () => {
     await libro.xlsx.writeFile(ruta);
     a.seleccionarArchivo(ruta);
 
-    const informe = valor(await a.registro.invocar('importacion:previsualizar', { entidadId: a.entidad.id, plantilla: 'PL-01' }));
+    const informe = valor(await a.registro.invocar('importacion:previsualizar', { procesoId: a.entidad.id, plantilla: 'PL-01' }));
     if (informe === null) throw new Error('sin informe');
     expect(informe.errores).toBe(0);
     expect(informe.incidencias.some((i) => i.columna === 'fecha_corte_ejercicio' && i.severidad === 'ADVERTENCIA')).toBe(true);
-    expect(informe.normalizaciones.some((n) => n.columna === 'fecha_corte_ejercicio' && n.interpretado === '2025-06-30')).toBe(true);
+    expect(informe.normalizaciones.some((n) => n.columna === 'fecha_corte_ejercicio' && n.interpretado === '2025-12-31')).toBe(true);
 
     valor(await a.registro.invocar('importacion:confirmar', { token: informe.token }));
-    const entidad = valor(await a.registro.invocar('entidad:porId', { id: a.entidad.id }));
+    const entidad = valor(await a.registro.invocar('proceso:porId', { id: a.entidad.id }));
+    // La fecha del proceso no la cambia la plantilla: se cambia en Configurar, y descarta el cálculo.
+    expect(entidad?.fechaCorte).toBe(PROCESO_PRUEBA.fechaCorte);
     expect(entidad).toMatchObject({ razonSocial: 'E.S.E Hospital Importado', nit: '900123456-7', nivelComplejidad: 'III', direccion: 'Avenida 3N # 45-10', telefono: '3001234567' });
-    const p = valor(await a.registro.invocar('parametros:obtener', { entidadId: a.entidad.id }));
-    expect(p).toMatchObject({ metodo_conteo_meses: 'mes_completo', metodo_conteo_meses_confirmado: false, deprecia_mes_adquisicion: false, umbral_semaforo_verde: 0.45, umbral_capitalizacion: 2000000 });
+    const p = valor(await a.registro.invocar('parametros:obtener', { procesoId: a.entidad.id }));
+    expect(p).toMatchObject({ metodo_conteo_meses: 'mes_completo', deprecia_mes_adquisicion: false, umbral_semaforo_verde: 0.45, umbral_capitalizacion: 2000000 });
   });
 });

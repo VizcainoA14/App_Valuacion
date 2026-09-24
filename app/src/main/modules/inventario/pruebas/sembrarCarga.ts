@@ -32,7 +32,8 @@ export interface OpcionesSiembra {
   readonly semilla?: number;
   /** Proporción de bienes con hoja de vida completa (datos económicos). */
   readonly proporcionConHojaVida?: number;
-  readonly fechaCorte?: string;
+  /** Fecha alrededor de la cual se generan tomas y adquisiciones (todas anteriores). */
+  readonly fechaReferencia?: string;
 }
 
 export interface ResultadoSiembra {
@@ -42,35 +43,32 @@ export interface ResultadoSiembra {
 }
 
 /**
- * Inserta bienes en un ejercicio existente. Requiere que la entidad ya tenga
- * clases, sedes y servicios (los toma de la base tal cual están).
+ * Inserta bienes en el inventario de una entidad. Requiere que ya tenga clases,
+ * sedes y servicios (los toma de la base tal cual están).
  */
-export function sembrarBienes(sqlite: ConexionSqlite, ejercicioId: string, opciones: OpcionesSiembra): ResultadoSiembra {
+export function sembrarBienes(sqlite: ConexionSqlite, procesoId: string, opciones: OpcionesSiembra): ResultadoSiembra {
   const inicio = Date.now();
   const azar = aleatorio(opciones.semilla ?? 42);
   const proporcion = opciones.proporcionConHojaVida ?? 0.8;
 
-  const ejercicio = sqlite.prepare('SELECT entidad_id, fecha_corte FROM ejercicio WHERE id = ?').get(ejercicioId) as { entidad_id: string; fecha_corte: string } | undefined;
-  if (ejercicio === undefined) throw new Error(`El ejercicio ${ejercicioId} no existe`);
-  const clases = sqlite.prepare('SELECT id, codigo FROM clase_activo WHERE entidad_id = ? AND activo = 1').all(ejercicio.entidad_id) as { id: string; codigo: string }[];
+  const clases = sqlite.prepare('SELECT id, codigo FROM clase_activo WHERE proceso_id = ? AND activo = 1').all(procesoId) as { id: string; codigo: string }[];
   const ubicaciones = sqlite
-    .prepare('SELECT v.id AS servicio_id, s.id AS sede_id, s.codigo AS sede_codigo FROM servicio v JOIN sede s ON s.id = v.sede_id WHERE s.entidad_id = ? AND v.activo = 1')
-    .all(ejercicio.entidad_id) as { servicio_id: string; sede_id: string; sede_codigo: string }[];
+    .prepare('SELECT v.id AS servicio_id, s.id AS sede_id, s.codigo AS sede_codigo FROM servicio v JOIN sede s ON s.id = v.sede_id WHERE s.proceso_id = ? AND v.activo = 1')
+    .all(procesoId) as { servicio_id: string; sede_id: string; sede_codigo: string }[];
   if (clases.length === 0 || ubicaciones.length === 0) throw new Error('La entidad no tiene clases o servicios activos');
 
   const insertarBien = sqlite.prepare(
-    `INSERT INTO bien (id, ejercicio_id, codigo_institucional, placa, descripcion_funcional, clase_activo_id, marca, modelo, serie, sede_id, servicio_id, cantidad, estado_actual, condicion_tenencia, responsable_custodia, fecha_toma, funcionario_conteo, estado_registro, creado_en, actualizado_en)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, 'Siembra de carga', 'BORRADOR', ?, ?)`,
+    `INSERT INTO bien (id, proceso_id, codigo_institucional, placa, descripcion_funcional, clase_activo_id, marca, modelo, serie, sede_id, servicio_id, cantidad, estado_actual, condicion_tenencia, responsable_custodia, fecha_toma, funcionario_conteo, creado_en, actualizado_en)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, 'Siembra de carga', ?, ?)`,
   );
-  const transitar = sqlite.prepare('UPDATE bien SET estado_registro = ? WHERE id = ?');
   const insertarHoja = sqlite.prepare(
     `INSERT INTO hoja_vida (id, bien_id, estado_operativo, forma_adquisicion, fecha_adquisicion, costo_adquisicion_cent, adiciones_mejoras_cent, creado_en, actualizado_en)
      VALUES (?, ?, 'OPERATIVO', 'COMPRA', ?, ?, 0, ?, ?)`,
   );
 
-  const existentes = (sqlite.prepare('SELECT COUNT(*) AS n FROM bien WHERE ejercicio_id = ?').get(ejercicioId) as { n: number }).n;
+  const existentes = (sqlite.prepare('SELECT COUNT(*) AS n FROM bien WHERE proceso_id = ?').get(procesoId) as { n: number }).n;
   const ahora = new Date().toISOString();
-  const corte = comoFechaIso(opciones.fechaCorte ?? ejercicio.fecha_corte);
+  const corte = comoFechaIso(opciones.fechaReferencia ?? '2025-06-30');
   let hojasVida = 0;
 
   sqlite.transaction(() => {
@@ -83,7 +81,7 @@ export function sembrarBienes(sqlite: ConexionSqlite, ejercicioId: string, opcio
       const bienId = nuevoId();
       insertarBien.run(
         bienId,
-        ejercicioId,
+        procesoId,
         componerCodigo(SEGMENTOS, 6, { codigoSede: ubicacion.sede_codigo, abreviatura: clase.codigo, consecutivo: n }),
         `PL-${String(n).padStart(7, '0')}`,
         descripcion,
@@ -100,8 +98,6 @@ export function sembrarBienes(sqlite: ConexionSqlite, ejercicioId: string, opcio
         ahora,
         ahora,
       );
-      transitar.run('VALIDADO', bienId);
-      transitar.run('ACTIVO', bienId);
 
       if (azar() < proporcion) {
         insertarHoja.run(nuevoId(), bienId, sumarDias(corte, -Math.floor(azar() * 3650) - 30), aCentavos(Math.floor(azar() * 40_000_000) + 200_000), ahora, ahora);

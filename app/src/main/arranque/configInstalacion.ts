@@ -1,7 +1,7 @@
 /**
  * Nivel 2 de configuración (plan 4.3 §3): `userData/config.json`.
  * Se lee ANTES de abrir la base, por eso no puede vivir en ella. Nunca contiene
- * parámetros de negocio (esos van en la base y se congelan por ejercicio).
+ * parámetros de negocio (esos van en la base y cada corte guarda su copia).
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';

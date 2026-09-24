@@ -82,5 +82,8 @@ export function useListadoInfinito<C extends Canal>(
   });
 }
 
-/** Efectos de invalidación del paso 01: cualquier cambio de configuración caduca las validaciones. */
-export const EFECTOS_PASO_01: readonly Canal[] = ['validaciones:evaluar', 'ejercicio:listar', 'ejercicio:porId'];
+/** Cualquier cambio de configuración caduca la revisión de la configuración. */
+export const EFECTOS_CONFIGURACION: readonly Canal[] = ['validaciones:evaluar'];
+
+/** Lo que cambia cuando cambia el inventario: el listado, sus cifras y lo que se calcula sobre él. */
+export const EFECTOS_INVENTARIO: readonly Canal[] = ['bien:listar', 'bien:porId', 'bien:cobertura', 'bien:idsDelFiltro', 'barrido:listar', 'calculo:resumen', 'baja:candidatos', 'baja:listar'];

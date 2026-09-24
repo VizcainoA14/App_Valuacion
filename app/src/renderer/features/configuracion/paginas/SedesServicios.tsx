@@ -11,20 +11,20 @@ import { Plus, MapPin, Stethoscope } from 'lucide-react';
 import { camposSede, camposServicio } from '@compartido/ipc/contrato';
 import { TIPO_SERVICIO } from '@compartido/enums/plataforma';
 import type { SedeDto, ServicioDto } from '@compartido/dtos/configuracion';
-import { useCanal, useMutacion, EFECTOS_PASO_01 } from '../../../ipc/consultas';
+import { useCanal, useMutacion, EFECTOS_CONFIGURACION } from '../../../ipc/consultas';
 import { Aviso, Boton, Campo, Cargando, Casilla, Encabezado, EstadoVacio, Insignia, Seccion, Selector } from '../../../componentes/ui';
 import { ImportarPlantilla } from '../../../componentes/ImportarPlantilla';
-import { useEntidadId, mensajeError } from '../hooks';
+import { useProcesoId, mensajeError } from '../hooks';
 
-const INVALIDA = ['sede:listar', 'servicio:listar', ...EFECTOS_PASO_01] as const;
+const INVALIDA = ['sede:listar', 'servicio:listar', ...EFECTOS_CONFIGURACION] as const;
 
 const esquemaSede = z.object({ ...camposSede, activa: z.boolean().default(true) });
 const esquemaServicio = z.object({ ...camposServicio, activo: z.boolean().default(true) });
 
 export function SedesServicios(): JSX.Element {
-  const entidadId = useEntidadId();
-  const sedes = useCanal('sede:listar', { entidadId, incluirInactivas: true });
-  const servicios = useCanal('servicio:listar', { entidadId, incluirInactivos: true });
+  const procesoId = useProcesoId();
+  const sedes = useCanal('sede:listar', { procesoId, incluirInactivas: true });
+  const servicios = useCanal('servicio:listar', { procesoId, incluirInactivos: true });
   const [nuevaSede, setNuevaSede] = useState(false);
 
   if (sedes.isPending || servicios.isPending) return <Cargando />;
@@ -41,7 +41,7 @@ export function SedesServicios(): JSX.Element {
         subtitulo="Estructura organizacional: cada bien se ubica en una sede y un servicio."
         acciones={
           <>
-            <ImportarPlantilla entidadId={entidadId} plantilla="PL-02b" invalida={['sede:listar', 'servicio:listar']} />
+            <ImportarPlantilla procesoId={procesoId} plantilla="PL-02b" invalida={['sede:listar', 'servicio:listar']} />
             <Boton variante="primario" icono={<Plus className="h-4 w-4" aria-hidden />} onClick={() => setNuevaSede(true)}>
               Nueva sede
             </Boton>
@@ -50,7 +50,7 @@ export function SedesServicios(): JSX.Element {
       />
       {nuevaSede && (
         <Seccion titulo="Nueva sede">
-          <FormularioSede entidadId={entidadId} onListo={() => setNuevaSede(false)} />
+          <FormularioSede procesoId={procesoId} onListo={() => setNuevaSede(false)} />
         </Seccion>
       )}
       {lista.length === 0 && !nuevaSede && (
@@ -65,11 +65,11 @@ export function SedesServicios(): JSX.Element {
   );
 }
 
-function FormularioSede({ entidadId, onListo }: { entidadId: string; onListo: () => void }): JSX.Element {
+function FormularioSede({ procesoId, onListo }: { procesoId: string; onListo: () => void }): JSX.Element {
   const crear = useMutacion('sede:crear', [...INVALIDA]);
   const { register, handleSubmit, formState: { errors } } = useForm<z.input<typeof esquemaSede>, unknown, z.output<typeof esquemaSede>>({ resolver: zodResolver(esquemaSede), defaultValues: { activa: true } });
   return (
-    <form noValidate onSubmit={handleSubmit((v) => crear.mutate({ entidadId, ...v }, { onSuccess: onListo }))} className="flex flex-col gap-3">
+    <form noValidate onSubmit={handleSubmit((v) => crear.mutate({ procesoId, ...v }, { onSuccess: onListo }))} className="flex flex-col gap-3">
       {crear.isError && <Aviso tono="peligro">{mensajeError(crear.error)}</Aviso>}
       <div className="grid gap-3 md:grid-cols-4">
         <Campo etiqueta="Código" obligatorio ayuda="Corto y único, p. ej. 01" error={errors.codigo?.message} {...register('codigo')} />

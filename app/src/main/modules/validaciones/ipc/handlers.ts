@@ -1,5 +1,5 @@
 import type { RegistroIpc } from '../../../ipc/registroIpc';
-import { evaluarPaso, registrarPredicados, type MapaPredicados } from '../motor';
+import { evaluarConfiguracion, registrarPredicados, type MapaPredicados } from '../motor';
 
 let predicadosRegistrados = false;
 
@@ -14,5 +14,5 @@ export function registrarCanalesValidaciones(registro: RegistroIpc, predicados: 
     for (const mapa of predicados) registrarPredicados(mapa);
     predicadosRegistrados = true;
   }
-  registro.registrar('validaciones:evaluar', (e, ctx) => evaluarPaso(e.paso, e.entidadId, e.ejercicioId ?? null, ctx));
+  registro.registrar('validaciones:evaluar', (e, ctx) => evaluarConfiguracion(e.procesoId, ctx));
 }

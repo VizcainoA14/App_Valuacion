@@ -1,6 +1,6 @@
 # 05 · Comunicación entre procesos (IPC)
 
-**55 canales** y **3 eventos**. Es la única frontera entre la interfaz y el sistema, así que está
+**53 canales** y **3 eventos**. Es la única frontera entre la interfaz y el sistema, así que está
 cerrada por los dos lados: lista blanca en el preload y contrato tipado en el proceso principal.
 
 ## El puente: un archivo, dos funciones
@@ -46,7 +46,7 @@ directamente.
 1. ¿El canal existe en el contrato?              → si no, error registrado
 2. Validar la entrada con Zod                    → ErrorValidacion, con el campo culpable
 3/4. (sin sesión ni permisos — ADR-016)
-5. Si `muta` y hay ejercicioId: ¿está CERRADO?   → INT-09
+5. (sin ejercicio que cerrar — ADR-028; lo inmutable lo defienden los disparadores)
 6. Ejecutar el caso de uso                       → si `muta`, dentro de una transacción
 7. Bitácora en la MISMA transacción              → ctx.bitacora
 8. Envolver la salida en RespuestaIpc
@@ -68,32 +68,33 @@ type RespuestaIpc<T> =
 
 El renderer nunca recibe una excepción: recibe un objeto. Los tipos de error son `VALIDACION`,
 `REGLA_NEGOCIO` e `INFRAESTRUCTURA`, y el `codigo` es el que la interfaz usa para decidir qué
-mostrar (`VAL-01-06`, `NIT_DUPLICADO`, `SIN_CALCULO`…).
+mostrar (`FECHA_CORTE_FUTURA`, `PROCESO_FINALIZADO`, `JUSTIFICACION_GENERICA`…).
 
 ## Los canales, por familia
 
 | Familia | N.º | Qué cubre |
 |---|:-:|---|
-| `entidad:*` | 6 | listar, porId, crear, actualizar, eliminar, clonarParametrizacion |
-| `baja:*` | 6 | candidatos, proponer, listar, resumen, transiciones |
-| `bien:*` | 5 | listar, cobertura, activarValidados… |
-| `ejercicio:*` | 4 | listar, porId, crear, cambiarFechaCorte |
+| `proceso:*` | 6 | listar, porId, crear, actualizar, finalizar, eliminar |
+| `bien:*` | 5 | listar, porId, idsDelFiltro, cobertura, marcarObsolescenciaFuncional |
+| `barrido:*` | 1 | listar |
+| `corte:*` | 2 | actual (el del proceso, o `null`), porId |
+| `calculo:*` | 4 | ejecutar (a la fecha del proceso; reemplaza el corte anterior), resumen, listar, exclusiones |
+| `baja:*` | 4 | candidatos (del cálculo), listar, registrar, anular |
 | `clase:*` | 4 | listar, crear, actualizar, precargarSugeridas |
-| `calculo:*` | 4 | calcular, consultar, resumen |
 | `sede:*` / `servicio:*` | 3 + 3 | catálogos |
-| `plantilla:*` | 3 | catálogo y entrega de las 28 plantillas |
+| `plantilla:*` | 3 | catálogo y entrega de las 5 plantillas |
 | `evento:*` | 3 | progreso, tareaFinalizada, alerta |
 | `convencion:*` | 3 | codificación de bienes |
 | `importacion:*` | 2 | previsualizar, confirmar |
-| `informe:*` | 2 | generar, estado |
+| `informe:*` | 2 | previsualizar y generar, siempre del cálculo del proceso |
 | `parametros:*` | 2 | obtener, actualizar |
 | `abreviatura:*` | 2 | |
 | `demo:*` | 2 | cargar y borrar el hospital de demostración |
 | `app:*` | 2 | obtenerEstado, registrarErrorRenderer |
-| `validaciones:evaluar` | 1 | canal único para las 58 validaciones |
+| `validaciones:evaluar` | 1 | la revisión de la configuración (7 validaciones) |
 | `tarea:cancelar` | 1 | |
 
-Nótese que **no hay canales de responsables**: se retiraron en ADR-027.
+Nótese lo que **no** hay: ni responsables (ADR-027), ni ejercicio, ni propuestas de baja con sus transiciones (ADR-028).
 
 ## Tareas largas y eventos
 

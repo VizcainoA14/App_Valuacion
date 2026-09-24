@@ -1,13 +1,13 @@
 /**
  * Los 16 parámetros de cálculo de ANEXO_B §2.5 (claves obligatorias), tipados.
- * Se persisten en `parametro_calculo` (clave/valor/tipo_dato) y se congelan por
- * ejercicio en `ejercicio.parametros_congelados_json` (RN-01-01): el motor lee
- * SIEMPRE del congelado, nunca del catálogo vigente (plan 4.3 §4).
+ * Se persisten en `parametro_calculo` (clave/valor/tipo_dato) y cada corte de
+ * cálculo guarda una copia de los que usó (`corte.parametros_json`): así un
+ * informe viejo sigue diciendo con qué método se calculó aunque hoy se cambie.
  *
- * `metodo_conteo_meses` trae el valor SUGERIDO `dias_exactos`, pero VAL-01-07 no
- * se cumple hasta que el contador lo confirme por acta (CT-02): por eso existe
- * `metodo_conteo_meses_confirmado`, que no es de ANEXO_B pero es la única forma de
- * distinguir "sugerido" de "adoptado".
+ * `metodo_conteo_meses` trae el valor SUGERIDO `dias_exactos`. Hasta ADR-028
+ * existía `metodo_conteo_meses_confirmado`, que bloqueaba el cálculo mientras
+ * el contador no firmara un acta; se retiró porque hacía depender la aplicación
+ * de un documento externo. El método elegido se declara en el informe.
  */
 import { z } from 'zod';
 import { zCatalogo } from '../esquemas/basicos';
@@ -25,7 +25,6 @@ const fraccion = z.number().min(0).max(1);
 export const EsquemaParametrosCalculo = z.object({
   metodo_depreciacion: zCatalogo(METODO_DEPRECIACION).default('linea_recta'),
   metodo_conteo_meses: zCatalogo(METODO_CONTEO_MESES).default('dias_exactos'),
-  metodo_conteo_meses_confirmado: z.boolean().default(false),
   deprecia_mes_adquisicion: z.boolean().default(true),
   usa_puesta_en_servicio: z.boolean().default(false),
   enfoque_adiciones: zCatalogo(ENFOQUE_ADICIONES).default('simplificado'),
@@ -53,7 +52,6 @@ export const CLAVES_PARAMETRO = Object.keys(PARAMETROS_POR_DEFECTO) as ClavePara
 export const TIPO_DATO_PARAMETRO_DE: Readonly<Record<ClaveParametro, TipoDatoParametro>> = {
   metodo_depreciacion: 'enum',
   metodo_conteo_meses: 'enum',
-  metodo_conteo_meses_confirmado: 'booleano',
   deprecia_mes_adquisicion: 'booleano',
   usa_puesta_en_servicio: 'booleano',
   enfoque_adiciones: 'enum',

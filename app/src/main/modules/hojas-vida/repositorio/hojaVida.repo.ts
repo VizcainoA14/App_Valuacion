@@ -145,24 +145,13 @@ export const hojaVidaRepo = {
     return filas.length;
   },
 
-  /** Bienes del ejercicio indexados por su código institucional, para resolver PL-05. */
-  bienesPorCodigo(db: ConexionSqlite, ejercicioId: string): ReadonlyMap<string, { id: string; estadoRegistro: string }> {
-    const filas = db.prepare('SELECT id, codigo_institucional, estado_registro FROM bien WHERE ejercicio_id = ?').all(ejercicioId) as {
+  /** Bienes de la entidad indexados por su código institucional, para resolver PL-05. */
+  bienesPorCodigo(db: ConexionSqlite, procesoId: string): ReadonlyMap<string, { id: string; estadoRegistro: string }> {
+    const filas = db.prepare('SELECT id, codigo_institucional, estado_registro FROM bien WHERE proceso_id = ?').all(procesoId) as {
       id: string;
       codigo_institucional: string;
       estado_registro: string;
     }[];
     return new Map(filas.map((f) => [f.codigo_institucional.trim().toUpperCase(), { id: f.id, estadoRegistro: f.estado_registro }]));
-  },
-
-  /**
-   * RN-03-01: con fecha y costo el bien deja de estar INCOMPLETO. Se marca
-   * VALIDADO —no ACTIVO— porque activarlo es decisión del cierre del paso 03.
-   */
-  marcarValidados(db: ConexionSqlite, bienIds: readonly string[], actualizadoEn: string): number {
-    if (bienIds.length === 0) return 0;
-    return db
-      .prepare(`UPDATE bien SET estado_registro = 'VALIDADO', actualizado_en = ? WHERE estado_registro IN ('BORRADOR', 'INCOMPLETO') AND id IN (${bienIds.map(() => '?').join(',')})`)
-      .run(actualizadoEn, ...bienIds).changes;
   },
 };

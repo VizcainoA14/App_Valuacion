@@ -25,9 +25,9 @@ arrancar. Se sustituyó por una implementación propia de UUID v7.
 
 | | Cuánto | Con qué |
 |---|:-:|---|
-| Unitarias e integración | **379** en 35 archivos | Vitest |
+| Unitarias e integración | **360** en 35 archivos | Vitest |
 | Rendimiento | 5 en 3 archivos | Vitest, sin paralelismo |
-| Extremo a extremo | **15** en 12 archivos | Playwright sobre la app real |
+| Extremo a extremo | **16** en 13 archivos | Playwright sobre la app real |
 
 Los E2E se ejecutan **dos veces**: contra `out/` y contra el paquete (`PROBAR_PAQUETE=1`).
 
@@ -40,16 +40,17 @@ directorio y el bloqueo de instancia única las hacía colisionar.
 |---|---|
 | `arranque` (3) | Ventana, SQLite, y que el renderer esté aislado (**conductual**) |
 | `arranque-datos` (2) | `--user-data`, migración, respaldo, y que una UNC bloquee el arranque |
-| `paso01` | Entidad → sedes → parámetros → ejercicio → puede avanzar |
-| `entidadDesdePl01` | La entidad nace del `PL-01` diligenciado, sin teclear nada |
-| `eliminarEntidad` | Se elimina antes del ejercicio, y después ya no |
+| `configuracion` | Proceso (nombre, fecha, hospital) → sedes y servicios → listo para calcular; sin contador ni acta |
+| `procesoDesdePl01` | El proceso nace del `PL-01` diligenciado, con su fecha de corte, sin teclear nada |
+| `eliminarProceso` | Un proceso en curso se elimina mientras no tenga inventario; la demostración tiene su propio botón |
 | `formatos` | Las plantillas están dentro y se descargan |
-| `inventario` | Listado: filtra, ordena, selecciona, cobertura |
-| `calculo` | Calcular y revisar el resultado |
-| `bajas` | Proponer y recorrer la decisión |
-| `informe` | Generar el PDF |
+| `inventario` | Carga, listado (filtra, ordena, selecciona) y servicios barridos |
+| `calculo` | Calcular a la fecha del proceso, recalcular, **finalizar** y comprobar que queda de solo lectura |
+| `bajas` | Registrar la baja de un candidato y anularla |
+| `informe` | El informe del cálculo, sin firmas, en PDF |
 | `demostracion` | Cargar, recorrer y borrar el hospital de demostración |
-| `recorrido-demo` | Todas las pantallas **sin errores del renderer** |
+| `datosDePrueba` | El recorrido completo con `datos_de_prueba`: PL-01 → catálogo → barrido → PL-05 → cálculo → baja → PDF → finalizar. Con `CAPTURAS=<carpeta>` guarda una captura por pantalla |
+| `recorrido-demo` | Todas las secciones **sin errores del renderer** |
 
 `_lanzar.ts` limpia `ELECTRON_RUN_AS_NODE`, que convierte el binario de Electron en un Node pelado y
 rompe el arranque.

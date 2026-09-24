@@ -34,7 +34,7 @@ const AYUDA: Readonly<Record<string, string>> = {
   codigo_institucional: 'El código de la placa que lleva pegada el bien. **Único en todo el inventario.**',
   placa: 'El número de la placa o marquilla. **Único**, y distinto del código institucional.',
   descripcion_funcional: 'Qué es el bien, en palabras del hospital: "MONITOR DE SIGNOS VITALES", no "equipo".',
-  clase_activo: 'Elija de la lista desplegable. Son las clases que la entidad cargó con PL-02.',
+  clase_activo: 'Elija de la lista desplegable. Son las clases que se cargaron en el proceso con PL-02.',
   sede: 'El **código** de la sede (01, 02…), de la lista desplegable.',
   servicio_ubicacion: 'El servicio donde ESTÁ el bien hoy. Debe existir en esa sede.',
   cantidad: 'Casi siempre 1. Un bien, una fila: no agrupe cinco camas en una línea.',
@@ -88,15 +88,13 @@ function tablaPl01(): string {
     .map(([clave, d]) => {
       const tipo = TIPO_LEGIBLE[d.tipo] ?? d.tipo;
       const valores = d.catalogo === undefined ? '' : `<br>Valores: \`${d.catalogo.join('\` · \`')}\``;
-      const destino = d.destino === 'entidad' ? 'Identificación' : d.destino === 'ejercicio' ? 'Ejercicio' : 'Parámetro de cálculo';
+      const destino = d.destino === 'hospital' ? 'Identificación del hospital' : d.destino === 'proceso' ? 'Fecha de corte del proceso' : 'Parámetro de cálculo';
       return `| \`${clave}\` | ${destino} | ${tipo}${valores} |`;
     });
   return ['| Campo | Para qué sirve | Qué se escribe |', '|---|---|---|', ...filas].join('\n');
 }
 
 const IMPORTABLES = CATALOGO_PLANTILLAS.filter((p) => p.importable).map((p) => p.codigo);
-const DILIGENCIA_NO_IMPORTABLE = CATALOGO_PLANTILLAS.filter((p) => p.seDiligencia && !p.importable);
-const LAS_PRODUCE_LA_APP = CATALOGO_PLANTILLAS.filter((p) => !p.seDiligencia);
 
 function generar(): string {
   return `# Instructivo de diligenciamiento
@@ -106,38 +104,31 @@ function generar(): string {
 
 ## Lo primero: cuáles hay que llenar
 
-De las **${CATALOGO_PLANTILLAS.length} plantillas** del proceso, la aplicación hoy **lee ${IMPORTABLES.length}**:
+La aplicación trabaja con **${IMPORTABLES.length} plantillas**, y todas se vuelven a cargar en ella:
 
 | Orden | Plantilla | Qué aporta | Quién la llena |
 |:-:|---|---|---|
 | 1 | \`PL-01\` | Identificación de la E.S.E y parámetros de cálculo | Subgerencia administrativa, con contabilidad |
 | 2 | \`PL-02\` | Clases de activo y vidas útiles | Contabilidad (Manual de Políticas Contables) |
 | 3 | \`PL-02b\` | Sedes y servicios | Administración |
-| 4 | \`PL-03\` | **El inventario físico** | Los técnicos que recorren los servicios |
+| 4 | \`PL-03\` | **El barrido: el inventario físico** | Los técnicos que recorren los servicios |
 | 5 | \`PL-05\` | Fecha y costo de adquisición, mantenimientos | Contabilidad y biomédica |
 
-**Ese es todo el trabajo de campo que hace falta para calcular.** Con esas cinco, la
-aplicación produce la depreciación, la obsolescencia, los candidatos a baja y el informe.
+**Ese es todo el trabajo que hace falta para calcular.** Con esas cinco, la aplicación
+produce la depreciación, la obsolescencia, los candidatos a baja y el informe.
+
+Las tres primeras se llenan al **iniciar el proceso de valuación**. \`PL-03\` y \`PL-05\`
+traen el inventario; mientras el proceso siga en curso se pueden volver a importar
+corregidos, y un barrido nuevo actualiza lo que ya estaba. Cada proceso nuevo carga su
+inventario **de cero**.
 
 ### Descárguelas desde la aplicación, no de una carpeta suelta
 
-En **2. Formatos**, la aplicación entrega las plantillas **con los catálogos del hospital
+En **Formatos**, la aplicación entrega las plantillas **con los catálogos del hospital
 ya puestos como listas desplegables** (sus clases, sus sedes, sus servicios). Eso evita la
 mitad de los errores de digitación. Una plantilla bajada de otro lado no los trae.
 
-> Excepción: \`PL-01\` se descarga antes de que exista la entidad, así que va sin listas.
-
-### Las que NO hay que llenar todavía
-
-**Las produce la aplicación** (no se diligencian):
-${LAS_PRODUCE_LA_APP.map((p) => `\`${p.codigo}\``).join(' · ')}
-
-**Se diligencian, pero pertenecen a etapas que aún no están construidas.** Llenarlas hoy
-no sirve de nada porque la aplicación todavía no las lee:
-
-| Plantilla | Para qué es | Llega con |
-|---|---|---|
-${DILIGENCIA_NO_IMPORTABLE.map((p) => `| \`${p.codigo}\` | ${p.nombre} | paso ${p.paso} |`).join('\n')}
+> Excepción: \`PL-01\` se descarga antes de que exista el proceso, así que va sin listas.
 
 ---
 
@@ -153,23 +144,24 @@ ${DILIGENCIA_NO_IMPORTABLE.map((p) => `| \`${p.codigo}\` | ${p.nombre} | paso ${
 
 ---
 
-## \`PL-01\` · Parámetros de la entidad
+## \`PL-01\` · El hospital y los parámetros del proceso
 
 Hoja **PARAMETROS**. Es clave/valor: escriba en la columna \`valor\`, sin tocar la columna
-\`campo\`. Con este archivo se puede **crear la entidad** desde *Nueva entidad → Crear desde
-PL-01*.
+\`campo\`. Con este archivo se puede **iniciar el proceso** desde *Iniciar un proceso nuevo → Crear
+desde PL-01*.
 
-Obligatorios para crear la entidad: \`razon_social\`, \`nit\`, \`municipio\`, \`departamento\`,
-\`nivel_complejidad\`, \`nombre_gerente\`, \`direccion\`.
+Obligatorios para iniciar el proceso: \`razon_social\`, \`nit\`, \`municipio\`, \`departamento\`,
+\`nivel_complejidad\`, \`nombre_gerente\`, \`direccion\` y \`fecha_corte_ejercicio\`.
 
 ${tablaPl01()}
 
-> \`fecha_corte_ejercicio\` se informa aquí, pero la fecha de corte se fija al **crear el
-> ejercicio** en la aplicación. Verá un aviso al importar; es correcto.
+> \`fecha_corte_ejercicio\` es **la fecha a la que se calcula todo el proceso**. No puede ser
+> futura. Si el proceso ya existe, la plantilla no la cambia: se cambia en *Configurar*, y
+> eso descarta el cálculo hecho.
 >
 > \`metodo_conteo_meses\` es **el parámetro más delicado de todo el sistema**: decide cuántos
-> meses se deprecia cada bien. Debe acordarse con el contador **antes** de calcular, y la
-> aplicación exige confirmarlo por acta dentro de la aplicación. No basta con escribirlo aquí.
+> meses se deprecia cada bien. Conviene acordarlo con el contador **antes** de calcular. El
+> informe declara el que se usó.
 
 ---
 
@@ -199,14 +191,22 @@ ${tablaHoja(PL_02B, 'SERVICIOS')}
 ## \`PL-03\` · Toma de inventario físico
 
 Hoja **INVENTARIO**. **Una fila por bien.** Es la plantilla que llena el personal de campo
-y la única entrada del inventario.
+y la única entrada del inventario. Cada archivo que se importa es un **barrido**:
+
+- un bien que no estaba se **agrega**;
+- uno que ya estaba (mismo código institucional) se **actualiza** con lo que se vio: dónde
+  está, en qué estado, quién lo contó;
+- uno que estaba registrado en un servicio que el archivo **sí** recorre, pero que no aparece
+  en él, queda como **no encontrado**. Los servicios que el archivo no menciona no se tocan.
 
 ${tablaHoja(PL_03, 'INVENTARIO')}
 
 ### Lo que más se equivoca
 
-- **Código y placa repetidos.** Cada uno es único en el ejercicio. Si dos bienes comparten
+- **Código y placa repetidos.** Cada uno es único en el hospital. Si dos bienes comparten
   placa, revise cuál está mal marcado antes de importar.
+- **Un barrido parcial que se quiere completo.** Si recorrió un servicio, incluya todos sus
+  bienes: los que falten se marcarán como no encontrados.
 - **Servicio que no pertenece a la sede.** "URGENCIAS" existe en la sede 01; escribirlo en
   un bien de la sede 02 rechaza la fila.
 - **La serie sí puede repetirse.** Equipos idénticos comparten serie o no la traen. La
@@ -223,7 +223,8 @@ Tres hojas. La primera es la que alimenta el cálculo.
 ${tablaHoja(PL_05, 'HOJA_VIDA')}
 
 > \`fecha_adquisicion\` y \`costo_adquisicion\` son **lo que el motor necesita**. Un bien sin
-> ellos queda marcado como incompleto y **no entra al cálculo** hasta que se resuelva.
+> ellos **no entra al cálculo de la depreciación** hasta que se resuelva, y el informe lo
+> relaciona con su motivo.
 
 ### Hoja **MANTENIMIENTOS** — una fila por mantenimiento
 
@@ -235,7 +236,7 @@ ${tablaHoja(PL_05, 'MANTENIMIENTOS')}
 
 Cuando tras buscar no hay soporte, **no se inventa el dato**: un especialista estima el
 valor y la fecha, y deja constancia escrita. Esta hoja **es** esa constancia; el libro que
-se importa queda archivado como acta, con su huella digital.
+se importa queda archivado como soporte, con su huella digital.
 
 ${tablaHoja(PL_05, 'SIN_SOPORTE')}
 
@@ -243,12 +244,14 @@ ${tablaHoja(PL_05, 'SIN_SOPORTE')}
 
 ## Orden de trabajo sugerido
 
-1. Descargue \`PL-01\` desde **2. Formatos** y páselo a la subgerencia administrativa.
-2. Cree la entidad con **Nueva entidad → Crear desde PL-01**.
+1. Descargue \`PL-01\` desde **Formatos** y páselo a la subgerencia administrativa.
+2. Inicie el proceso con **Iniciar un proceso nuevo → Crear desde PL-01**.
 3. Descargue \`PL-02\` y \`PL-02b\` (ya salen con membrete) e impórtelos.
 4. **Vuelva a descargar \`PL-03\` y \`PL-05\`**: ahora sí traen las listas desplegables con
    las clases, sedes y servicios del hospital. Entréguelos al personal de campo.
-5. Importe \`PL-03\`, luego \`PL-05\`, y calcule.
+5. Importe \`PL-03\`, luego \`PL-05\`, y calcule: a la fecha de corte del proceso.
+6. Registre las bajas, saque el informe y **finalice el proceso**. La próxima valuación es
+   un proceso nuevo, con su propia fecha de corte.
 
 > El punto 4 importa: si entrega \`PL-03\` antes de cargar el catálogo, el personal escribirá
 > los nombres a mano y aparecerán errores de digitación al importar.
@@ -269,5 +272,3 @@ mkdirSync(salida, { recursive: true });
 writeFileSync(join(salida, 'INSTRUCTIVO_DILIGENCIAMIENTO.md'), generar(), 'utf8');
 console.log(`✓ INSTRUCTIVO_DILIGENCIAMIENTO.md`);
 console.log(`  ${IMPORTABLES.length} plantillas importables: ${IMPORTABLES.join(', ')}`);
-console.log(`  ${DILIGENCIA_NO_IMPORTABLE.length} se diligencian pero aún no se leen`);
-console.log(`  ${LAS_PRODUCE_LA_APP.length} las produce la aplicación`);

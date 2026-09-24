@@ -7,6 +7,9 @@
  * Dos exigencias de `/especificacion/teoria` mandan sobre el diseño:
  *   RF-06-08  el método de depreciación aplicado va **en el encabezado**
  *   ANEXO_C   lo no calculado se declara con su motivo, nunca como un cero
+ *
+ * ADR-028: no lleva bloque de firmas. Es el soporte de cálculo de un corte;
+ * el trámite que lo adopta ocurre fuera de la aplicación.
  */
 import type { Centavos } from '../../../../compartido/tipos/basicos';
 
@@ -32,15 +35,22 @@ export interface FilaSubcuentaInforme {
   readonly valorNeto: Centavos;
 }
 
+export interface FilaCandidatoInforme {
+  readonly codigo: string;
+  readonly descripcion: string;
+  readonly clase: string;
+  readonly indice: number | null;
+  readonly motivos: readonly string[];
+  readonly valorNeto: Centavos | null;
+}
+
 export interface FilaBajaInforme {
   readonly codigo: string;
   readonly descripcion: string;
+  readonly fecha: string;
   readonly causal: string;
   readonly justificacion: string;
-  readonly especialista: string;
-  readonly estado: string;
-  readonly valorNeto: Centavos;
-  readonly perdida: Centavos;
+  readonly referencia: string | null;
 }
 
 export interface FilaExcluidaInforme {
@@ -54,13 +64,10 @@ export interface DatosInforme {
   readonly nit: string;
   readonly municipio: string;
   readonly departamento: string;
-  readonly gerente: string;
-  /** ADR-027: los dos firmantes salen de los datos de la entidad. */
-  readonly contador: string | null;
-  readonly tarjetaProfesionalContador: string | null;
   readonly esDemostracion: boolean;
-  readonly ejercicio: string;
+  readonly nombreProceso: string;
   readonly fechaCorte: string;
+  readonly calculadoEn: string;
   readonly generadoEn: string;
   readonly metodoConteo: string;
   readonly metodoDepreciacion: string;
@@ -73,12 +80,11 @@ export interface DatosInforme {
   readonly noAplicaDepreciacion: number;
   readonly totalSaldoAjustado: Centavos;
   readonly totalDepreciacion: Centavos;
-  readonly totalDeterioro: Centavos;
   readonly totalValorNeto: Centavos;
   readonly porSemaforo: Readonly<Record<string, number>>;
   readonly subcuentas: readonly FilaSubcuentaInforme[];
+  readonly candidatos: readonly FilaCandidatoInforme[];
   readonly bajas: readonly FilaBajaInforme[];
-  readonly perdidaBajas: Centavos;
   readonly excluidos: readonly FilaExcluidaInforme[];
   readonly detalle: readonly FilaDetalleInforme[];
 }
@@ -152,9 +158,7 @@ const ESTILOS = `
   .vacio { color: #666; font-style: italic; }
   .nota { color: #555; font-size: 8.5pt; }
   .mono { font-family: 'Consolas', 'Courier New', monospace; }
-  .firmas { margin-top: 12mm; page-break-inside: avoid; }
-  .firmas td { border: none; padding-top: 12mm; text-align: center; }
-  .firmas .linea { border-top: 0.5pt solid #1a1a1a; padding-top: 1mm; }
+  ul.motivos { margin: 0; padding-left: 4mm; }
   .anexo { page-break-before: always; }
   thead { display: table-header-group; }
   tr { page-break-inside: avoid; }
@@ -168,7 +172,6 @@ export function construirInformeHtml(d: DatosInforme): string {
     [
       ['Saldo final ajustado (costo + adiciones)', dinero(d.totalSaldoAjustado)],
       ['(−) Depreciación acumulada', dinero(d.totalDepreciacion)],
-      ['(−) Deterioro reconocido', dinero(d.totalDeterioro)],
       ['<strong>Valor neto en libros</strong>', `<strong>${dinero(d.totalValorNeto)}</strong>`],
     ],
     [1],
@@ -177,7 +180,7 @@ export function construirInformeHtml(d: DatosInforme): string {
   const cobertura = tabla(
     ['Bienes', 'Cantidad'],
     [
-      ['Considerados en el ejercicio (sin los dados de baja)', entero(d.bienesConsiderados)],
+      ['Considerados en el corte (sin los dados de baja)', entero(d.bienesConsiderados)],
       ['Con depreciación calculada', entero(d.conDepreciacion)],
       ['Sin depreciación por datos incompletos', entero(d.sinDepreciacion)],
       ['No depreciables o de terceros', entero(d.noAplicaDepreciacion)],
@@ -217,19 +220,22 @@ export function construirInformeHtml(d: DatosInforme): string {
       ? ''
       : `<p class="nota">Suma por subcuenta: ${dinero(totalSub as Centavos)} · Total del detalle: ${dinero(d.totalValorNeto)} · Diferencia: ${dinero((totalSub - d.totalValorNeto) as Centavos)}.</p>`;
 
-  const bajas = tabla(
-    ['Código', 'Bien', 'Causal', 'Justificación técnica', 'Especialista', 'Estado', 'Valor neto', 'Pérdida'],
-    d.bajas.map((b) => [
-      `<span class="mono">${esc(b.codigo)}</span>`,
-      esc(b.descripcion),
-      esc(b.causal),
-      esc(b.justificacion),
-      esc(b.especialista),
-      esc(b.estado),
-      dinero(b.valorNeto),
-      dinero(b.perdida),
+  const candidatos = tabla(
+    ['Código', 'Bien', 'Clase', 'Índice', 'Por qué', 'Valor neto'],
+    d.candidatos.map((c) => [
+      `<span class="mono">${esc(c.codigo)}</span>`,
+      esc(c.descripcion),
+      esc(c.clase),
+      c.indice === null ? '—' : c.indice.toFixed(4),
+      c.motivos.length === 0 ? '—' : `<ul class="motivos">${c.motivos.map((m) => `<li>${esc(m)}</li>`).join('')}</ul>`,
+      dinero(c.valorNeto),
     ]),
-    [6, 7],
+    [3, 5],
+  );
+
+  const bajas = tabla(
+    ['Código', 'Bien', 'Fecha', 'Causal', 'Justificación', 'Referencia'],
+    d.bajas.map((b) => [`<span class="mono">${esc(b.codigo)}</span>`, esc(b.descripcion), fecha(b.fecha), esc(b.causal), esc(b.justificacion), esc(b.referencia ?? '—')]),
   );
 
   const excluidos = tabla(
@@ -265,10 +271,11 @@ export function construirInformeHtml(d: DatosInforme): string {
   </div>
 
   <h1>Informe de valuación de activos fijos</h1>
-  <p>Ejercicio <strong>${esc(d.ejercicio)}</strong> · fecha de corte <strong>${fecha(d.fechaCorte)}</strong> · generado el ${esc(d.generadoEn)}.</p>
+  <p><strong>${esc(d.nombreProceso)}</strong> · fecha de corte <strong>${fecha(d.fechaCorte)}</strong> · calculado el ${esc(d.calculadoEn)} · generado el ${esc(d.generadoEn)}.</p>
+  <p class="nota">Este documento es el soporte de cálculo de la valuación. No lleva firmas: la entidad lo adopta mediante su propio acto, que firman el representante legal y el contador (Resolución 193 de 2016 de la CGN, numeral 1.1).</p>
 
   <h2>1. Método aplicado</h2>
-  <p class="nota">Se declara en el encabezado del informe porque cambiarlo obliga a recalcular el ejercicio completo y las cifras dejan de cuadrar con contabilidad (RF-06-08, ANEXO_C §3.3).</p>
+  <p class="nota">Se declara en el encabezado del informe porque con otro método las cifras cambian y dejan de cuadrar con contabilidad (RF-06-08, ANEXO_C §3.3).</p>
   ${tabla(
     ['Parámetro', 'Valor aplicado'],
     [
@@ -282,6 +289,7 @@ export function construirInformeHtml(d: DatosInforme): string {
 
   <h2>2. Resumen contable</h2>
   ${resumenContable}
+  <p class="nota">La aplicación no reconoce deterioro: exige indicios y un avalúo que no hace. Si la entidad lo reconoció por su cuenta, debe sumarse aparte.</p>
   ${cobertura}
 
   <h2>3. Consolidado por subcuenta</h2>
@@ -291,21 +299,17 @@ export function construirInformeHtml(d: DatosInforme): string {
   <h2>4. Estado de la vida útil</h2>
   ${vidaUtil}
 
-  <h2>5. Bienes propuestos para baja</h2>
-  <p class="nota">La aplicación registra estados; la baja la aprueba el Comité (RN-09-04). Cada justificación es individual (RN-09-06).</p>
-  ${bajas}
-  ${d.bajas.length === 0 ? '' : `<p><strong>Pérdida total a reconocer por las bajas: ${dinero(d.perdidaBajas)}</strong></p>`}
+  <h2>5. Candidatos a baja</h2>
+  <p class="nota">Los señala el cálculo con su motivo (ANEXO_C §2.7). Ser candidato no da de baja nada: la decisión la toma la entidad por su propio trámite.</p>
+  ${candidatos}
 
-  <h2>6. Bienes fuera del cálculo</h2>
+  <h2>6. Bajas registradas hasta la fecha de corte</h2>
+  <p class="nota">Bajas que la entidad decidió y registró en la aplicación. Esos bienes no entran al cálculo.</p>
+  ${bajas}
+
+  <h2>7. Bienes fuera del cálculo</h2>
   <p class="nota">No se cuentan como cero: se relacionan con su motivo para que se resuelvan (ANEXO_C §2.4 y §3.4).</p>
   ${excluidos}
-
-  <table class="firmas">
-    <tr>
-      <td><div class="linea">${esc(d.gerente)}<br>Gerente</div></td>
-      <td><div class="linea">${esc(d.contador ?? '')}<br>Contador<br>T.P. ${esc(d.tarjetaProfesionalContador ?? '____________')}</div></td>
-    </tr>
-  </table>
 
   <div class="anexo">
     <h2>Anexo · Listado depreciado bien por bien</h2>

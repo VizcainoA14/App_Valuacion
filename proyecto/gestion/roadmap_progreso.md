@@ -1,45 +1,48 @@
 # Roadmap de progreso
 
 **Sincronizado con:** `/proyecto/plan` v1.1
-**Última actualización:** 2026-09-24 *(reorganización de carpetas: `especificacion/`, `proyecto/`, `app/`, `datos_de_prueba/`; sin cambios en tareas)*
+**Última actualización:** 2026-09-24 *(ADR-029: el proceso es lo principal; ADR-028: las extensiones quedan omitidas)*
 
 > **Regla de sincronización.** Este archivo debe reflejar siempre las fases y tareas definidas en
 > `/proyecto/plan/FASE_5_IMPLEMENTACION/5.0_backlog_maestro.md`. Si el backlog cambia, este archivo
 > se actualiza en la misma sesión. Ver `.claude/config_sesion.json` § *sincronizacion*.
 
-## Orden de trabajo vigente (ADR-026)
+## Alcance vigente (ADR-028 y ADR-029)
 
-**Desde el 2026-09-02 el orden lo fija [ADR-026](../plan/DECISIONES/adr_producto.md)**, no
-el grafo de hitos: primero el **núcleo** que un hospital puede recorrer solo, después las extensiones.
-Las tareas conservan su identificador; lo que cambia es cuándo se abordan.
+**Desde el 2026-09-24 el alcance lo fijan [ADR-028 y ADR-029](../plan/DECISIONES/adr_producto.md).**
+Lo principal es el **proceso de valuación**: se inicia (hospital + fecha de corte), se configura, se
+carga su inventario por barridos, se calcula a su fecha, se registran las bajas, se saca el informe
+sin firmas y se **finaliza**. Cada proceso es independiente. **Las extensiones de ADR-026 se
+retiraron** y sus tareas quedan ⏭️.
 
-### Núcleo — el camino del cálculo
+### El producto
 
-| # | Etapa del hospital | Tareas | Estado |
+| # | Sección | Tareas | Estado |
 |:-:|---|---|:-:|
-| 1 | **Configurar** la entidad, sus clases y el método de conteo | `T-B-10` | ✅ |
-| 2 | **Obtener las plantillas** Excel desde la aplicación, con sus catálogos | `T-G-01`, `T-G-02` | ✅ |
-| 3 | **Importar** el inventario con datos económicos | `T-C-07` ✅, `T-C-08` ✅, `T-C-03` ⬜ | 🟡 |
-| 4 | **Calcular** depreciación y obsolescencia ★ | `T-D-01` ✅, `T-D-03` ✅, `T-D-04` ✅, `T-D-05` ✅, `T-D-06` ✅ | ✅ |
-| 5 | **Revisar** candidatos a baja y decidir | `T-D-07` ✅, `T-D-10` ✅, `T-F-01` ✅, `T-F-02` ✅ | ✅ |
-| 6 | **Entregar** el informe | `T-G-03` ✅, `T-C-09` 🟡 | ✅ |
+| 0 | **Procesos**: iniciar, continuar, **finalizar** (solo lectura) | ADR-029 | ✅ |
+| 1 | **Configurar** el proceso: hospital, clases y parámetros | `T-B-10`, ADR-029 | ✅ |
+| 2 | **Formatos**: las 5 plantillas desde la aplicación, con sus catálogos | `T-G-01`, `T-G-02` | ✅ |
+| 3 | **Inventario**: barridos (`PL-03`) y datos económicos (`PL-05`) | `T-C-07` ✅, `T-C-08` ✅, ADR-028 ✅, `T-C-03` ⬜ | 🟡 |
+| 4 | **Calcular** a la fecha de corte del proceso ★ | `T-D-01`, `T-D-03` … `T-D-06`, ADR-029 | ✅ |
+| 5 | **Bajas**: candidatos y registro | `T-D-07`, `T-D-10`, `T-F-01`, ADR-028 | ✅ |
+| 6 | **Informe** del proceso | `T-G-03`, ADR-028 | ✅ |
 
-★ La etapa 4 es la razón de ser del producto: el resto existe para alimentarla y para explicar su
+★ El cálculo es la razón de ser del producto: el resto existe para alimentarlo y para explicar su
 resultado.
 
-### Extensiones — después del núcleo
+### Omitidas por ADR-028
 
-| Extensión | Pasos | Tareas |
+| Lo retirado | Pasos | Tareas |
 |---|:-:|---|
-| Conciliación físico-contable | 04 | `T-D-08`, `T-D-09` |
-| Valuación técnica de muebles | 07 | `T-E-01` … `T-E-04` |
-| Inmuebles y avalúos | 08 | `T-E-05` … `T-E-08` |
-| Comité, resoluciones y consolidación | 09-10 | `T-F-03` … `T-F-09` |
-| Entrega contractual y cierre | 11 | `T-F-10`, `T-F-11`, `T-G-07`, `T-G-08` |
-| Soporte físico (fotos, etiquetas, custodia) | 02 | `T-C-05`, `T-C-06`, `T-G-06` |
+| Conciliación físico-contable | 04 | `T-D-08`, `T-D-09` ⏭️ |
+| Valuación técnica de muebles | 07 | `T-E-01` … `T-E-04` ⏭️ |
+| Inmuebles y avalúos | 08 | `T-E-05` … `T-E-08` ⏭️ |
+| Comité, resoluciones, consolidación y propuestas de baja | 09-10 | `T-F-02` (flujo del Comité), `T-F-03` … `T-F-09` ⏭️ |
+| Entrega contractual y cierre del ejercicio | 11 | `T-F-10`, `T-F-11`, `T-G-07`, `T-G-08` ⏭️ |
+| Soporte físico (fotos, etiquetas, custodia) | 02 | `T-C-05`, `T-C-06`, `T-G-06` ⏭️ |
 
-Las tablas por hito de más abajo se conservan íntegras: son el detalle de cada tarea y su criterio de
-verificación. El **orden** es el de esta sección.
+Las tablas por hito de más abajo se conservan como **registro histórico** del plan original; **no se
+remarcaron fila por fila**. Donde discrepen con esta sección, manda esta sección.
 
 ---
 

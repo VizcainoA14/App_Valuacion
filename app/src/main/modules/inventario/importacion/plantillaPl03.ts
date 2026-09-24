@@ -16,7 +16,7 @@ export const PL_03: DefinicionPlantilla = {
   hojas: [
     {
       nombre: HOJA_INVENTARIO,
-      // RN-02-01: unicidad dentro del ejercicio. La placa se comprueba aparte
+      // RN-02-01: unicidad dentro de la entidad. La placa se comprueba aparte
       // porque las dos claves son independientes y cada una da su propio motivo.
       claveUnica: ['codigo_institucional'],
       columnas: [

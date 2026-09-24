@@ -1,6 +1,6 @@
 /**
  * Semilla mínima para pruebas de persistencia: una entidad completa con sede,
- * servicio, clase, responsable y ejercicio, sobre una base en memoria migrada.
+ * servicio y clases, sobre una base en memoria migrada.
  * NO es el hospital de demostración (T-B-11); es lo mínimo para insertar un bien.
  */
 import { abrirSqlite, crearBaseDatos, type BaseDatos, type ConexionSqlite } from '../conexion';
@@ -21,29 +21,27 @@ export async function abrirBaseDePrueba(ruta = ':memory:'): Promise<BasePrueba> 
 }
 
 export interface IdsSemilla {
-  readonly entidad: string;
+  readonly proceso: string;
   readonly sede: string;
   readonly servicio: string;
   readonly clase: string;
   readonly claseNoDepreciable: string;
-  readonly responsable: string;
-  readonly ejercicio: string;
 }
 
-export function sembrarMinimo(db: BaseDatos, fechaCorte = '2025-06-30'): IdsSemilla {
+export function sembrarMinimo(db: BaseDatos): IdsSemilla {
   const ids: IdsSemilla = {
-    entidad: nuevoId(),
+    proceso: nuevoId(),
     sede: nuevoId(),
     servicio: nuevoId(),
     clase: nuevoId(),
     claseNoDepreciable: nuevoId(),
-    responsable: nuevoId(),
-    ejercicio: nuevoId(),
   };
 
-  db.insert(esquema.entidad)
+  db.insert(esquema.proceso)
     .values({
-      id: ids.entidad,
+      id: ids.proceso,
+      nombre: 'Valuación de prueba',
+      fechaCorte: '2025-06-30',
       razonSocial: 'E.S.E Hospital de Prueba',
       nit: '800000000-1',
       municipio: 'Bogotá',
@@ -57,7 +55,7 @@ export function sembrarMinimo(db: BaseDatos, fechaCorte = '2025-06-30'): IdsSemi
   db.insert(esquema.sede)
     .values({
       id: ids.sede,
-      entidadId: ids.entidad,
+      procesoId: ids.proceso,
       codigo: 'SP',
       nombre: 'Sede principal',
       direccion: 'Calle 1 # 2-3',
@@ -79,7 +77,7 @@ export function sembrarMinimo(db: BaseDatos, fechaCorte = '2025-06-30'): IdsSemi
     .values([
       {
         id: ids.clase,
-        entidadId: ids.entidad,
+        procesoId: ids.proceso,
         codigo: 'EMC',
         nombre: 'Equipo médico y científico',
         subcuentaContable: '166501',
@@ -88,11 +86,11 @@ export function sembrarMinimo(db: BaseDatos, fechaCorte = '2025-06-30'): IdsSemi
         esDepreciable: true,
         requiereHojaVida: true,
         requiereInvima: true,
-        responsableTecnico: 'ESPECIALISTA_BIOMEDICO',
+        responsableTecnico: 'Ingeniería biomédica',
       },
       {
         id: ids.claseNoDepreciable,
-        entidadId: ids.entidad,
+        procesoId: ids.proceso,
         codigo: 'TER',
         nombre: 'Terrenos',
         subcuentaContable: '160501',
@@ -101,31 +99,9 @@ export function sembrarMinimo(db: BaseDatos, fechaCorte = '2025-06-30'): IdsSemi
         esDepreciable: false,
         requiereHojaVida: false,
         requiereInvima: false,
-        responsableTecnico: 'ESPECIALISTA_FISICOS',
+        responsableTecnico: 'Recursos físicos',
       },
     ])
-    .run();
-
-  db.insert(esquema.responsable)
-    .values({
-      id: ids.responsable,
-      entidadId: ids.entidad,
-      nombreCompleto: 'Coordinadora de Prueba',
-      documentoIdentidad: '1000000000',
-      perfil: 'COORDINADOR',
-      cargo: 'Coordinadora del proceso',
-    })
-    .run();
-
-  db.insert(esquema.ejercicio)
-    .values({
-      id: ids.ejercicio,
-      entidadId: ids.entidad,
-      nombre: `Valuación corte ${fechaCorte}`,
-      fechaCorte,
-      parametrosCongeladosJson: '{}',
-      creadoPorResponsableId: ids.responsable,
-    })
     .run();
 
   return ids;
@@ -141,7 +117,7 @@ export function crearBien(
   db.insert(esquema.bien)
     .values({
       id,
-      ejercicioId: ids.ejercicio,
+      procesoId: ids.proceso,
       codigoInstitucional: `HP-EMC-${consecutivo}`,
       placa: `PL-${consecutivo}`,
       descripcionFuncional: 'Monitor de signos vitales',

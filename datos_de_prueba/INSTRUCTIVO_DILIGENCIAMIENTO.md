@@ -5,55 +5,30 @@
 
 ## Lo primero: cuáles hay que llenar
 
-De las **28 plantillas** del proceso, la aplicación hoy **lee 5**:
+La aplicación trabaja con **5 plantillas**, y todas se vuelven a cargar en ella:
 
 | Orden | Plantilla | Qué aporta | Quién la llena |
 |:-:|---|---|---|
 | 1 | `PL-01` | Identificación de la E.S.E y parámetros de cálculo | Subgerencia administrativa, con contabilidad |
 | 2 | `PL-02` | Clases de activo y vidas útiles | Contabilidad (Manual de Políticas Contables) |
 | 3 | `PL-02b` | Sedes y servicios | Administración |
-| 4 | `PL-03` | **El inventario físico** | Los técnicos que recorren los servicios |
+| 4 | `PL-03` | **El barrido: el inventario físico** | Los técnicos que recorren los servicios |
 | 5 | `PL-05` | Fecha y costo de adquisición, mantenimientos | Contabilidad y biomédica |
 
-**Ese es todo el trabajo de campo que hace falta para calcular.** Con esas cinco, la
-aplicación produce la depreciación, la obsolescencia, los candidatos a baja y el informe.
+**Ese es todo el trabajo que hace falta para calcular.** Con esas cinco, la aplicación
+produce la depreciación, la obsolescencia, los candidatos a baja y el informe.
+
+Las tres primeras se llenan **una vez**, al configurar la entidad. `PL-03` y `PL-05` se
+vuelven a llenar **cada vez que se hace un barrido**: no hace falta recontar todo el
+hospital, basta con los servicios que se recorrieron.
 
 ### Descárguelas desde la aplicación, no de una carpeta suelta
 
-En **2. Formatos**, la aplicación entrega las plantillas **con los catálogos del hospital
+En **Formatos**, la aplicación entrega las plantillas **con los catálogos del hospital
 ya puestos como listas desplegables** (sus clases, sus sedes, sus servicios). Eso evita la
 mitad de los errores de digitación. Una plantilla bajada de otro lado no los trae.
 
 > Excepción: `PL-01` se descarga antes de que exista la entidad, así que va sin listas.
-
-### Las que NO hay que llenar todavía
-
-**Las produce la aplicación** (no se diligencian):
-`PL-04` · `PL-07` · `PL-08` · `PL-09` · `PL-14`
-
-**Se diligencian, pero pertenecen a etapas que aún no están construidas.** Llenarlas hoy
-no sirve de nada porque la aplicación todavía no las lee:
-
-| Plantilla | Para qué es | Llega con |
-|---|---|---|
-| `PL-06` | Saldos contables | paso 4 |
-| `PL-07b` | Partidas conciliatorias | paso 4 |
-| `PL-08b` | Ajuste de vida útil | paso 5 |
-| `PL-09b` | Deterioro | paso 6 |
-| `PL-10` | Valuación de muebles | paso 7 |
-| `PL-10b` | Referencias de mercado | paso 7 |
-| `PL-11` | Ficha de inmueble | paso 8 |
-| `PL-11b` | Estudio de mercado de inmuebles | paso 8 |
-| `PL-13` | Baja de bienes | paso 9 |
-| `PL-19` | Plan de capacitación | paso 11 |
-| `PL-12` | Acta de custodia | paso 2 |
-| `PL-13b` | Certificación técnica de baja | paso 9 |
-| `PL-13c` | Acta de disposición final | paso 9 |
-| `PL-15` | Resolución de valuación | paso 10 |
-| `PL-16` | Acta del Comité | paso 10 |
-| `PL-17` | Acta de entrega final | paso 11 |
-| `PL-18` | Manual de activos fijos | paso 11 |
-| `PL-20` | Acta de liquidación | paso 11 |
 
 ---
 
@@ -90,7 +65,7 @@ Obligatorios para crear la entidad: `razon_social`, `nit`, `municipio`, `departa
 | `direccion` | Identificación | Texto |
 | `telefono` | Identificación | Texto |
 | `email` | Identificación | Texto |
-| `fecha_corte_ejercicio` | Ejercicio | Fecha |
+| `fecha_corte_ejercicio` | Informativo (no se usa) | Fecha |
 | `metodo_depreciacion` | Parámetro de cálculo | Lista cerrada<br>Valores: `linea_recta` |
 | `metodo_conteo_meses` | Parámetro de cálculo | Lista cerrada<br>Valores: `mes_completo` · `dias_exactos` · `fraccion_anual` |
 | `deprecia_mes_adquisicion` | Parámetro de cálculo | SI / NO |
@@ -108,12 +83,12 @@ Obligatorios para crear la entidad: `razon_social`, `nit`, `municipio`, `departa
 | `vigencia_avaluo_meses` | Parámetro de cálculo | Número entero |
 | `moneda` | Parámetro de cálculo | Texto |
 
-> `fecha_corte_ejercicio` se informa aquí, pero la fecha de corte se fija al **crear el
-> ejercicio** en la aplicación. Verá un aviso al importar; es correcto.
+> `fecha_corte_ejercicio` se puede dejar en blanco: la fecha de corte se elige **cada vez
+> que se calcula**. Si viene llena, la aplicación avisa y no la usa.
 >
 > `metodo_conteo_meses` es **el parámetro más delicado de todo el sistema**: decide cuántos
-> meses se deprecia cada bien. Debe acordarse con el contador **antes** de calcular, y la
-> aplicación exige confirmarlo por acta dentro de la aplicación. No basta con escribirlo aquí.
+> meses se deprecia cada bien. Conviene acordarlo con el contador **antes** de calcular. El
+> informe declara el que se usó.
 
 ---
 
@@ -167,7 +142,13 @@ Hoja **CLASES**. Una fila por clase. Salen del Manual de Políticas Contables.
 ## `PL-03` · Toma de inventario físico
 
 Hoja **INVENTARIO**. **Una fila por bien.** Es la plantilla que llena el personal de campo
-y la única entrada del inventario.
+y la única entrada del inventario. Cada archivo que se importa es un **barrido**:
+
+- un bien que no estaba se **agrega**;
+- uno que ya estaba (mismo código institucional) se **actualiza** con lo que se vio: dónde
+  está, en qué estado, quién lo contó;
+- uno que estaba registrado en un servicio que el archivo **sí** recorre, pero que no aparece
+  en él, queda como **no encontrado**. Los servicios que el archivo no menciona no se tocan.
 
 | Columna | ¿Obligatoria? | Qué se escribe | Notas |
 |---|:-:|---|---|
@@ -191,8 +172,10 @@ y la única entrada del inventario.
 
 ### Lo que más se equivoca
 
-- **Código y placa repetidos.** Cada uno es único en el ejercicio. Si dos bienes comparten
+- **Código y placa repetidos.** Cada uno es único en el hospital. Si dos bienes comparten
   placa, revise cuál está mal marcado antes de importar.
+- **Un barrido parcial que se quiere completo.** Si recorrió un servicio, incluya todos sus
+  bienes: los que falten se marcarán como no encontrados.
 - **Servicio que no pertenece a la sede.** "URGENCIAS" existe en la sede 01; escribirlo en
   un bien de la sede 02 rechaza la fila.
 - **La serie sí puede repetirse.** Equipos idénticos comparten serie o no la traen. La
@@ -228,7 +211,8 @@ Tres hojas. La primera es la que alimenta el cálculo.
 | `justificacion_override` | No | Texto | Por qué se cambia la vida útil. Sin esto la fila se rechaza. |
 
 > `fecha_adquisicion` y `costo_adquisicion` son **lo que el motor necesita**. Un bien sin
-> ellos queda marcado como incompleto y **no entra al cálculo** hasta que se resuelva.
+> ellos **no entra al cálculo de la depreciación** hasta que se resuelva, y el informe lo
+> relaciona con su motivo.
 
 ### Hoja **MANTENIMIENTOS** — una fila por mantenimiento
 
@@ -248,7 +232,7 @@ Tres hojas. La primera es la que alimenta el cálculo.
 
 Cuando tras buscar no hay soporte, **no se inventa el dato**: un especialista estima el
 valor y la fecha, y deja constancia escrita. Esta hoja **es** esa constancia; el libro que
-se importa queda archivado como acta, con su huella digital.
+se importa queda archivado como soporte, con su huella digital.
 
 | Columna | ¿Obligatoria? | Qué se escribe | Notas |
 |---|:-:|---|---|
@@ -263,12 +247,13 @@ se importa queda archivado como acta, con su huella digital.
 
 ## Orden de trabajo sugerido
 
-1. Descargue `PL-01` desde **2. Formatos** y páselo a la subgerencia administrativa.
+1. Descargue `PL-01` desde **Formatos** y páselo a la subgerencia administrativa.
 2. Cree la entidad con **Nueva entidad → Crear desde PL-01**.
 3. Descargue `PL-02` y `PL-02b` (ya salen con membrete) e impórtelos.
 4. **Vuelva a descargar `PL-03` y `PL-05`**: ahora sí traen las listas desplegables con
    las clases, sedes y servicios del hospital. Entréguelos al personal de campo.
-5. Importe `PL-03`, luego `PL-05`, y calcule.
+5. Importe `PL-03`, luego `PL-05`, y calcule a la fecha de corte que necesite.
+6. En el próximo barrido, repita desde el punto 4: la aplicación actualiza lo que ya tiene.
 
 > El punto 4 importa: si entrega `PL-03` antes de cargar el catálogo, el personal escribirá
 > los nombres a mano y aparecerán errores de digitación al importar.

@@ -2,8 +2,8 @@
 
 export type FormatoPlantilla = 'xlsx' | 'docx';
 
-/** Etapa del núcleo a la que pertenece la plantilla (ADR-026). */
-export type EtapaPlantilla = 'configurar' | 'inventario' | 'datos-economicos' | 'calculo' | 'bajas' | 'extension';
+/** Para qué se usa: dejar lista la entidad, o registrar lo que hay (ADR-028). */
+export type EtapaPlantilla = 'configurar' | 'inventario';
 
 export interface PlantillaDto {
   readonly codigo: string;

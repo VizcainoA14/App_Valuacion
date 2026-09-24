@@ -1,6 +1,13 @@
-/** MOD-07/08 — Resultados persistidos del motor (ANEXO_B §4.2, §4.3; pasos 05 y 06). */
+/**
+ * MOD-07/08 — Cortes de cálculo y sus resultados (ANEXO_B §4.2, §4.3; ADR-028).
+ *
+ * Un corte es la corrida del motor de un proceso, a su fecha. Guarda los
+ * parámetros que usó y, bien por bien, lo que calculó y lo que no pudo
+ * calcular. No se modifica —un trigger lo impide—: recalcular lo reemplaza
+ * entero, y con el proceso finalizado ya no se puede (ADR-029).
+ */
 import { sql } from 'drizzle-orm';
-import { index, uniqueIndex, check, sqliteTable } from 'drizzle-orm/sqlite-core';
+import { index, uniqueIndex, check, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 import {
   uuidPk,
   uuid,
@@ -9,7 +16,7 @@ import {
   centavos,
   x10k,
   fecha,
-  marcaTiempo,
+  json,
   booleano,
   enumCatalogo,
   creadoEn,
@@ -17,22 +24,37 @@ import {
   chkBooleano,
   chkNoNegativo,
 } from './_columnas';
-import { SEMAFORO, INDICIO_DETERIORO } from '../../../../compartido/enums/catalogos';
+import { SEMAFORO } from '../../../../compartido/enums/catalogos';
 import { METODO_CONTEO_MESES } from '../../../../compartido/enums/parametros';
-import { ejercicio, responsable } from './configuracion';
+import { proceso } from './configuracion';
 import { bien } from './inventario';
+
+export const corte = sqliteTable(
+  'corte',
+  {
+    id: uuidPk(),
+    procesoId: uuid('proceso_id')
+      .notNull()
+      .references(() => proceso.id, { onDelete: 'cascade' }),
+    /** Parámetro central de todo el cálculo. */
+    fechaCorte: fecha('fecha_corte').notNull(),
+    /** Copia de los parámetros vigentes al calcular (RN-01-01). */
+    parametrosJson: json('parametros_json').notNull(),
+    creadoEn: creadoEn(),
+  },
+  (t) => [uniqueIndex('ux_corte_proceso').on(t.procesoId)],
+);
 
 export const calculoObsolescencia = sqliteTable(
   'calculo_obsolescencia',
   {
     id: uuidPk(),
-    ejercicioId: uuid('ejercicio_id')
+    corteId: uuid('corte_id')
       .notNull()
-      .references(() => ejercicio.id, { onDelete: 'restrict' }),
+      .references(() => corte.id, { onDelete: 'cascade' }),
     bienId: uuid('bien_id')
       .notNull()
       .references(() => bien.id, { onDelete: 'restrict' }),
-    fechaCorte: fecha('fecha_corte').notNull(),
     vidaUtilTecnicaAplicada: x10k('vida_util_tecnica_aplicada').notNull(),
     edadActualAnios: x10k('edad_actual_anios').notNull(),
     /** Sin truncar en 1 (RN-05-02). */
@@ -40,22 +62,15 @@ export const calculoObsolescencia = sqliteTable(
     aniosRestantes: x10k('anios_restantes').notNull(),
     fechaFinVidaUtil: fecha('fecha_fin_vida_util').notNull(),
     semaforo: enumCatalogo('semaforo', SEMAFORO).notNull(),
+    /** Lo que el hospital había declarado del bien al momento del corte. */
     obsolescenciaFuncional: booleano('obsolescencia_funcional').notNull().default(false),
-    justificacionFuncional: texto('justificacion_funcional'),
     candidatoBaja: booleano('candidato_baja').notNull().default(false),
-    conceptoEspecialista: texto('concepto_especialista'),
-    /** Recalcular si cambia (plan 2.6 §9). */
-    entradaHash: texto('entrada_hash').notNull(),
-    parametrosHash: texto('parametros_hash').notNull(),
-    calculadoEn: marcaTiempo('calculado_en').notNull(),
-    calculadoPorResponsableId: uuid('calculado_por_responsable_id').references(
-      () => responsable.id,
-      { onDelete: 'set null' },
-    ),
+    /** Por qué el motor lo señaló (ANEXO_C §2.7), tal como se dijo ese día. JSON: string[]. */
+    motivosBaja: json('motivos_baja'),
   },
   (t) => [
-    uniqueIndex('ux_calc_obs_bien').on(t.ejercicioId, t.bienId),
-    index('ix_calc_obs_semaforo').on(t.ejercicioId, t.semaforo),
+    uniqueIndex('ux_calc_obs_bien').on(t.corteId, t.bienId),
+    index('ix_calc_obs_semaforo').on(t.corteId, t.semaforo),
     chkCatalogo('chk_obs_semaforo', t.semaforo, SEMAFORO),
     chkBooleano('chk_obs_funcional', t.obsolescenciaFuncional),
     chkBooleano('chk_obs_candidato', t.candidatoBaja),
@@ -67,13 +82,12 @@ export const calculoDepreciacion = sqliteTable(
   'calculo_depreciacion',
   {
     id: uuidPk(),
-    ejercicioId: uuid('ejercicio_id')
+    corteId: uuid('corte_id')
       .notNull()
-      .references(() => ejercicio.id, { onDelete: 'restrict' }),
+      .references(() => corte.id, { onDelete: 'cascade' }),
     bienId: uuid('bien_id')
       .notNull()
       .references(() => bien.id, { onDelete: 'restrict' }),
-    fechaCorte: fecha('fecha_corte').notNull(),
     valorAdquisicion: centavos('valor_adquisicion').notNull(),
     adicionesMejoras: centavos('adiciones_mejoras').notNull().default(0),
     saldoFinalAjustado: centavos('saldo_final_ajustado').notNull(),
@@ -87,16 +101,14 @@ export const calculoDepreciacion = sqliteTable(
     /** Se persiste en cada fila para auditar aunque el parámetro cambie. */
     metodoConteoAplicado: enumCatalogo('metodo_conteo_aplicado', METODO_CONTEO_MESES).notNull(),
     depreciacionAcumulada: centavos('depreciacion_acumulada').notNull(),
+    /** La aplicación no reconoce deterioro (exige indicios y avalúo): queda en 0 y el informe lo dice. */
     deterioro: centavos('deterioro').notNull().default(0),
     saldoPorDepreciar: centavos('saldo_por_depreciar').notNull(),
     valorNetoLibros: centavos('valor_neto_libros').notNull(),
     totalmenteDepreciado: booleano('totalmente_depreciado').notNull().default(false),
-    entradaHash: texto('entrada_hash').notNull(),
-    parametrosHash: texto('parametros_hash').notNull(),
-    calculadoEn: marcaTiempo('calculado_en').notNull(),
   },
   (t) => [
-    uniqueIndex('ux_calc_dep_bien').on(t.ejercicioId, t.bienId),
+    uniqueIndex('ux_calc_dep_bien').on(t.corteId, t.bienId),
     chkCatalogo('chk_dep_metodo', t.metodoConteoAplicado, METODO_CONTEO_MESES),
     chkBooleano('chk_dep_total', t.totalmenteDepreciado),
     // INT-05
@@ -107,31 +119,27 @@ export const calculoDepreciacion = sqliteTable(
   ],
 );
 
-export const deterioro = sqliteTable(
-  'deterioro',
+/**
+ * Regla 11: lo que no se pudo calcular no es un cero. Se guarda con su motivo
+ * para que el informe de ESTE corte lo relacione aunque después el bien cambie.
+ */
+export const calculoExclusion = sqliteTable(
+  'calculo_exclusion',
   {
     id: uuidPk(),
-    ejercicioId: uuid('ejercicio_id')
+    corteId: uuid('corte_id')
       .notNull()
-      .references(() => ejercicio.id, { onDelete: 'restrict' }),
+      .references(() => corte.id, { onDelete: 'cascade' }),
     bienId: uuid('bien_id')
       .notNull()
       .references(() => bien.id, { onDelete: 'restrict' }),
-    valorNetoAntes: centavos('valor_neto_antes').notNull(),
-    valorRecuperable: centavos('valor_recuperable').notNull(),
-    deterioroReconocido: centavos('deterioro_reconocido').notNull(),
-    indicio: enumCatalogo('indicio', INDICIO_DETERIORO).notNull(),
-    justificacion: texto('justificacion').notNull(),
-    especialistaId: uuid('especialista_id').references(() => responsable.id, {
-      onDelete: 'set null',
-    }),
-    soporteUrl: texto('soporte_url'),
-    reconocidoEn: marcaTiempo('reconocido_en').notNull(),
-    creadoEn: creadoEn(),
+    ambito: text('ambito', { enum: ['GENERAL', 'OBSOLESCENCIA', 'DEPRECIACION'] }).notNull(),
+    estado: text('estado', { enum: ['NO_APLICA', 'NO_CALCULABLE', 'ERROR_DATOS'] }).notNull(),
+    motivo: texto('motivo').notNull(),
   },
   (t) => [
-    uniqueIndex('ux_deterioro_bien').on(t.ejercicioId, t.bienId),
-    chkCatalogo('chk_deterioro_indicio', t.indicio, INDICIO_DETERIORO),
-    chkNoNegativo('chk_deterioro_valor', t.deterioroReconocido),
+    index('ix_calc_exclusion').on(t.corteId, t.bienId),
+    check('chk_exclusion_ambito', sql`${t.ambito} IN ('GENERAL', 'OBSOLESCENCIA', 'DEPRECIACION')`),
+    check('chk_exclusion_estado', sql`${t.estado} IN ('NO_APLICA', 'NO_CALCULABLE', 'ERROR_DATOS')`),
   ],
 );

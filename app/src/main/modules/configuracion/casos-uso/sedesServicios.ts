@@ -6,7 +6,7 @@ import { ErrorReglaNegocio, ErrorValidacion } from '../../../../compartido/error
 import { nuevoId } from '../../../infraestructura/db/identificadores';
 import { sedeRepo, type NuevaSede } from '../repositorio/sede.repo';
 import { servicioRepo, type NuevoServicio } from '../repositorio/servicio.repo';
-import { exigirEntidad } from './entidades';
+import { exigirProceso } from './procesos';
 
 /** Zod deja `undefined` en las claves ausentes del parcial; el repositorio solo recibe las presentes. */
 function soloPresentes<T>(cambios: object): T {
@@ -19,12 +19,12 @@ function proyectar(dto: object, claves: string[]): Record<string, unknown> {
 }
 
 export function listarSedes(e: EntradaValidadaDe<'sede:listar'>, ctx: ContextoIpc): SedeDto[] {
-  return sedeRepo.listar(ctx.db, e.entidadId, e.incluirInactivas);
+  return sedeRepo.listar(ctx.db, e.procesoId, e.incluirInactivas);
 }
 
 export function crearSede(e: EntradaValidadaDe<'sede:crear'>, ctx: ContextoIpc): SedeDto {
-  exigirEntidad(ctx, e.entidadId);
-  if (sedeRepo.porCodigo(ctx.db, e.entidadId, e.codigo) !== null) {
+  exigirProceso(ctx, e.procesoId);
+  if (sedeRepo.porCodigo(ctx.db, e.procesoId, e.codigo) !== null) {
     throw new ErrorReglaNegocio('SEDE_DUPLICADA', `Ya existe una sede con código ${e.codigo}.`, { campo: 'codigo' });
   }
   const ahora = ctx.ahoraIso();
@@ -37,7 +37,7 @@ export function actualizarSede(e: EntradaValidadaDe<'sede:actualizar'>, ctx: Con
   const actual = sedeRepo.porId(ctx.db, e.id);
   if (actual === null) throw new ErrorValidacion('SEDE_INEXISTENTE', 'La sede no existe.', { campo: 'id' });
   const presentes = soloPresentes<Partial<NuevaSede>>(e.cambios);
-  if (presentes.codigo !== undefined && presentes.codigo !== actual.codigo && sedeRepo.porCodigo(ctx.db, actual.entidadId, presentes.codigo) !== null) {
+  if (presentes.codigo !== undefined && presentes.codigo !== actual.codigo && sedeRepo.porCodigo(ctx.db, actual.procesoId, presentes.codigo) !== null) {
     throw new ErrorReglaNegocio('SEDE_DUPLICADA', 'Otra sede ya tiene ese código.', { campo: 'codigo' });
   }
   const actualizada = sedeRepo.actualizar(ctx.db, e.id, presentes, ctx.ahoraIso());
@@ -46,7 +46,7 @@ export function actualizarSede(e: EntradaValidadaDe<'sede:actualizar'>, ctx: Con
 }
 
 export function listarServicios(e: EntradaValidadaDe<'servicio:listar'>, ctx: ContextoIpc): ServicioDto[] {
-  return servicioRepo.listarPorEntidad(ctx.db, e.entidadId, e.incluirInactivos);
+  return servicioRepo.listarPorProceso(ctx.db, e.procesoId, e.incluirInactivos);
 }
 
 export function crearServicio(e: EntradaValidadaDe<'servicio:crear'>, ctx: ContextoIpc): ServicioDto {

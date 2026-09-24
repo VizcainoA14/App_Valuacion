@@ -5,15 +5,15 @@ import type { ClaseActivoDto } from '../../../../compartido/dtos/configuracion';
 import { ErrorReglaNegocio, ErrorValidacion } from '../../../../compartido/errores';
 import { nuevoId } from '../../../infraestructura/db/identificadores';
 import { claseRepo, aniosAX10k, type NuevaClase } from '../repositorio/clase.repo';
-import { exigirEntidad, precargarClasesSugeridas } from './entidades';
+import { exigirProceso, precargarClasesSugeridas } from './procesos';
 
 export function listarClases(e: EntradaValidadaDe<'clase:listar'>, ctx: ContextoIpc): ClaseActivoDto[] {
-  return claseRepo.listar(ctx.db, e.entidadId, e.incluirInactivas);
+  return claseRepo.listar(ctx.db, e.procesoId, e.incluirInactivas);
 }
 
 export function crearClase(e: EntradaValidadaDe<'clase:crear'>, ctx: ContextoIpc): ClaseActivoDto {
-  exigirEntidad(ctx, e.entidadId);
-  if (claseRepo.porCodigo(ctx.db, e.entidadId, e.codigo) !== null) {
+  exigirProceso(ctx, e.procesoId);
+  if (claseRepo.porCodigo(ctx.db, e.procesoId, e.codigo) !== null) {
     throw new ErrorReglaNegocio('CLASE_DUPLICADA', `Ya existe una clase con código ${e.codigo}.`, { campo: 'codigo' });
   }
   const ahora = ctx.ahoraIso();
@@ -27,14 +27,14 @@ export function actualizarClase(e: EntradaValidadaDe<'clase:actualizar'>, ctx: C
   const actual = claseRepo.porId(ctx.db, e.id);
   if (actual === null) throw new ErrorValidacion('CLASE_INEXISTENTE', 'La clase no existe.', { campo: 'id' });
   const presentes = Object.fromEntries(Object.entries(e.cambios).filter(([, v]) => v !== undefined)) as Partial<typeof e.cambios>;
-  if (presentes.codigo !== undefined && presentes.codigo !== actual.codigo && claseRepo.porCodigo(ctx.db, actual.entidadId, presentes.codigo) !== null) {
+  if (presentes.codigo !== undefined && presentes.codigo !== actual.codigo && claseRepo.porCodigo(ctx.db, actual.procesoId, presentes.codigo) !== null) {
     throw new ErrorReglaNegocio('CLASE_DUPLICADA', 'Otra clase ya tiene ese código.', { campo: 'codigo' });
   }
   const cambiosFisicos: Partial<NuevaClase> = { ...presentes } as Partial<NuevaClase>;
   if ('vidaUtilTecnicaAnios' in presentes) cambiosFisicos.vidaUtilTecnicaAnios = aniosAX10k(presentes.vidaUtilTecnicaAnios);
 
   const actualizada = claseRepo.actualizar(ctx.db, e.id, cambiosFisicos, ctx.ahoraIso());
-  // Cambiar una vida útil invalida los cálculos de los ejercicios abiertos (ANEXO_C §10): queda en bitácora.
+  // Cambiar una vida útil vale para los cortes que vengan; los ya calculados conservan la suya (ANEXO_C §10). Queda en bitácora.
   ctx.bitacora.registrarCambios(
     { entidadAfectada: 'clase_activo', registroId: e.id, justificacion: e.justificacion },
     actual as unknown as Record<string, unknown>,
@@ -44,10 +44,10 @@ export function actualizarClase(e: EntradaValidadaDe<'clase:actualizar'>, ctx: C
 }
 
 export function precargarSugeridas(e: EntradaValidadaDe<'clase:precargarSugeridas'>, ctx: ContextoIpc): { creadas: number; omitidas: number } {
-  exigirEntidad(ctx, e.entidadId);
-  const r = precargarClasesSugeridas(ctx, e.entidadId);
+  exigirProceso(ctx, e.procesoId);
+  const r = precargarClasesSugeridas(ctx, e.procesoId);
   if (r.creadas > 0) {
-    ctx.bitacora.registrar({ entidadAfectada: 'clase_activo', registroId: e.entidadId, accion: 'IMPORTAR', valorNuevo: `Catálogo sugerido: ${r.creadas} clases creadas, ${r.omitidas} ya existían` });
+    ctx.bitacora.registrar({ entidadAfectada: 'clase_activo', registroId: e.procesoId, accion: 'IMPORTAR', valorNuevo: `Catálogo sugerido: ${r.creadas} clases creadas, ${r.omitidas} ya existían` });
   }
   return r;
 }

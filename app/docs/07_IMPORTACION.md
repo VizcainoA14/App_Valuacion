@@ -2,16 +2,16 @@
 
 El inventario **solo** entra por aquí (ADR-015). No hay captura en campo.
 
-## Las 28 plantillas viajan dentro
+## Las 5 plantillas viajan dentro
 
-Las plantillas de `especificacion/plantillas/` se empaquetan en el instalador con
-`extraResources`, así que el hospital **no tiene que buscarlas en ningún correo**. La etapa 2 las
-entrega, y al descargarlas se les inyectan los catálogos de la entidad como **listas desplegables**:
-las clases, sedes y servicios que ese hospital registró.
+Las cinco plantillas que el hospital diligencia —`PL-01`, `PL-02`, `PL-02b`, `PL-03` y `PL-05`— se
+empaquetan en el instalador con `extraResources`, así que el hospital **no tiene que buscarlas en
+ningún correo**. La sección *Formatos* las entrega, y al descargarlas se les inyectan los catálogos
+del proceso como **listas desplegables**: las clases, sedes y servicios que se registraron en él.
 
-De las 28, **hoy se leen 5**: `PL-01`, `PL-02`, `PL-02b`, `PL-03` y `PL-05`. Las demás se
-diligencian pero aún no se importan. `npm run instructivo` genera el manual de diligenciamiento
-**desde las definiciones reales del importador**, así que no puede quedar desactualizado.
+Las otras 23 de `ANEXO_A` siguen en `especificacion/plantillas/` como referencia, pero la aplicación
+no las entrega (ADR-028). `npm run instructivo` genera el manual de diligenciamiento **desde las
+definiciones reales del importador**, así que no puede quedar desactualizado.
 
 ## Una sola orquestación
 
@@ -20,8 +20,7 @@ diligencian pero aún no se importan. `npm run instructivo` genera el manual de 
 ```ts
 interface ImportadorPlantilla {
   codigo: PlantillaImportable;
-  requiereEjercicio: boolean;
-  requiereEntidad?: boolean;          // false solo en PL-01: la crea
+  requiereProceso?: boolean;          // false solo en PL-01: lo inicia
   leer(archivo, formatoFecha): Promise<LecturaNormalizada>;
   validarNegocio(ambito, lectura, ctx): void;
   aplicar(ambito, lectura, ctx, archivo): ResultadoAplicacion;
@@ -30,6 +29,23 @@ interface ImportadorPlantilla {
 
 Una sola pantalla importa cualquiera de las cinco: **reconoce qué plantilla se le entrega** en vez
 de obligar a elegirla de una lista (ADR-026).
+
+## `PL-03` es un barrido
+
+El inventario es del proceso: cada proceso nuevo lo importa de cero (ADR-029). Dentro de un proceso
+en curso, una importación de `PL-03` no lo reemplaza, lo **actualiza** (ADR-028):
+
+| Lo que trae el archivo | Qué pasa |
+|---|---|
+| Un código que no existía | Se **crea** el bien |
+| Un código que ya existía | Se **actualiza** con lo que se vio (ubicación, estado, quién contó). Si estaba `NO_ENCONTRADO`, vuelve a `ACTIVO` |
+| Nada de un bien registrado en un servicio que el archivo **sí** recorre | El bien queda `NO_ENCONTRADO` |
+| Nada de un servicio | Ese servicio **no se toca**: un barrido parcial es legítimo |
+| Un bien dado de baja | Se actualizan sus datos, sigue dado de baja y se avisa |
+| Una placa que pertenece a otro código | Error: dos bienes no comparten placa |
+
+La previsualización ya dice cuántos quedarán como no encontrados, con sus códigos. Al confirmar, el
+barrido se registra (tabla `barrido`, inmutable) con sus cifras y la huella del archivo.
 
 ## Previsualizar, luego confirmar
 
@@ -87,7 +103,7 @@ un callejón sin salida y algo que se puede arreglar.
 
 | Plantilla | Qué aporta | Reglas |
 |---|---|---|
-| `PL-01` | Datos de la entidad y parámetros. **Puede crear la entidad** si no existe | CT-18 |
+| `PL-01` | Datos del hospital, fecha de corte y parámetros. **Puede iniciar el proceso** (entonces la fecha de corte es obligatoria); sobre uno existente, una fecha distinta solo se advierte | CT-18 |
 | `PL-02` | Clases de activo, vida útil, subcuenta | |
 | `PL-02b` | Sedes y servicios | |
 | `PL-03` | **Los bienes** | `RN-02-01` código y placa únicos · `RN-02-05` serie repetida solo advierte · `VAL-02-03` catálogo |
@@ -108,7 +124,7 @@ Antes de aplicar, el libro se guarda en el almacén con su **SHA-256**. No es po
 puede generar un soporte de tipo `AVALUO_RECONOCIMIENTO_INICIAL` que **cita ese archivo como
 evidencia**. Si el archivo no estuviera, el soporte apuntaría al vacío.
 
-Para `PL-01` sin entidad todavía, se guarda bajo `_entidades_nuevas`.
+Para `PL-01` sin proceso todavía, se guarda bajo `_procesos_nuevos`.
 
 ## Datos de prueba
 

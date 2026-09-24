@@ -13,22 +13,18 @@ import { CAMPOS_SENSIBLES } from '../../../compartido/enums/plataforma';
 import { ErrorValidacion } from '../../../compartido/errores';
 
 export interface EntradaBitacora {
-  readonly ejercicioId?: Uuid | null;
   readonly entidadAfectada: string;
   readonly registroId: string;
   readonly accion: AccionBitacora;
   readonly campo?: string | null;
   readonly valorAnterior?: string | null;
   readonly valorNuevo?: string | null;
-  readonly responsableId?: Uuid | null;
   readonly justificacion?: string | null;
 }
 
 export interface ContextoCambio {
-  readonly ejercicioId?: Uuid | null;
   readonly entidadAfectada: string;
   readonly registroId: string;
-  readonly responsableId?: Uuid | null;
   readonly justificacion?: string | null;
 }
 
@@ -60,24 +56,22 @@ export function crearBitacora(
   ahoraIso: () => string,
 ): Bitacora {
   const insertar = sqlite.prepare(
-    `INSERT INTO bitacora (id, ejercicio_id, entidad_afectada, registro_id, accion, campo,
-       valor_anterior, valor_nuevo, responsable_id, fecha, origen, justificacion)
-     VALUES (@id, @ejercicioId, @entidadAfectada, @registroId, @accion, @campo,
-       @valorAnterior, @valorNuevo, @responsableId, @fecha, @origen, @justificacion)`,
+    `INSERT INTO bitacora (id, entidad_afectada, registro_id, accion, campo,
+       valor_anterior, valor_nuevo, fecha, origen, justificacion)
+     VALUES (@id, @entidadAfectada, @registroId, @accion, @campo,
+       @valorAnterior, @valorNuevo, @fecha, @origen, @justificacion)`,
   );
 
   const registrar = (e: EntradaBitacora): Uuid => {
     const id = nuevoId();
     insertar.run({
       id,
-      ejercicioId: e.ejercicioId ?? null,
       entidadAfectada: e.entidadAfectada,
       registroId: e.registroId,
       accion: e.accion,
       campo: e.campo ?? null,
       valorAnterior: e.valorAnterior ?? null,
       valorNuevo: e.valorNuevo ?? null,
-      responsableId: e.responsableId ?? null,
       fecha: ahoraIso(),
       origen,
       justificacion: e.justificacion ?? null,
@@ -102,14 +96,12 @@ export function crearBitacora(
       }
       for (const campo of campos) {
         registrar({
-          ejercicioId: contexto.ejercicioId ?? null,
           entidadAfectada: contexto.entidadAfectada,
           registroId: contexto.registroId,
           accion: 'ACTUALIZAR',
           campo,
           valorAnterior: serializar(anterior[campo]),
           valorNuevo: serializar(nuevo[campo]),
-          responsableId: contexto.responsableId ?? null,
           justificacion: justificacion === '' ? null : justificacion,
         });
       }

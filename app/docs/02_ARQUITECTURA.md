@@ -105,7 +105,7 @@ principal**. Nunca traer todo al renderer: hay hospitales con 20.000 bienes.
 | `dtos/` | Lo que viaja por el cable |
 | `enums/` | Los catálogos (`ESTADO_ACTUAL`, `CAUSAL_BAJA`…) alimentan a la vez los `CHECK` de la base y los desplegables de la interfaz |
 | `motor/` | El cálculo. La interfaz muestra resultados que el proceso principal produjo con **este mismo código** |
-| `reglas/` | El catálogo de las 58 validaciones, con su severidad y su mensaje |
+| `reglas/` | El catálogo de la revisión de la configuración (7 validaciones), con su severidad y su mensaje |
 | `parametros/` | Los 16 parámetros de cálculo, con su esquema |
 | `tipos/` | `Centavos`, `X10k`, `FechaIso`, `Uuid`: tipos nominales que impiden confundir pesos con centavos |
 | `errores/` | Las clases de error y su traducción a DTO |

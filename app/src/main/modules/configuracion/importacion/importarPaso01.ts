@@ -4,8 +4,9 @@
  * vive en `infraestructura/documental/excel/orquestadorImportacion`.
  */
 import type { ContextoIpc } from '../../../ipc/registroIpc';
+import { comoFechaIso } from '../../../../compartido/tipos/basicos';
 import type { IncidenciaImportacion, NormalizacionAplicada } from '../../../../compartido/dtos/importacion';
-import { ErrorReglaNegocio, ErrorValidacion } from '../../../../compartido/errores';
+import { ErrorValidacion } from '../../../../compartido/errores';
 import { EsquemaParametrosCalculo, type ParametrosCalculo } from '../../../../compartido/parametros/parametrosCalculo';
 import { leerYNormalizar, rechazarFila, type LecturaNormalizada, type FilaDatos } from '../../../infraestructura/documental/excel/importador';
 import { leerLibro, normalizarClave } from '../../../infraestructura/documental/excel/lector';
@@ -13,8 +14,8 @@ import { normalizar, type FormatoFechaRegional, type ValorNormalizado } from '..
 import type { AmbitoImportacion, ImportadorPlantilla, ResultadoAplicacion } from '../../../infraestructura/documental/excel/orquestadorImportacion';
 import { nuevoId } from '../../../infraestructura/db/identificadores';
 import { PL_01_HOJA, PL_02, PL_02B, CLAVES_PL_01 } from './plantillas';
-import { entidadRepo } from '../repositorio/entidad.repo';
-import { crearEntidad } from '../casos-uso/entidades';
+import { procesoRepo } from '../repositorio/proceso.repo';
+import { crearProceso } from '../casos-uso/procesos';
 import { sedeRepo } from '../repositorio/sede.repo';
 import { servicioRepo } from '../repositorio/servicio.repo';
 import { claseRepo, aniosAX10k } from '../repositorio/clase.repo';
@@ -68,9 +69,9 @@ async function leerPl01(archivo: string, formatoFecha: FormatoFechaRegional): Pr
 }
 
 /** PL-02 y PL-02b siempre llegan con entidad; el orquestador ya lo garantiza. */
-function exigirEntidad(ambito: AmbitoImportacion): string {
-  if (ambito.entidadId === null) throw new ErrorValidacion('ENTIDAD_REQUERIDA', 'Esta plantilla se importa sobre una entidad existente.', { campo: 'entidadId' });
-  return ambito.entidadId;
+function exigirProceso(ambito: AmbitoImportacion): string {
+  if (ambito.procesoId === null) throw new ErrorValidacion('PROCESO_REQUERIDO', 'Esta plantilla se importa dentro de un proceso.', { campo: 'procesoId' });
+  return ambito.procesoId;
 }
 
 function texto(v: ValorNormalizado | undefined): string | null {
@@ -79,16 +80,16 @@ function texto(v: ValorNormalizado | undefined): string | null {
 
 // ── Aplicadores ──────────────────────────────────────────────────────────────
 
-function aplicarPl02b(ctx: ContextoIpc, entidadId: string, lectura: LecturaNormalizada): ResultadoAplicacion {
+function aplicarPl02b(ctx: ContextoIpc, procesoId: string, lectura: LecturaNormalizada): ResultadoAplicacion {
   let creados = 0;
   let actualizados = 0;
   const ahora = ctx.ahoraIso();
   for (const f of lectura.hojas['SEDES'] ?? []) {
     const d = f.datos;
     const datos = { codigo: String(d['codigo_sede']).toUpperCase(), nombre: String(d['nombre_sede']), direccion: String(d['direccion']), municipio: String(d['municipio']), activa: d['activa'] === true };
-    const existente = sedeRepo.porCodigo(ctx.db, entidadId, datos.codigo);
+    const existente = sedeRepo.porCodigo(ctx.db, procesoId, datos.codigo);
     if (existente === null) {
-      sedeRepo.insertar(ctx.db, { id: nuevoId(), entidadId, ...datos, creadoEn: ahora, actualizadoEn: ahora });
+      sedeRepo.insertar(ctx.db, { id: nuevoId(), procesoId, ...datos, creadoEn: ahora, actualizadoEn: ahora });
       creados += 1;
     } else {
       sedeRepo.actualizar(ctx.db, existente.id, datos, ahora);
@@ -97,7 +98,7 @@ function aplicarPl02b(ctx: ContextoIpc, entidadId: string, lectura: LecturaNorma
   }
   for (const f of lectura.hojas['SERVICIOS'] ?? []) {
     const d = f.datos;
-    const sede = sedeRepo.porCodigo(ctx.db, entidadId, String(d['codigo_sede']).toUpperCase());
+    const sede = sedeRepo.porCodigo(ctx.db, procesoId, String(d['codigo_sede']).toUpperCase());
     if (sede === null) throw new ErrorValidacion('SEDE_INEXISTENTE', `Fila ${f.numero}: la sede ${String(d['codigo_sede'])} no existe.`);
     const datos = { codigo: String(d['codigo_servicio']).toUpperCase(), nombre: String(d['nombre_servicio']), tipo: String(d['tipo']) as 'asistencial' | 'administrativo' | 'apoyo', responsable: texto(d['responsable']), activo: d['activo'] === true };
     const existente = servicioRepo.porCodigo(ctx.db, sede.id, datos.codigo);
@@ -112,7 +113,7 @@ function aplicarPl02b(ctx: ContextoIpc, entidadId: string, lectura: LecturaNorma
   return { creados, actualizados };
 }
 
-function aplicarPl02(ctx: ContextoIpc, entidadId: string, lectura: LecturaNormalizada): ResultadoAplicacion {
+function aplicarPl02(ctx: ContextoIpc, procesoId: string, lectura: LecturaNormalizada): ResultadoAplicacion {
   let creados = 0;
   let actualizados = 0;
   const ahora = ctx.ahoraIso();
@@ -130,9 +131,9 @@ function aplicarPl02(ctx: ContextoIpc, entidadId: string, lectura: LecturaNormal
       responsableTecnico: String(d['responsable_tecnico']),
       activo: d['activo'] === true,
     };
-    const existente = claseRepo.porCodigo(ctx.db, entidadId, datos.codigo);
+    const existente = claseRepo.porCodigo(ctx.db, procesoId, datos.codigo);
     if (existente === null) {
-      claseRepo.insertar(ctx.db, { id: nuevoId(), entidadId, ...datos, creadoEn: ahora, actualizadoEn: ahora });
+      claseRepo.insertar(ctx.db, { id: nuevoId(), procesoId, ...datos, creadoEn: ahora, actualizadoEn: ahora });
       creados += 1;
     } else {
       claseRepo.actualizar(ctx.db, existente.id, datos, ahora);
@@ -154,71 +155,66 @@ function faltantesDeIdentificacion(datos: FilaDatos): string[] {
 
 function aplicarPl01(ctx: ContextoIpc, ambito: AmbitoImportacion, lectura: LecturaNormalizada): ResultadoAplicacion {
   const datos: FilaDatos = lectura.hojas['PARAMETROS']?.[0]?.datos ?? {};
-  const cambiosEntidad: Record<string, string> = {};
+  const cambiosHospital: Record<string, string> = {};
   const cambiosParametros: Record<string, ValorNormalizado> = {};
   for (const [clave, def] of Object.entries(CLAVES_PL_01)) {
     const v = datos[clave];
     if (v === undefined || v === null) continue;
-    if (def.destino === 'entidad') cambiosEntidad[def.campo] = String(v);
+    if (def.destino === 'hospital') cambiosHospital[def.campo] = String(v);
     if (def.destino === 'parametro') cambiosParametros[def.campo] = v;
   }
   const ahora = ctx.ahoraIso();
 
-  // ── Sin entidad: la plantilla la CREA ──
+  // ── Sin proceso: la plantilla lo CREA ──
   // Es como llega un hospital que recibió el formato diligenciado y todavía no
-  // ha tecleado nada. Se reutiliza el caso de uso de creación para no duplicar
-  // ni el NIT único, ni las semillas, ni la bitácora.
-  if (ambito.entidadId === null) {
-    const creada = crearEntidad(
+  // ha tecleado nada. La fecha de corte sale de la plantilla (la validación ya
+  // exigió que viniera). Se reutiliza el caso de uso de creación para no
+  // duplicar ni las semillas ni la bitácora.
+  if (ambito.procesoId === null) {
+    const fechaCorte = comoFechaIso(String(datos['fecha_corte_ejercicio']));
+    const creada = crearProceso(
       {
-        razonSocial: cambiosEntidad['razonSocial'] ?? '',
-        nit: cambiosEntidad['nit'] ?? '',
-        municipio: cambiosEntidad['municipio'] ?? '',
-        departamento: cambiosEntidad['departamento'] ?? '',
-        nivelComplejidad: (cambiosEntidad['nivelComplejidad'] ?? 'I') as 'I' | 'II' | 'III',
-        nombreGerente: cambiosEntidad['nombreGerente'] ?? '',
-        actoNombramientoGerente: cambiosEntidad['actoNombramientoGerente'] ?? null,
-        nombreContador: cambiosEntidad['nombreContador'] ?? null,
-        tarjetaProfesionalContador: null,
-        direccion: cambiosEntidad['direccion'] ?? '',
-        telefono: cambiosEntidad['telefono'] ?? null,
-        email: cambiosEntidad['email'] ?? null,
+        nombre: `Valuación con corte al ${fechaCorte.slice(8, 10)}/${fechaCorte.slice(5, 7)}/${fechaCorte.slice(0, 4)}`,
+        fechaCorte,
+        razonSocial: cambiosHospital['razonSocial'] ?? '',
+        nit: cambiosHospital['nit'] ?? '',
+        municipio: cambiosHospital['municipio'] ?? '',
+        departamento: cambiosHospital['departamento'] ?? '',
+        nivelComplejidad: (cambiosHospital['nivelComplejidad'] ?? 'I') as 'I' | 'II' | 'III',
+        nombreGerente: cambiosHospital['nombreGerente'] ?? '',
+        actoNombramientoGerente: cambiosHospital['actoNombramientoGerente'] ?? null,
+        direccion: cambiosHospital['direccion'] ?? '',
+        telefono: cambiosHospital['telefono'] ?? null,
+        email: cambiosHospital['email'] ?? null,
         // El catálogo sugerido se precarga igual que al crearla a mano; después
         // PL-02 lo reemplaza con el del hospital si lo trae.
         precargarSemillas: true,
       },
       ctx,
     );
-    let aplicados = Object.keys(cambiosEntidad).length;
+    let aplicados = Object.keys(cambiosHospital).length;
     if (Object.keys(cambiosParametros).length > 0) {
       const actuales = parametroRepo.obtener(ctx.db, creada.id);
       const nuevos: ParametrosCalculo = EsquemaParametrosCalculo.parse({ ...actuales, ...cambiosParametros });
-      // Recién creada, el método nunca está confirmado por acta (CT-02).
-      nuevos.metodo_conteo_meses_confirmado = false;
       parametroRepo.guardar(ctx.db, creada.id, nuevos, ahora);
       aplicados += Object.keys(cambiosParametros).length;
     }
-    return { creados: aplicados, actualizados: 0, entidadId: creada.id };
+    return { creados: aplicados, actualizados: 0, procesoId: creada.id };
   }
 
-  const entidadId = ambito.entidadId;
+  const procesoId = ambito.procesoId;
   let actualizados = 0;
-  if (Object.keys(cambiosEntidad).length > 0) {
-    const actual = entidadRepo.porId(ctx.db, entidadId);
-    if (actual !== null && typeof cambiosEntidad['nit'] === 'string' && cambiosEntidad['nit'] !== actual.nit && entidadRepo.porNit(ctx.db, cambiosEntidad['nit']) !== null) {
-      throw new ErrorReglaNegocio('NIT_DUPLICADO', 'Otra entidad ya tiene el NIT de la plantilla.', { campo: 'nit' });
-    }
-    entidadRepo.actualizar(ctx.db, entidadId, cambiosEntidad, ahora);
-    actualizados += Object.keys(cambiosEntidad).length;
+  if (Object.keys(cambiosHospital).length > 0) {
+    procesoRepo.actualizar(ctx.db, procesoId, cambiosHospital, ahora);
+    actualizados += Object.keys(cambiosHospital).length;
   }
   if (Object.keys(cambiosParametros).length > 0) {
-    const actuales = parametroRepo.obtener(ctx.db, entidadId);
+    const actuales = parametroRepo.obtener(ctx.db, procesoId);
     const nuevos: ParametrosCalculo = EsquemaParametrosCalculo.parse({ ...actuales, ...cambiosParametros });
-    if (nuevos.metodo_conteo_meses !== actuales.metodo_conteo_meses) nuevos.metodo_conteo_meses_confirmado = false;
-    parametroRepo.guardar(ctx.db, entidadId, nuevos, ahora);
+    parametroRepo.guardar(ctx.db, procesoId, nuevos, ahora);
     actualizados += Object.keys(cambiosParametros).length;
   }
-  return { creados: 0, actualizados, entidadId };
+  return { creados: 0, actualizados, procesoId };
 }
 
 // ── Los tres importadores del paso 01 ────────────────────────────────────────
@@ -226,23 +222,30 @@ function aplicarPl01(ctx: ContextoIpc, ambito: AmbitoImportacion, lectura: Lectu
 export const IMPORTADORES_PASO_01: readonly ImportadorPlantilla[] = [
   {
     codigo: 'PL-01',
-    requiereEjercicio: false,
-    // Única plantilla que puede llegar sin entidad: la crea.
-    requiereEntidad: false,
+    // Única plantilla que puede llegar sin proceso: lo crea.
+    requiereProceso: false,
     leer: leerPl01,
     validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, ctx: ContextoIpc): void {
       const datos = lectura.hojas['PARAMETROS']?.[0]?.datos ?? {};
 
-      // Crear la entidad exige la identificación completa: sin ella no hay
-      // encabezado para las resoluciones. Se avisa AQUÍ, en la previsualización,
-      // y no al confirmar: el usuario debe verlo antes de decidir.
-      if (ambito.entidadId === null) {
+      // Crear el proceso exige la identificación completa y la fecha de corte:
+      // sin ellas no hay encabezado para el informe ni fecha a la que calcular.
+      // Se avisa AQUÍ, en la previsualización, y no al confirmar.
+      const fecha = datos['fecha_corte_ejercicio'];
+      const hoy = ctx.ahoraIso().slice(0, 10);
+      if (ambito.procesoId === null) {
         for (const campo of faltantesDeIdentificacion(datos)) {
-          lectura.incidencias.push({ hoja: 'PARAMETROS', fila: 0, columna: campo, valorRecibido: null, motivo: `Para crear la entidad desde la plantilla, "${campo}" es obligatorio (ANEXO_B §2.1).`, severidad: 'ERROR' });
+          lectura.incidencias.push({ hoja: 'PARAMETROS', fila: 0, columna: campo, valorRecibido: null, motivo: `Para crear el proceso desde la plantilla, "${campo}" es obligatorio (ANEXO_B §2.1).`, severidad: 'ERROR' });
         }
-        const nit = datos['nit'];
-        if (typeof nit === 'string' && nit.trim() !== '' && entidadRepo.porNit(ctx.db, nit) !== null) {
-          lectura.incidencias.push({ hoja: 'PARAMETROS', fila: 0, columna: 'nit', valorRecibido: nit, motivo: 'Ya existe una entidad con este NIT. Ábrala y actualícela desde su pantalla de datos.', severidad: 'ERROR' });
+        if (typeof fecha !== 'string' || fecha === '') {
+          lectura.incidencias.push({ hoja: 'PARAMETROS', fila: 0, columna: 'fecha_corte_ejercicio', valorRecibido: null, motivo: 'Para crear el proceso desde la plantilla hace falta la fecha de corte: escríbala en el formato o cree el proceso a mano.', severidad: 'ERROR' });
+        } else if (fecha > hoy) {
+          lectura.incidencias.push({ hoja: 'PARAMETROS', fila: 0, columna: 'fecha_corte_ejercicio', valorRecibido: fecha, motivo: `La fecha de corte no puede ser futura (hoy es ${hoy}).`, severidad: 'ERROR' });
+        }
+      } else if (typeof fecha === 'string') {
+        const actual = procesoRepo.porId(ctx.db, ambito.procesoId);
+        if (actual !== null && actual.fechaCorte !== fecha) {
+          lectura.incidencias.push({ hoja: 'PARAMETROS', fila: 0, columna: 'fecha_corte_ejercicio', valorRecibido: fecha, motivo: `El proceso calcula al ${actual.fechaCorte}; la plantilla no lo cambia. Si hace falta, cámbielo en Configurar.`, severidad: 'ADVERTENCIA' });
         }
       }
 
@@ -252,26 +255,21 @@ export const IMPORTADORES_PASO_01: readonly ImportadorPlantilla[] = [
       if (!r.success) {
         for (const i of r.error.issues) lectura.incidencias.push({ hoja: 'PARAMETROS', fila: 0, columna: i.path.join('.'), valorRecibido: String(parcial[String(i.path[0])] ?? ''), motivo: i.message, severidad: 'ERROR' });
       }
-      if (datos['fecha_corte_ejercicio'] !== undefined) {
-        lectura.incidencias.push({ hoja: 'PARAMETROS', fila: 0, columna: 'fecha_corte_ejercicio', valorRecibido: String(datos['fecha_corte_ejercicio']), motivo: 'La fecha de corte se aplica al crear el ejercicio (RF-01-05); aquí solo se muestra', severidad: 'ADVERTENCIA' });
-      }
     },
     aplicar: (ambito, lectura, ctx) => aplicarPl01(ctx, ambito, lectura),
   },
   {
     codigo: 'PL-02',
-    requiereEjercicio: false,
     leer: (archivo, formatoFecha) => leerYNormalizar(archivo, PL_02, formatoFecha),
     validarNegocio: () => undefined,
-    aplicar: (ambito, lectura, ctx) => aplicarPl02(ctx, exigirEntidad(ambito), lectura),
+    aplicar: (ambito, lectura, ctx) => aplicarPl02(ctx, exigirProceso(ambito), lectura),
   },
   {
     codigo: 'PL-02b',
-    requiereEjercicio: false,
     leer: (archivo, formatoFecha) => leerYNormalizar(archivo, PL_02B, formatoFecha),
     validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, ctx: ContextoIpc): void {
       const sedesArchivo = new Set((lectura.hojas['SEDES'] ?? []).map((f) => String(f.datos['codigo_sede']).toUpperCase()));
-      const sedesBase = new Set(sedeRepo.listar(ctx.db, exigirEntidad(ambito), true).map((s) => s.codigo.toUpperCase()));
+      const sedesBase = new Set(sedeRepo.listar(ctx.db, exigirProceso(ambito), true).map((s) => s.codigo.toUpperCase()));
       for (const f of [...(lectura.hojas['SERVICIOS'] ?? [])]) {
         const cod = String(f.datos['codigo_sede']).toUpperCase();
         if (!sedesArchivo.has(cod) && !sedesBase.has(cod)) {
@@ -279,6 +277,6 @@ export const IMPORTADORES_PASO_01: readonly ImportadorPlantilla[] = [
         }
       }
     },
-    aplicar: (ambito, lectura, ctx) => aplicarPl02b(ctx, exigirEntidad(ambito), lectura),
+    aplicar: (ambito, lectura, ctx) => aplicarPl02b(ctx, exigirProceso(ambito), lectura),
   },
 ];

@@ -43,14 +43,13 @@ const ctx: ContextoIpc = {
   dialogos: dialogosNulos(),
 };
 
-const entidad = sqlite.transaction(() => cargarDemostracion({}, ctx))();
-const ejercicio = sqlite.prepare('SELECT id FROM ejercicio WHERE entidad_id = ?').get(entidad.id) as { id: string };
+const proceso = sqlite.transaction(() => cargarDemostracion({}, ctx))();
 
-const r = sembrarBienes(sqlite, ejercicio.id, { bienes, proporcionConHojaVida: 0.85 });
-const total = (sqlite.prepare('SELECT COUNT(*) AS n FROM bien WHERE ejercicio_id = ?').get(ejercicio.id) as { n: number }).n;
+const r = sembrarBienes(sqlite, proceso.id, { bienes, proporcionConHojaVida: 0.85 });
+const total = (sqlite.prepare('SELECT COUNT(*) AS n FROM bien WHERE proceso_id = ?').get(proceso.id) as { n: number }).n;
 
 console.log(`Base sembrada: ${ruta}`);
-console.log(`  entidad: ${entidad.razonSocial}`);
+console.log(`  proceso: ${proceso.nombre} · ${proceso.razonSocial}`);
 console.log(`  bienes: ${total} (${r.bienes} sintéticos + 50 de la demostración) · hojas de vida sintéticas: ${r.hojasVida}`);
 console.log(`  tiempo de inserción: ${r.milisegundos} ms`);
 sqlite.close();

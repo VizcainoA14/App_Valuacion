@@ -1,4 +1,4 @@
-/** MOD-04 — Hojas de vida (ANEXO_B §4.1; paso 03 §10.1; paso 05 OverrideVidaUtil). */
+/** MOD-04 — Hojas de vida (ANEXO_B §4.1; paso 03 §10.1). */
 import { index, uniqueIndex, sqliteTable } from 'drizzle-orm/sqlite-core';
 import {
   uuidPk,
@@ -17,7 +17,6 @@ import {
 import { ESTADO_OPERATIVO, FORMA_ADQUISICION } from '../../../../compartido/enums/catalogos';
 import { TIPO_INSTALACION } from '../../../../compartido/enums/plataforma';
 import { bien } from './inventario';
-import { responsable } from './configuracion';
 
 export const hojaVida = sqliteTable(
   'hoja_vida',
@@ -33,7 +32,7 @@ export const hojaVida = sqliteTable(
     paisOrigen: texto('pais_origen'),
     estadoOperativo: enumCatalogo('estado_operativo', ESTADO_OPERATIVO).notNull(),
     formaAdquisicion: enumCatalogo('forma_adquisicion', FORMA_ADQUISICION).notNull(),
-    /** ★ Nula = dato no disponible → INCOMPLETO (RN-03-01). INT-04 la acota por trigger. */
+    /** ★ Nula = dato no disponible (RN-03-01): el bien queda fuera de la depreciación con su motivo. */
     fechaAdquisicion: fecha('fecha_adquisicion'),
     documentoAdquisicion: texto('documento_adquisicion'),
     numeroFactura: texto('numero_factura'),
@@ -87,30 +86,7 @@ export const soporteDocumental = sqliteTable(
     tipoDocumento: texto('tipo_documento').notNull(),
     url: texto('url').notNull(),
     hashSha256: texto('hash_sha256').notNull(),
-    cargadoPorResponsableId: uuid('cargado_por_responsable_id').references(() => responsable.id, {
-      onDelete: 'set null',
-    }),
     cargadoEn: marcaTiempo('cargado_en').notNull(),
   },
   (t) => [index('ix_soporte_bien').on(t.bienId)],
-);
-
-export const overrideVidaUtil = sqliteTable(
-  'override_vida_util',
-  {
-    id: uuidPk(),
-    bienId: uuid('bien_id')
-      .notNull()
-      .references(() => bien.id, { onDelete: 'restrict' }),
-    vidaUtilCatalogo: x10k('vida_util_catalogo').notNull(),
-    vidaUtilAjustada: x10k('vida_util_ajustada').notNull(),
-    fuente: texto('fuente').notNull(),
-    justificacion: texto('justificacion').notNull(),
-    especialistaId: uuid('especialista_id').references(() => responsable.id, {
-      onDelete: 'set null',
-    }),
-    soporteUrl: texto('soporte_url'),
-    creadoEn: creadoEn(),
-  },
-  (t) => [index('ix_override_bien').on(t.bienId)],
 );

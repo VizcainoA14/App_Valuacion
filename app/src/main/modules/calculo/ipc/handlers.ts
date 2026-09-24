@@ -1,11 +1,13 @@
 import type { RegistroIpc } from '../../../ipc/registroIpc';
-import { calcularEjercicio } from '../casos-uso/calcularEjercicio';
-import { listarCalculo, marcarObsolescenciaFuncional, resumenCalculo } from '../casos-uso/consultarCalculo';
+import { calcularCorte } from '../casos-uso/calcularCorte';
+import { corteActual, cortePorId, listarCalculo, listarExclusiones, resumenCalculo } from '../casos-uso/consultarCalculo';
 
-/** Canales de los pasos 05 y 06 (MOD-07/08). */
+/** Canales del cálculo del proceso (MOD-07/08, ADR-029). */
 export function registrarCanalesCalculo(registro: RegistroIpc): void {
-  registro.registrar('calculo:ejecutar', calcularEjercicio);
+  registro.registrar('corte:actual', corteActual);
+  registro.registrar('corte:porId', cortePorId);
+  registro.registrar('calculo:ejecutar', calcularCorte);
   registro.registrar('calculo:resumen', resumenCalculo);
   registro.registrar('calculo:listar', listarCalculo);
-  registro.registrar('calculo:marcarObsolescenciaFuncional', marcarObsolescenciaFuncional);
+  registro.registrar('calculo:exclusiones', listarExclusiones);
 }

@@ -1,5 +1,5 @@
 /**
- * Etapa 6 — el informe declara lo que está calculado y decidido, y solo eso.
+ * El informe declara lo que un corte calculó, y solo eso (ADR-028).
  *
  * La generación del PDF necesita Electron y se prueba en E2E; aquí se prueba lo
  * que decide qué dice el documento, que es lo que puede estar mal en silencio.
@@ -14,12 +14,10 @@ const BASE: DatosInforme = {
   nit: '890000000-1',
   municipio: 'Popayán',
   departamento: 'Cauca',
-  gerente: 'Gerente Prueba',
-  contador: 'Carlos Contador',
-  tarjetaProfesionalContador: 'T.P. 12345-T',
   esDemostracion: false,
-  ejercicio: 'Corte 2025',
+  nombreProceso: 'Valuación cierre primer semestre',
   fechaCorte: '2025-06-30',
+  calculadoEn: '2025-09-02 09:30',
   generadoEn: '2025-09-02 10:00',
   metodoConteo: 'dias_exactos',
   metodoDepreciacion: 'linea_recta',
@@ -32,12 +30,11 @@ const BASE: DatosInforme = {
   noAplicaDepreciacion: 0,
   totalSaldoAjustado: comoCentavos(2_373_928_000),
   totalDepreciacion: comoCentavos(1_135_672_423),
-  totalDeterioro: comoCentavos(0),
   totalValorNeto: comoCentavos(1_238_255_577),
   porSemaforo: { VERDE: 1, AMARILLO: 0, NARANJA: 0, ROJO: 1 },
   subcuentas: [{ subcuenta: '167002', clase: 'Equipo médico-científico', bienes: 2, saldoAjustado: comoCentavos(2_373_928_000), depreciacionAcumulada: comoCentavos(1_135_672_423), valorNeto: comoCentavos(1_238_255_577) }],
+  candidatos: [],
   bajas: [],
-  perdidaBajas: comoCentavos(0),
   excluidos: [],
   detalle: [],
 };
@@ -75,42 +72,62 @@ describe('maqueta del informe', () => {
     expect(html).toContain('B-9');
   });
 
-  it('sin bajas propuestas no inventa un total de pérdida', () => {
-    expect(construirInformeHtml(BASE)).not.toContain('Pérdida total a reconocer');
+  it('no lleva bloque de firmas: es el soporte de cálculo, no el acto que lo adopta', () => {
+    const html = construirInformeHtml(BASE);
+    expect(html).not.toContain('class="firmas"');
+    expect(html).not.toContain('T.P.');
+    // Y dice dónde va la firma, para que nadie lo presente como si fuera el acto.
+    expect(html).toContain('la entidad lo adopta mediante su propio acto');
+  });
+
+  it('los candidatos a baja llevan sus motivos', () => {
+    const html = construirInformeHtml({
+      ...BASE,
+      candidatos: [{ codigo: 'B-7', descripcion: 'Monitor', clase: 'Equipo médico', indice: 1.2345, motivos: ['Superó su vida útil técnica: índice de obsolescencia 1.2345.'], valorNeto: comoCentavos(0) }],
+    });
+    expect(html).toContain('Candidatos a baja');
+    expect(html).toContain('Superó su vida útil técnica');
+    expect(html).toContain('1.2345');
   });
 });
 
 describe('datos del informe sobre el hospital de demostración', () => {
-  it('se niega a generar el informe de un ejercicio sin calcular', async () => {
+  it('sin un corte no hay informe: se pide el de un corte que existe', async () => {
     const a = await arnesPaso01();
-    const demo = valor(await a.registro.invocar('demo:cargar', undefined));
-    const ej = valor(await a.registro.invocar('ejercicio:listar', { entidadId: demo.id }))[0];
-    if (ej === undefined) throw new Error('sin ejercicio');
-
-    const r = await a.registro.invocar('informe:previsualizar', { entidadId: demo.id, ejercicioId: ej.id });
+    const r = await a.registro.invocar('informe:previsualizar', { corteId: '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b' });
     expect(r.ok).toBe(false);
-    if (!r.ok) {
-      expect(r.error.codigo).toBe('SIN_CALCULO');
-      expect(r.error.mensaje).toContain('etapa 4');
-    }
+    if (!r.ok) expect(r.error.codigo).toBe('CORTE_INEXISTENTE');
   });
 
-  it('tras calcular, el informe trae los totales, el anexo y la marca de demostración', async () => {
+  it('el informe de un corte trae los totales, el anexo y la marca de demostración', async () => {
     const a = await arnesPaso01();
     const demo = valor(await a.registro.invocar('demo:cargar', undefined));
-    const ej = valor(await a.registro.invocar('ejercicio:listar', { entidadId: demo.id }))[0];
-    if (ej === undefined) throw new Error('sin ejercicio');
-    valor(await a.registro.invocar('calculo:ejecutar', { entidadId: demo.id, ejercicioId: ej.id }));
+    const { corte } = valor(await a.registro.invocar('calculo:ejecutar', { procesoId: demo.id, fechaCorte: '2025-06-30', descripcion: null }));
 
-    const r = valor(await a.registro.invocar('informe:previsualizar', { entidadId: demo.id, ejercicioId: ej.id }));
+    const r = valor(await a.registro.invocar('informe:previsualizar', { corteId: corte.id }));
     expect(r.bienes).toBe(50);
     expect(r.html).toContain('EJEMPLO — SIN VALIDEZ');
     expect(r.html).toContain('HOSPITAL DE DEMOSTRACIÓN');
     expect(r.html).toContain('Anexo · Listado depreciado bien por bien');
     expect(r.html).toContain('Consolidado por subcuenta');
     // El total del consolidado tiene que cuadrar con el del detalle (VAL-06-06).
-    const resumen = valor(await a.registro.invocar('calculo:resumen', { ejercicioId: ej.id }));
+    const resumen = valor(await a.registro.invocar('calculo:resumen', { corteId: corte.id }));
     const esperado = (resumen.totalValorNetoLibros / 100).toLocaleString('es-CO', { minimumFractionDigits: 2 });
     expect(r.html).toContain(`$ ${esperado}`);
+  });
+});
+
+describe('un informe regenerado dice lo mismo que el primero', () => {
+  it('cambiar el inventario después del corte no altera su informe', async () => {
+    const a = await arnesPaso01();
+    const demo = valor(await a.registro.invocar('demo:cargar', undefined));
+    const { corte } = valor(await a.registro.invocar('calculo:ejecutar', { procesoId: demo.id, fechaCorte: '2025-06-30', descripcion: null }));
+    const antes = valor(await a.registro.invocar('informe:previsualizar', { corteId: corte.id }));
+
+    // Se corrige un costo después del corte: el corte no se entera, el siguiente sí.
+    a.sqlite.prepare('UPDATE hoja_vida SET costo_adquisicion_cent = costo_adquisicion_cent * 2').run();
+    const despues = valor(await a.registro.invocar('informe:previsualizar', { corteId: corte.id }));
+    const sinHora = (html: string): string => html.replace(/generado el [^.]+\./, '');
+    expect(sinHora(despues.html)).toBe(sinHora(antes.html));
   });
 });

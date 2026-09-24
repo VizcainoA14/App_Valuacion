@@ -60,7 +60,10 @@ export async function arnesPaso01(opciones: { rutaDatos?: string; hoy?: string; 
   };
 }
 
-export const ENTIDAD_PRUEBA = {
+/** Un proceso con su hospital; la fecha de corte es la que usan las cifras de ANEXO_C §3.3. */
+export const PROCESO_PRUEBA = {
+  nombre: 'Valuación de prueba',
+  fechaCorte: '2025-06-30',
   razonSocial: 'E.S.E Hospital San Vicente',
   nit: '890000000-1',
   municipio: 'Popayán',

@@ -1,14 +1,9 @@
 /**
- * T-B-05 — Máquinas de estado de ANEXO_B §6 como DATOS, no como `switch`.
+ * Máquinas de estado como DATOS, no como `switch`.
  * Una sola fuente de verdad: el dominio valida con ellas, `scripts/generar-triggers.ts`
  * emite los triggers SQL y la interfaz sabe qué acciones ofrecer.
  */
-import type { EstadoRegistro } from '../enums/catalogos';
-import type {
-  EstadoEjercicio,
-  EstadoPropuestaBaja,
-  EstadoActoAdministrativo,
-} from '../enums/estados';
+import type { EstadoBien, EstadoProceso } from '../enums/estados';
 import { ErrorReglaNegocio } from '../errores';
 
 export interface MaquinaEstado<E extends string> {
@@ -29,81 +24,42 @@ function definirMaquina<E extends string>(maquina: MaquinaEstado<E>): MaquinaEst
   return Object.freeze(maquina);
 }
 
-/** ANEXO_B §6.1 — lineal; CERRADO es terminal e inmutable (INT-09). */
-export const MAQUINA_EJERCICIO = definirMaquina<EstadoEjercicio>({
-  nombre: 'Ejercicio',
-  tabla: 'ejercicio',
-  columna: 'estado',
-  fuente: 'ANEXO_B §6.1',
-  inicial: 'ABIERTO',
-  transiciones: {
-    ABIERTO: ['EN_LEVANTAMIENTO'],
-    EN_LEVANTAMIENTO: ['EN_CONCILIACION'],
-    EN_CONCILIACION: ['EN_CALCULO'],
-    EN_CALCULO: ['EN_VALUACION'],
-    EN_VALUACION: ['EN_APROBACION'],
-    EN_APROBACION: ['CERRADO'],
-    CERRADO: [],
-  },
-});
-
-/** ANEXO_B §6.2 — seis estados, con la vuelta PROPUESTO_BAJA → ACTIVO de RN-09-04 (CT-06). */
-export const MAQUINA_BIEN = definirMaquina<EstadoRegistro>({
+/**
+ * ADR-028 — el bien de un inventario vivo.
+ *
+ * - Un barrido que no lo encuentra en un servicio que sí recorrió lo pasa a
+ *   NO_ENCONTRADO; el siguiente barrido que lo encuentre lo devuelve a ACTIVO.
+ * - La baja la decide el hospital fuera de la aplicación; aquí solo se registra.
+ * - Una baja registrada por error se anula y el bien vuelve a ACTIVO. El bien
+ *   nunca se elimina: cambia de estado y conserva su historia.
+ */
+export const MAQUINA_BIEN = definirMaquina<EstadoBien>({
   nombre: 'Bien',
   tabla: 'bien',
   columna: 'estado_registro',
-  fuente: 'ANEXO_B §6.2',
-  inicial: 'BORRADOR',
+  fuente: 'ADR-028',
+  inicial: 'ACTIVO',
   transiciones: {
-    BORRADOR: ['VALIDADO', 'INCOMPLETO'],
-    VALIDADO: ['ACTIVO', 'INCOMPLETO'],
-    ACTIVO: ['PROPUESTO_BAJA', 'INCOMPLETO'],
-    INCOMPLETO: ['VALIDADO', 'ACTIVO'],
-    PROPUESTO_BAJA: ['DADO_DE_BAJA', 'ACTIVO'],
-    DADO_DE_BAJA: [], // terminal: RN-09-09, el bien nunca se elimina
+    ACTIVO: ['NO_ENCONTRADO', 'DADO_DE_BAJA'],
+    NO_ENCONTRADO: ['ACTIVO', 'DADO_DE_BAJA'],
+    DADO_DE_BAJA: ['ACTIVO'],
   },
 });
 
-/** ANEXO_B §6.3 — el rechazo devuelve el bien a ACTIVO (lo hace el caso de uso, no el trigger). */
-export const MAQUINA_PROPUESTA_BAJA = definirMaquina<EstadoPropuestaBaja>({
-  nombre: 'Propuesta de baja',
-  tabla: 'propuesta_baja',
-  columna: 'estado_aprobacion',
-  fuente: 'ANEXO_B §6.3',
-  inicial: 'PROPUESTO',
-  transiciones: {
-    PROPUESTO: ['EN_REVISION'],
-    EN_REVISION: ['APROBADO_COMITE', 'RECHAZADO'],
-    APROBADO_COMITE: ['RESOLUCION_EMITIDA'],
-    RESOLUCION_EMITIDA: ['EJECUTADO'],
-    EJECUTADO: ['DISPOSICION_DOCUMENTADA'],
-    DISPOSICION_DOCUMENTADA: [],
-    RECHAZADO: [],
-  },
-});
-
-/** ANEXO_B §6.4 — FIRMADO es inmutable (RN-10-07); solo puede pasar a PUBLICADO. */
-export const MAQUINA_ACTO_ADMINISTRATIVO = definirMaquina<EstadoActoAdministrativo>({
-  nombre: 'Acto administrativo',
-  tabla: 'acto_administrativo',
+/** ADR-029 — el proceso se trabaja y, cuando alguien lo decide, se finaliza. No se reabre. */
+export const MAQUINA_PROCESO = definirMaquina<EstadoProceso>({
+  nombre: 'Proceso',
+  tabla: 'proceso',
   columna: 'estado',
-  fuente: 'ANEXO_B §6.4',
-  inicial: 'PROYECTADO',
+  fuente: 'ADR-029',
+  inicial: 'EN_CURSO',
   transiciones: {
-    PROYECTADO: ['EN_REVISION_JURIDICA'],
-    EN_REVISION_JURIDICA: ['APROBADO_COMITE'],
-    APROBADO_COMITE: ['FIRMADO'],
-    FIRMADO: ['PUBLICADO'],
-    PUBLICADO: [],
+    EN_CURSO: ['FINALIZADO'],
+    FINALIZADO: [],
   },
 });
 
-export const MAQUINAS_DE_ESTADO: readonly MaquinaEstado<string>[] = Object.freeze([
-  MAQUINA_EJERCICIO,
-  MAQUINA_BIEN,
-  MAQUINA_PROPUESTA_BAJA,
-  MAQUINA_ACTO_ADMINISTRATIVO,
-]);
+export const MAQUINAS_DE_ESTADO: readonly MaquinaEstado<string>[] = Object.freeze([MAQUINA_BIEN, MAQUINA_PROCESO]);
 
 export function estadosDe<E extends string>(maquina: MaquinaEstado<E>): readonly E[] {
   return Object.keys(maquina.transiciones) as E[];

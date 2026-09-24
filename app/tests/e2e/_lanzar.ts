@@ -1,4 +1,4 @@
-import { _electron as electron, type ElectronApplication } from '@playwright/test';
+import { _electron as electron, type ElectronApplication, type Locator, type Page } from '@playwright/test';
 import { existsSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -42,4 +42,13 @@ export function lanzarApp(opciones: OpcionesLanzamiento = {}): Promise<ElectronA
     return electron.launch({ executablePath: exe, args: argumentos, env });
   }
   return electron.launch({ args: [join(raizApp, 'out', 'main', 'index.js'), ...argumentos], env });
+}
+
+/**
+ * Un enlace de la barra lateral. Se busca DENTRO de la navegación porque las
+ * pantallas también enlazan a otras secciones ("Calcular", "Ir al inventario")
+ * con el mismo nombre.
+ */
+export function seccion(pagina: Page, nombre: 'Resumen' | 'Configurar' | 'Formatos' | 'Inventario' | 'Calcular' | 'Bajas' | 'Informe'): Locator {
+  return pagina.getByRole('navigation', { name: 'Secciones' }).getByRole('link', { name: new RegExp(`^${nombre}`) });
 }

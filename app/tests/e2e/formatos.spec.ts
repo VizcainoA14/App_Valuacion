@@ -1,12 +1,12 @@
 /**
- * ADR-026 etapa 2 — el hospital obtiene los formatos DESDE la aplicación. Antes
- * había que buscarlos fuera, que es justo lo que impedía cederla sin acompañamiento.
+ * El hospital obtiene los formatos DESDE la aplicación. Antes había que buscarlos
+ * fuera, que es justo lo que impedía cederla sin acompañamiento.
  */
 import { test, expect } from '@playwright/test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { lanzarApp } from './_lanzar';
+import { lanzarApp, seccion } from './_lanzar';
 
 test('los formatos están dentro de la aplicación y se pueden descargar', async () => {
   test.setTimeout(120_000);
@@ -15,38 +15,39 @@ test('los formatos están dentro de la aplicación y se pueden descargar', async
   try {
     const pagina = await app.firstWindow();
 
-    // La etapa 2 es alcanzable sin haber configurado nada todavía.
-    await pagina.getByRole('link', { name: /^2\. Formatos/ }).click();
+    // Formatos es alcanzable desde el inicio, sin haber iniciado ningún proceso.
+    await seccion(pagina, 'Formatos').click();
     await expect(pagina.getByRole('heading', { name: 'Formatos para diligenciar' })).toBeVisible();
 
-    // Las 28 plantillas de ANEXO_A están presentes en la instalación.
+    // Las cinco que se diligencian están presentes en la instalación (ADR-028).
     await expect(pagina.getByText('Faltan archivos de plantilla en la instalación')).toBeHidden();
-    await expect(pagina.getByRole('button', { name: 'Descargar', exact: true })).toHaveCount(28);
+    await expect(pagina.getByRole('button', { name: 'Descargar', exact: true })).toHaveCount(5);
     await expect(pagina.getByRole('button', { name: 'Descargar los 5 formatos indispensables' })).toBeVisible();
 
-    // Sin entidad, se avisa de que saldrán sin listas desplegables.
-    await expect(pagina.getByText('Todavía no hay una entidad seleccionada')).toBeVisible();
+    // Fuera de un proceso, se avisa de que saldrán sin listas desplegables.
+    await expect(pagina.getByText('Formatos en blanco')).toBeVisible();
 
     // Los cinco que el hospital diligencia están agrupados por etapa y explicados.
-    await expect(pagina.getByText('PL-03')).toBeVisible();
+    await expect(pagina.getByText('PL-03', { exact: true })).toBeVisible();
     await expect(pagina.getByText('SIN estos dos datos no se puede calcular la depreciación', { exact: false })).toBeVisible();
 
-    // Con la demostración cargada, el aviso desaparece.
+    // Dentro de un proceso, salen con sus catálogos y el aviso desaparece.
     await pagina.getByRole('link', { name: 'Valuación de Activos' }).click();
-    await pagina.getByRole('button', { name: 'Cargar hospital de demostración' }).click();
+    await pagina.getByRole('button', { name: 'Cargar proceso de demostración' }).click();
     await pagina.getByRole('link', { name: /HOSPITAL DE DEMOSTRACIÓN/ }).click();
-    await pagina.getByRole('link', { name: /^2\. Formatos/ }).click();
-    await expect(pagina.getByText('Todavía no hay una entidad seleccionada')).toBeHidden();
+    await seccion(pagina, 'Formatos').click();
+    await expect(pagina.getByRole('heading', { name: 'Formatos para diligenciar' })).toBeVisible();
+    await expect(pagina.getByText('Formatos en blanco')).toBeHidden();
 
-    // La etapa 2 no lleva `:entidadId` en su ruta, pero entrar en ella NO puede
-    // deshabilitar las demás: la entidad seleccionada sigue siéndolo (defecto
-    // reportado por el propietario el 2026-09-03).
-    for (const etapa of [/^1\. Configurar/, /^3\. Inventario/, /^4\. Calcular/, /^5\. Bajas/, /^6\. Informe/]) {
-      await expect(pagina.getByRole('link', { name: etapa })).toBeVisible();
+    // Los formatos del proceso cuelgan de él: entrar en ellos no saca del proceso
+    // (defecto reportado por el propietario el 2026-09-03).
+    for (const nombre of ['Configurar', 'Inventario', 'Calcular', 'Bajas', 'Informe'] as const) {
+      await expect(seccion(pagina, nombre)).toBeVisible();
     }
+
     // Y se puede volver a cualquiera de ellas y seguir trabajando.
-    await pagina.getByRole('link', { name: /^3\. Inventario/ }).click();
-    await expect(pagina.getByRole('heading', { name: '1 · Los bienes — PL-03' })).toBeVisible();
+    await seccion(pagina, 'Inventario').click();
+    await expect(pagina.getByRole('heading', { name: '1 · El barrido — PL-03' })).toBeVisible();
   } finally {
     await app.close();
     rmSync(userData, { recursive: true, force: true });

@@ -10,9 +10,9 @@ import { EsquemaParametrosCalculo, type ParametrosCalculo as Parametros } from '
 import { METODO_CONTEO_MESES, METODO_DEPRECIACION, ENFOQUE_ADICIONES, BASE_COMPARACION_AVALUO } from '@compartido/enums/parametros';
 import type { SegmentoCodigo } from '@compartido/dtos/configuracion';
 import { componerCodigo, validarSegmentos } from '@compartido/reglas/codigoInstitucional';
-import { useCanal, useMutacion, EFECTOS_PASO_01 } from '../../../ipc/consultas';
-import { Aviso, Boton, Campo, Cargando, Casilla, Encabezado, Seccion, Selector, AreaTexto, Insignia } from '../../../componentes/ui';
-import { useEntidadId, mensajeError } from '../hooks';
+import { useCanal, useMutacion, EFECTOS_CONFIGURACION } from '../../../ipc/consultas';
+import { Aviso, Boton, Campo, Cargando, Casilla, Encabezado, Seccion, Selector, AreaTexto } from '../../../componentes/ui';
+import { useProcesoId, mensajeError } from '../hooks';
 
 const numero = (min: number, max: number) => z.preprocess((v) => Number(String(v).replace(',', '.')), z.number().min(min).max(max));
 
@@ -32,42 +32,36 @@ type Valores = z.input<typeof esquema>;
 type Validados = z.output<typeof esquema>;
 
 export function ParametrosCalculo(): JSX.Element {
-  const entidadId = useEntidadId();
-  const parametros = useCanal('parametros:obtener', { entidadId });
+  const procesoId = useProcesoId();
+  const parametros = useCanal('parametros:obtener', { procesoId });
   // La mutación vive aquí: el formulario se sincroniza con `values` y no se remonta al guardar.
-  const actualizar = useMutacion('parametros:actualizar', ['parametros:obtener', ...EFECTOS_PASO_01]);
+  const actualizar = useMutacion('parametros:actualizar', ['parametros:obtener', ...EFECTOS_CONFIGURACION]);
   if (parametros.isPending) return <Cargando />;
   if (parametros.isError || parametros.data === undefined) return <Aviso tono="peligro">{parametros.error?.message ?? 'Sin parámetros'}</Aviso>;
   return (
     <>
-      <Encabezado titulo="Parámetros de cálculo" subtitulo="RN-01-01: al abrir un ejercicio se congela una copia. Cada cambio queda en bitácora (RF-01-08)." />
+      <Encabezado titulo="Parámetros de cálculo" subtitulo="Valen para los cálculos que vengan: cada corte guarda una copia de los que usó (RN-01-01). Cada cambio queda en bitácora (RF-01-08)." />
       <div className="flex flex-col gap-5">
         {actualizar.isError && <Aviso tono="peligro">{mensajeError(actualizar.error)}</Aviso>}
-        {actualizar.isSuccess && <Aviso tono="exito">Parámetros guardados. Los ejercicios aún ABIERTOS recibieron la copia actualizada.</Aviso>}
-        <FormularioParametros actuales={parametros.data} guardando={actualizar.isPending} onGuardar={(cambios, justificacion) => actualizar.mutate({ entidadId, cambios, justificacion })} />
-        <ConvencionCodificacion entidadId={entidadId} />
+        {actualizar.isSuccess && <Aviso tono="exito">Parámetros guardados. Se aplican desde el próximo cálculo; los cortes ya hechos no cambian.</Aviso>}
+        <FormularioParametros actuales={parametros.data} guardando={actualizar.isPending} onGuardar={(cambios, justificacion) => actualizar.mutate({ procesoId, cambios, justificacion })} />
+        <ConvencionCodificacion procesoId={procesoId} />
       </div>
     </>
   );
 }
 
 function FormularioParametros({ actuales, guardando, onGuardar }: { actuales: Parametros; guardando: boolean; onGuardar: (cambios: Parametros, justificacion: string | null) => void }): JSX.Element {
-  const { register, handleSubmit, watch, formState: { errors, isDirty } } = useForm<Valores, unknown, Validados>({ resolver: zodResolver(esquema), defaultValues: actuales, values: actuales });
-  const confirmado = watch('metodo_conteo_meses_confirmado');
-  const metodo = watch('metodo_conteo_meses');
+  const { register, handleSubmit, formState: { errors, isDirty } } = useForm<Valores, unknown, Validados>({ resolver: zodResolver(esquema), defaultValues: actuales, values: actuales });
   const opciones = <C extends { valores: readonly string[]; etiqueta: (v: never) => string }>(c: C) => c.valores.map((v) => ({ valor: v, etiqueta: c.etiqueta(v as never) }));
 
   return (
     <form noValidate onSubmit={handleSubmit(({ justificacion, ...cambios }) => onGuardar(cambios, justificacion ?? null))} className="flex flex-col gap-5">
 
-      <Seccion titulo="Depreciación" descripcion="El método de conteo de meses es el punto crítico del sistema (ANEXO_C §3.3): debe constar en acta con el contador.">
+      <Seccion titulo="Depreciación" descripcion="El método de conteo de meses es el punto crítico del sistema (ANEXO_C §3.3): conviene acordarlo con el contador. El informe declara el que se usó.">
         <div className="grid gap-4 md:grid-cols-2">
           <Selector etiqueta="Método de depreciación" ayuda="Fórmula del paso 06 · Manual de Políticas Contables" opciones={opciones(METODO_DEPRECIACION)} {...register('metodo_depreciacion')} />
           <Selector etiqueta="Método de conteo de meses" ayuda="mes_completo: solo meses cumplidos · dias_exactos: días/365,25×12 (sugerido) · fraccion_anual: equivalente a días exactos" opciones={opciones(METODO_CONTEO_MESES)} {...register('metodo_conteo_meses')} />
-          <div className="md:col-span-2 rounded-md border border-aviso/40 bg-aviso-fondo p-3">
-            <Casilla etiqueta={`Método ${metodo} confirmado por acta con el contador (IN-06-04)`} ayuda="VAL-01-07 no se cumple con el valor sugerido: hace falta la confirmación explícita (CT-02). Cambiar el método la invalida." {...register('metodo_conteo_meses_confirmado')} />
-            {confirmado === true ? <Insignia tono="exito">Confirmado</Insignia> : <Insignia tono="aviso">Pendiente de acta</Insignia>}
-          </div>
           <Casilla etiqueta="Deprecia el mes de adquisición" ayuda="Si no, la depreciación inicia el primer día del mes siguiente (ANEXO_C §3.2)" {...register('deprecia_mes_adquisicion')} />
           <Casilla etiqueta="Usa la fecha de puesta en servicio" ayuda="Cuando existe, en lugar de la fecha de adquisición" {...register('usa_puesta_en_servicio')} />
           <Selector etiqueta="Enfoque de adiciones y mejoras" ayuda="ANEXO_C §3.6" opciones={opciones(ENFOQUE_ADICIONES)} {...register('enfoque_adiciones')} />
@@ -115,9 +109,9 @@ const TIPOS: readonly { tipo: SegmentoCodigo['tipo']; etiqueta: string }[] = [
   { tipo: 'SEPARADOR', etiqueta: 'Separador' },
 ];
 
-function ConvencionCodificacion({ entidadId }: { entidadId: string }): JSX.Element {
-  const convencion = useCanal('convencion:obtener', { entidadId });
-  const guardar = useMutacion('convencion:guardar', ['convencion:obtener', ...EFECTOS_PASO_01]);
+function ConvencionCodificacion({ procesoId }: { procesoId: string }): JSX.Element {
+  const convencion = useCanal('convencion:obtener', { procesoId });
+  const guardar = useMutacion('convencion:guardar', ['convencion:obtener', ...EFECTOS_CONFIGURACION]);
   const [segmentos, setSegmentos] = useState<SegmentoCodigo[] | null>(null);
   const [longitud, setLongitud] = useState<number | null>(null);
 
@@ -133,9 +127,9 @@ function ConvencionCodificacion({ entidadId }: { entidadId: string }): JSX.Eleme
   return (
     <Seccion
       titulo="Convención de codificación (plaqueteo)"
-      descripcion={convencion.data.definida ? 'RN-01-02 · Definida por la entidad.' : 'VAL-01-10 · No definida: se usará la genérica SEDE-TIPO-CONSECUTIVO hasta que la configure.'}
+      descripcion={convencion.data.definida ? 'RN-01-02 · Definida por el hospital.' : 'VAL-01-10 · No definida: se usará la genérica SEDE-TIPO-CONSECUTIVO hasta que la configure.'}
       acciones={
-        <Boton variante="primario" cargando={guardar.isPending} disabled={problema !== null} onClick={() => guardar.mutate({ entidadId, segmentos: actuales, longitudConsecutivo: longitudActual }, { onSuccess: () => { setSegmentos(null); setLongitud(null); } })}>
+        <Boton variante="primario" cargando={guardar.isPending} disabled={problema !== null} onClick={() => guardar.mutate({ procesoId, segmentos: actuales, longitudConsecutivo: longitudActual }, { onSuccess: () => { setSegmentos(null); setLongitud(null); } })}>
           Guardar convención
         </Boton>
       }

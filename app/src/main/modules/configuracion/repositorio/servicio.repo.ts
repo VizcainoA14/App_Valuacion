@@ -20,8 +20,8 @@ function aDto(f: Fila): ServicioDto {
 }
 
 export const servicioRepo = {
-  listarPorEntidad(db: BaseDatos, entidadId: string, incluirInactivos: boolean): ServicioDto[] {
-    const sedes = db.select({ id: sede.id }).from(sede).where(eq(sede.entidadId, entidadId)).all().map((s) => s.id);
+  listarPorProceso(db: BaseDatos, procesoId: string, incluirInactivos: boolean): ServicioDto[] {
+    const sedes = db.select({ id: sede.id }).from(sede).where(eq(sede.procesoId, procesoId)).all().map((s) => s.id);
     if (sedes.length === 0) return [];
     const cond = incluirInactivos ? inArray(servicio.sedeId, sedes) : and(inArray(servicio.sedeId, sedes), eq(servicio.activo, true));
     return db.select().from(servicio).where(cond).orderBy(servicio.sedeId, servicio.codigo).all().map(aDto);

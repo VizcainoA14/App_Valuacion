@@ -29,7 +29,7 @@ describe('crearRespaldoVerificado', () => {
 
     // Restauración: la copia se abre sola y contiene lo mismo.
     const copia = new Database(destino, { readonly: true });
-    const fila = copia.prepare('SELECT razon_social FROM entidad WHERE id = ?').get(ids.entidad) as {
+    const fila = copia.prepare('SELECT razon_social FROM proceso WHERE id = ?').get(ids.proceso) as {
       razon_social: string;
     };
     expect(fila.razon_social).toBe('E.S.E Hospital de Prueba');

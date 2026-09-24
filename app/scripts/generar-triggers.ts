@@ -1,10 +1,19 @@
 /**
- * T-B-04 — Genera `0002_triggers_integridad.sql` (INT-02 … INT-10 y máquinas de estado).
+ * Genera `0002_triggers_integridad.sql`: las reglas de integridad que no caben en
+ * un CHECK, la máquina de estados del bien y la inmutabilidad de lo calculado.
  *
- * NO se escribe a mano: el SQL sale del esquema Drizzle (qué tablas tienen
- * `ejercicio_id`) y de las máquinas de estado de MOD-00. Un test comprueba que el
- * archivo en disco coincide con lo generado, así que añadir una tabla sin decidir
- * cómo se congela (INT-09) rompe la construcción en vez de pasar inadvertido.
+ * NO se escribe a mano: el SQL sale del esquema Drizzle y de las máquinas de
+ * estado de `compartido/estados`. Un test comprueba que el archivo en disco
+ * coincide con lo generado, así que cambiar una regla sin regenerar rompe la
+ * construcción en vez de pasar inadvertido.
+ *
+ * Dos niveles de inmutabilidad, ambos garantizados por la base aunque se le
+ * escriba por SQL directo (ADR-017):
+ *   - lo que se calculó en un corte, lo que trajo un barrido y lo que dice la
+ *     bitácora no se reescriben nunca (ADR-028);
+ *   - un proceso FINALIZADO no admite escritura en ninguna de sus tablas
+ *     (ADR-029). El generador exige que toda tabla del esquema diga cómo llega
+ *     a su proceso: una tabla nueva sin esa decisión rompe la construcción.
  *
  * Uso: npm run db:triggers   (y luego revisar el diff de la migración)
  */
@@ -20,41 +29,15 @@ export const RUTA_MIGRACION = 'src/main/infraestructura/db/migraciones/0002_trig
 
 const SEPARADOR = '--> statement-breakpoint';
 
-/** Tablas sin `ejercicio_id` que llegan al ejercicio por otra clave. Subconsulta que devuelve su estado. */
-const INDIRECTAS: Readonly<Record<string, { via: string; clave: string }>> = {
-  hoja_vida: { via: 'bien', clave: 'bien_id' },
-  mantenimiento: { via: 'bien', clave: 'bien_id' },
-  soporte_documental: { via: 'bien', clave: 'bien_id' },
-  foto_bien: { via: 'bien', clave: 'bien_id' },
-  movimiento_bien: { via: 'bien', clave: 'bien_id' },
-  override_vida_util: { via: 'bien', clave: 'bien_id' },
-  disposicion_final: { via: 'propuesta_baja', clave: 'propuesta_baja_id' },
-  efecto_contable_baja: { via: 'propuesta_baja', clave: 'propuesta_baja_id' },
-  oferta_comparable: { via: 'avaluo_inmueble', clave: 'avaluo_id' },
-};
-
-/** Tablas de configuración que NO pertenecen a un ejercicio: quedan fuera de INT-09 a propósito. */
-const SIN_EJERCICIO: ReadonlySet<string> = new Set([
-  'entidad',
-  'sede',
-  'servicio',
-  'clase_activo',
-  'parametro_calculo',
-  'convencion_codigo',
-  'abreviatura_tipo',
-  'responsable',
-  'factor_estado',
-  'inmueble',
-  'documento_inmueble',
+/** Tablas que, una vez escritas, no se modifican: lo que se calculó, lo que se importó, lo que se registró. */
+export const TABLAS_INMUTABLES: readonly string[] = Object.freeze([
+  'barrido',
+  'bitacora',
+  'calculo_depreciacion',
+  'calculo_exclusion',
+  'calculo_obsolescencia',
+  'corte',
 ]);
-
-function estadoEjercicio(tabla: string, fila: 'NEW' | 'OLD'): string {
-  const indirecta = INDIRECTAS[tabla];
-  if (indirecta === undefined) {
-    return `(SELECT estado FROM ejercicio WHERE id = ${fila}.ejercicio_id)`;
-  }
-  return `(SELECT j.estado FROM ${indirecta.via} v JOIN ejercicio j ON j.id = v.ejercicio_id WHERE v.id = ${fila}.${indirecta.clave})`;
-}
 
 function trigger(nombre: string, evento: string, tabla: string, cuando: string, mensaje: string): string {
   return [
@@ -66,95 +49,27 @@ function trigger(nombre: string, evento: string, tabla: string, cuando: string, 
   ].join('\n');
 }
 
-// ── INT-02 … INT-08, INT-10: reglas puntuales ────────────────────────────────
+// ── Reglas puntuales ─────────────────────────────────────────────────────────
 
 const REGLAS_PUNTUALES: string[] = [
   trigger(
-    'trg_int02_bien_ejercicio',
-    'UPDATE OF ejercicio_id',
+    'trg_int02_bien_proceso',
+    'UPDATE OF proceso_id',
     'bien',
-    'NEW.ejercicio_id <> OLD.ejercicio_id',
-    'INT-02: un bien no puede cambiar de ejercicio',
+    'NEW.proceso_id <> OLD.proceso_id',
+    'INT-02: un bien no puede cambiar de proceso',
   ),
   // INT-03 + RN-09-09: nunca se elimina un bien; se cambia su estado. Única excepción:
-  // el hospital de demostración, que se borra completo de un clic (T-B-11).
+  // el proceso de demostración, que se borra completo de un clic (T-B-11). Por
+  // eso un proceso en curso solo se elimina mientras no tenga inventario (ADR-029).
   trigger(
     'trg_int03_bien_delete',
     'DELETE',
     'bien',
-    '(SELECT e.es_demostracion FROM ejercicio j JOIN entidad e ON e.id = j.entidad_id WHERE j.id = OLD.ejercicio_id) = 0',
+    '(SELECT p.es_demostracion FROM proceso p WHERE p.id = OLD.proceso_id) = 0',
     'INT-03: un bien no se elimina; cambie su estado (RN-09-09)',
   ),
-  trigger(
-    'trg_int04_hoja_vida_insert',
-    'INSERT',
-    'hoja_vida',
-    'NEW.fecha_adquisicion IS NOT NULL AND NEW.fecha_adquisicion > (SELECT j.fecha_corte FROM bien b JOIN ejercicio j ON j.id = b.ejercicio_id WHERE b.id = NEW.bien_id)',
-    'INT-04: fecha_adquisicion posterior a la fecha de corte del ejercicio',
-  ),
-  trigger(
-    'trg_int04_hoja_vida_update',
-    'UPDATE OF fecha_adquisicion, bien_id',
-    'hoja_vida',
-    'NEW.fecha_adquisicion IS NOT NULL AND NEW.fecha_adquisicion > (SELECT j.fecha_corte FROM bien b JOIN ejercicio j ON j.id = b.ejercicio_id WHERE b.id = NEW.bien_id)',
-    'INT-04: fecha_adquisicion posterior a la fecha de corte del ejercicio',
-  ),
-  trigger(
-    'trg_int04_ejercicio_fecha_corte',
-    'UPDATE OF fecha_corte',
-    'ejercicio',
-    'EXISTS (SELECT 1 FROM hoja_vida h JOIN bien b ON b.id = h.bien_id WHERE b.ejercicio_id = NEW.id AND h.fecha_adquisicion > NEW.fecha_corte)',
-    'INT-04: hay bienes adquiridos después de la nueva fecha de corte',
-  ),
-  trigger(
-    'trg_int07_propuesta_insert',
-    'INSERT',
-    'propuesta_baja',
-    "NEW.estado_aprobacion IN ('EJECUTADO', 'DISPOSICION_DOCUMENTADA') AND NEW.acta_comite_id IS NULL",
-    'INT-07: una baja ejecutada exige acta del Comité',
-  ),
-  trigger(
-    'trg_int07_propuesta_update',
-    'UPDATE OF estado_aprobacion, acta_comite_id',
-    'propuesta_baja',
-    "NEW.estado_aprobacion IN ('EJECUTADO', 'DISPOSICION_DOCUMENTADA') AND NEW.acta_comite_id IS NULL",
-    'INT-07: una baja ejecutada exige acta del Comité',
-  ),
-  trigger(
-    'trg_int08_acto_insert',
-    'INSERT',
-    'acto_administrativo',
-    "NEW.estado IN ('FIRMADO', 'PUBLICADO') AND NEW.acta_comite_id IS NULL",
-    'INT-08: un acto firmado exige acta del Comité',
-  ),
-  trigger(
-    'trg_int08_acto_update',
-    'UPDATE OF estado, acta_comite_id',
-    'acto_administrativo',
-    "NEW.estado IN ('FIRMADO', 'PUBLICADO') AND NEW.acta_comite_id IS NULL",
-    'INT-08: un acto firmado exige acta del Comité',
-  ),
-  // RN-10-07: el acto firmado queda congelado; solo cambia a PUBLICADO.
-  trigger(
-    'trg_rn1007_acto_congelado',
-    'UPDATE',
-    'acto_administrativo',
-    [
-      'OLD.inmutable = 1 AND (',
-      '\tNEW.inmutable = 0',
-      '\tOR NEW.contenido_generado IS NOT OLD.contenido_generado',
-      '\tOR NEW.epigrafe IS NOT OLD.epigrafe',
-      '\tOR NEW.numero IS NOT OLD.numero',
-      '\tOR NEW.fecha IS NOT OLD.fecha',
-      '\tOR NEW.tipo_resolucion IS NOT OLD.tipo_resolucion',
-      '\tOR NEW.acta_comite_id IS NOT OLD.acta_comite_id',
-      '\tOR NEW.firmo_responsable_id IS NOT OLD.firmo_responsable_id',
-      '\tOR NEW.fecha_firma IS NOT OLD.fecha_firma',
-      ')',
-    ].join('\n'),
-    'RN-10-07: un acto firmado es inmutable',
-  ),
-  // RNF-07 / ANEXO_B §7.1: los 8 campos sensibles no cambian sin justificación. La capa
+  // RNF-07 / ANEXO_B §7.1: los campos sensibles no cambian sin justificación. La capa
   // de aplicación lo valida antes; la base lo garantiza aunque se escriba por SQL directo.
   trigger(
     'trg_rnf07_bitacora_justificacion',
@@ -170,16 +85,27 @@ const REGLAS_PUNTUALES: string[] = [
     '(SELECT c.es_depreciable FROM bien b JOIN clase_activo c ON c.id = b.clase_activo_id WHERE b.id = NEW.bien_id) = 0',
     'INT-10: la clase del bien no es depreciable',
   ),
+  // Una baja se registra y, si fue un error, se anula. Nada más: ni se reescribe
+  // su causal o su justificación, ni se "desanula".
   trigger(
-    'trg_int10_calculo_dep_update',
-    'UPDATE OF bien_id',
-    'calculo_depreciacion',
-    '(SELECT c.es_depreciable FROM bien b JOIN clase_activo c ON c.id = b.clase_activo_id WHERE b.id = NEW.bien_id) = 0',
-    'INT-10: la clase del bien no es depreciable',
+    'trg_baja_inmutable',
+    'UPDATE',
+    'baja',
+    [
+      'OLD.anulada_en IS NOT NULL',
+      '\tOR NEW.bien_id IS NOT OLD.bien_id',
+      '\tOR NEW.fecha IS NOT OLD.fecha',
+      '\tOR NEW.causal IS NOT OLD.causal',
+      '\tOR NEW.justificacion IS NOT OLD.justificacion',
+      '\tOR NEW.referencia IS NOT OLD.referencia',
+      '\tOR NEW.anulada_en IS NULL',
+      "\tOR NEW.motivo_anulacion IS NULL OR trim(NEW.motivo_anulacion) = ''",
+    ].join('\n'),
+    'Una baja registrada solo se anula, con motivo; no se modifica',
   ),
 ];
 
-// ── Máquinas de estado (T-B-05) ──────────────────────────────────────────────
+// ── Máquinas de estado ───────────────────────────────────────────────────────
 
 function triggersMaquina(m: MaquinaEstado<string>): string[] {
   const permitidas = Object.entries(m.transiciones)
@@ -206,74 +132,85 @@ function triggersMaquina(m: MaquinaEstado<string>): string[] {
   ];
 }
 
-// ── INT-09: ejercicio CERRADO rechaza toda escritura ─────────────────────────
+// ── Inmutabilidad (ADR-017 sobre la unidad de ADR-028) ───────────────────────
 
-function triggersInt09(tabla: string): string[] {
-  const cerrado = (fila: 'NEW' | 'OLD') => `${estadoEjercicio(tabla, fila)} = 'CERRADO'`;
-  const mensaje = 'INT-09: el ejercicio está CERRADO y es inmutable';
+function triggerInmutable(tabla: string): string {
+  return trigger(`trg_inmutable_${tabla}_upd`, 'UPDATE', tabla, '1', `${tabla}: lo registrado no se modifica`);
+}
 
-  if (tabla === 'ejercicio') {
+// ── ADR-029: un proceso finalizado es de solo lectura ────────────────────────
+
+/** Tablas que llegan a su proceso por otra clave: subconsulta que devuelve el `proceso_id`. */
+const INDIRECTAS: Readonly<Record<string, string>> = {
+  servicio: '(SELECT s.proceso_id FROM sede s WHERE s.id = FILA.sede_id)',
+  hoja_vida: '(SELECT b.proceso_id FROM bien b WHERE b.id = FILA.bien_id)',
+  mantenimiento: '(SELECT b.proceso_id FROM bien b WHERE b.id = FILA.bien_id)',
+  soporte_documental: '(SELECT b.proceso_id FROM bien b WHERE b.id = FILA.bien_id)',
+  baja: '(SELECT b.proceso_id FROM bien b WHERE b.id = FILA.bien_id)',
+  calculo_obsolescencia: '(SELECT c.proceso_id FROM corte c WHERE c.id = FILA.corte_id)',
+  calculo_depreciacion: '(SELECT c.proceso_id FROM corte c WHERE c.id = FILA.corte_id)',
+  calculo_exclusion: '(SELECT c.proceso_id FROM corte c WHERE c.id = FILA.corte_id)',
+};
+
+/** Fuera de la regla, a propósito: el proceso tiene la suya y la bitácora registra también lo finalizado (EXPORTAR). */
+const EXENTAS: ReadonlySet<string> = new Set(['proceso', 'bitacora']);
+
+const MENSAJE_FINALIZADO = 'El proceso está FINALIZADO y es de solo lectura (ADR-029)';
+
+function finalizado(expresionProceso: string): string {
+  return `(SELECT estado FROM proceso WHERE id = ${expresionProceso}) = 'FINALIZADO'`;
+}
+
+/** Del proceso de demostración se permite borrar todo, también finalizado (T-B-11). */
+function finalizadoNoDemo(expresionProceso: string): string {
+  return `(SELECT estado = 'FINALIZADO' AND es_demostracion = 0 FROM proceso WHERE id = ${expresionProceso}) = 1`;
+}
+
+function triggersFinalizado(tabla: string, columnas: readonly string[]): string[] {
+  if (tabla === 'proceso') {
     return [
-      trigger('trg_int09_ejercicio_update', 'UPDATE', 'ejercicio', "OLD.estado = 'CERRADO'", mensaje),
-      trigger('trg_int09_ejercicio_delete', 'DELETE', 'ejercicio', "OLD.estado = 'CERRADO'", mensaje),
+      trigger('trg_finalizado_proceso_upd', 'UPDATE', 'proceso', "OLD.estado = 'FINALIZADO'", MENSAJE_FINALIZADO),
+      trigger('trg_finalizado_proceso_del', 'DELETE', 'proceso', "OLD.estado = 'FINALIZADO' AND OLD.es_demostracion = 0", MENSAJE_FINALIZADO),
     ];
   }
-
-  // Consultar o exportar un ejercicio cerrado es legítimo (RN-11-04) y debe quedar en bitácora.
-  const condicionInsert =
-    tabla === 'bitacora' ? `${cerrado('NEW')} AND NEW.accion <> 'EXPORTAR'` : cerrado('NEW');
-
+  const via = columnas.includes('proceso_id') ? 'FILA.proceso_id' : INDIRECTAS[tabla];
+  if (via === undefined) throw new Error(`La tabla "${tabla}" no tiene proceso_id ni ruta indirecta declarada: decida cómo la congela ADR-029.`);
+  const de = (fila: 'NEW' | 'OLD') => via.replaceAll('FILA', fila);
   return [
-    trigger(`trg_int09_${tabla}_ins`, 'INSERT', tabla, condicionInsert, mensaje),
-    trigger(`trg_int09_${tabla}_upd`, 'UPDATE', tabla, `${cerrado('OLD')} OR ${cerrado('NEW')}`, mensaje),
-    trigger(`trg_int09_${tabla}_del`, 'DELETE', tabla, cerrado('OLD'), mensaje),
+    trigger(`trg_finalizado_${tabla}_ins`, 'INSERT', tabla, finalizado(de('NEW')), MENSAJE_FINALIZADO),
+    trigger(`trg_finalizado_${tabla}_upd`, 'UPDATE', tabla, `${finalizado(de('OLD'))} OR ${finalizado(de('NEW'))}`, MENSAJE_FINALIZADO),
+    trigger(`trg_finalizado_${tabla}_del`, 'DELETE', tabla, finalizadoNoDemo(de('OLD')), MENSAJE_FINALIZADO),
   ];
 }
 
 export function generarSql(): string {
-  const tablas = Object.values(esquema as Record<string, unknown>).filter(
-    (v): v is Table => typeof v === 'object' && v !== null && Symbol.for('drizzle:Name') in v,
-  );
-
-  const bloques: string[] = [];
-  const int09: string[] = [];
-  let tablasCongeladas = 0;
-
-  for (const tabla of tablas.sort((a, b) => getTableName(a).localeCompare(getTableName(b)))) {
-    const nombre = getTableName(tabla);
-    const columnas = Object.values(getTableColumns(tabla)).map((c) => c.name);
-    const tieneEjercicio = columnas.includes('ejercicio_id');
-
-    if (SIN_EJERCICIO.has(nombre)) {
-      if (tieneEjercicio) throw new Error(`${nombre} tiene ejercicio_id pero está en SIN_EJERCICIO`);
-      continue;
-    }
-    if (nombre !== 'ejercicio' && !tieneEjercicio && INDIRECTAS[nombre] === undefined) {
-      throw new Error(
-        `La tabla "${nombre}" no tiene ejercicio_id ni ruta indirecta declarada: decide cómo la congela INT-09.`,
-      );
-    }
-    int09.push(...triggersInt09(nombre));
-    tablasCongeladas += 1;
+  const definiciones = Object.values(esquema as Record<string, unknown>)
+    .filter((v): v is Table => typeof v === 'object' && v !== null && Symbol.for('drizzle:Name') in v)
+    .sort((a, b) => getTableName(a).localeCompare(getTableName(b)));
+  const tablas = new Set(definiciones.map((t) => getTableName(t)));
+  for (const t of TABLAS_INMUTABLES) {
+    if (!tablas.has(t)) throw new Error(`TABLAS_INMUTABLES menciona "${t}", que no está en el esquema.`);
   }
 
-  for (const m of MAQUINAS_DE_ESTADO) bloques.push(...triggersMaquina(m));
-
   const encabezado = [
-    '-- GENERADO por scripts/generar-triggers.ts (T-B-04). NO EDITAR A MANO: npm run db:triggers.',
-    '-- Reglas de integridad ANEXO_B §8 que no caben en un CHECK, máquinas de estado ANEXO_B §6',
-    '-- e inmutabilidad del ejercicio cerrado (INT-09, ADR-017) sobre TODAS las tablas del ejercicio.',
+    '-- GENERADO por scripts/generar-triggers.ts. NO EDITAR A MANO: npm run db:triggers.',
+    '-- Reglas de integridad que no caben en un CHECK, máquina de estados del bien',
+    '-- e inmutabilidad: cortes, barridos y bitácora (ADR-028) y el proceso finalizado (ADR-029).',
     '',
-    '-- ── INT-02 … INT-08, INT-10 y RN-10-07 ──',
+    '-- ── Reglas puntuales ──',
   ].join('\n');
 
   return [
     encabezado,
     ...REGLAS_PUNTUALES,
-    '-- ── Máquinas de estado (ANEXO_B §6) ──',
-    ...bloques,
-    `-- ── INT-09: ${int09.length} triggers sobre ${tablasCongeladas} tablas (incluido ejercicio) ──`,
-    ...int09,
+    '-- ── Máquina de estados del bien (ADR-028) ──',
+    ...MAQUINAS_DE_ESTADO.flatMap(triggersMaquina),
+    `-- ── Inmutabilidad: ${TABLAS_INMUTABLES.length} tablas ──`,
+    ...TABLAS_INMUTABLES.map(triggerInmutable),
+    '-- ── Proceso finalizado: solo lectura (ADR-029) ──',
+    ...definiciones
+      .filter((t) => !EXENTAS.has(getTableName(t)) || getTableName(t) === 'proceso')
+      .flatMap((t) => triggersFinalizado(getTableName(t), Object.values(getTableColumns(t)).map((c) => c.name))),
   ].join(`\n${SEPARADOR}\n`).concat('\n');
 }
 

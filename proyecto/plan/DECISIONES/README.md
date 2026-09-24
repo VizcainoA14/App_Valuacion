@@ -41,6 +41,9 @@ reconsiderarla**.
 | # | Decisión | Elección |
 |:-:|---|---|
 | 026 | **Destinatario y alcance** | **Producto para hospitales**: un *núcleo* (configurar → plantillas → importar → **calcular** → bajas → informe) y unas *extensiones*. `/especificacion/teoria` intacta; cambia el orden, no el contenido |
+| 027 | Firmantes del informe | Se retira el catálogo de responsables; firman el Gerente y el Contador. **El bloque de firmas lo retira ADR-028** |
+| 028 | **Desacople del proceso** | Inventario actualizado por **barridos**, bajas que solo se registran e informe sin firmas. Se retiran el ejercicio y las extensiones. **La entidad y los cortes a cualquier fecha los sustituye ADR-029** |
+| 029 | **El proceso es lo principal** | La pantalla inicial son los **procesos**; cada uno, independiente, con su hospital, su inventario (de cero) y **un cálculo a su fecha de corte**. **Finalizar** lo deja de solo lectura, garantizado por disparadores |
 
 ### Arquitectura y proceso — [`adr_arquitectura.md`](adr_arquitectura.md)
 

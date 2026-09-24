@@ -1,12 +1,13 @@
 /**
- * Recorrido completo del hospital de demostración pulsando cada "Guardar" del
- * paso 01. Cualquier excepción del renderer (pantalla en blanco) hace fallar el test.
+ * Recorrido completo del proceso de demostración pulsando cada "Guardar" de la
+ * configuración y visitando cada sección. Cualquier excepción del renderer
+ * (pantalla en blanco) hace fallar el test.
  */
 import { test, expect, type Page } from '@playwright/test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { lanzarApp } from './_lanzar';
+import { lanzarApp, seccion } from './_lanzar';
 
 function vigilarErrores(pagina: Page): string[] {
   const errores: string[] = [];
@@ -25,17 +26,21 @@ test('la demostración se recorre y se guarda en todas las pantallas sin errores
     const pagina = await app.firstWindow();
     const errores = vigilarErrores(pagina);
 
-    await pagina.getByRole('button', { name: 'Cargar hospital de demostración' }).click();
+    await pagina.getByRole('button', { name: 'Cargar proceso de demostración' }).click();
     await pagina.getByRole('link', { name: /HOSPITAL DE DEMOSTRACIÓN/ }).click();
     await expect(pagina.locator('[data-prueba="banda-demo"]')).toBeVisible();
 
-    // 1. Datos de la entidad → guardar cambios.
-    await pagina.getByRole('link', { name: /1\. Entidad/ }).click();
-    await expect(pagina.getByRole('heading', { name: 'Datos de la entidad' })).toBeVisible();
+    // Se entra al resumen del proceso; de ahí, a su configuración.
+    await expect(pagina.getByRole('heading', { name: 'En qué va' })).toBeVisible();
+    await seccion(pagina, 'Configurar').click();
+
+    // 1. El proceso y el hospital → guardar cambios.
+    await pagina.getByRole('link', { name: /1\. Proceso y hospital/ }).click();
+    await expect(pagina.getByRole('heading', { name: 'El proceso y el hospital' })).toBeVisible();
     await pagina.getByLabel('Teléfono').fill('(600) 111 1111');
     await pagina.getByRole('button', { name: 'Guardar cambios' }).click();
     await expect(pagina.getByText('Cambios guardados.')).toBeVisible();
-    await expect(pagina.getByRole('heading', { name: 'Datos de la entidad' })).toBeVisible();
+    await expect(pagina.getByRole('heading', { name: 'El proceso y el hospital' })).toBeVisible();
 
     // 2. Sedes: desactivar y reactivar una sede; nuevo servicio.
     await pagina.getByRole('link', { name: /2\. Sedes/ }).click();
@@ -65,20 +70,18 @@ test('la demostración se recorre y se guarda en todas las pantallas sin errores
     await pagina.getByRole('button', { name: 'Guardar convención' }).click();
     await expect(pagina.getByRole('heading', { name: 'Parámetros de cálculo' })).toBeVisible();
 
-    // 5. Ejercicio: avanzar (sin alert bloqueante), cambiar corte con justificación.
-    await pagina.getByRole('link', { name: /5\. Ejercicio/ }).click();
-    await expect(pagina.getByRole('button', { name: 'Avanzar al paso 02' })).toBeEnabled();
-    await pagina.getByRole('button', { name: 'Avanzar al paso 02' }).click();
-    // El paso 02 abre por "Importar": lo primero que hay que hacer es cargar PL-03.
-    await expect(pagina.getByRole('heading', { name: '1 · Los bienes — PL-03' })).toBeVisible();
-
-    await pagina.getByRole('link', { name: /^1. Configurar/ }).click();
-    await pagina.getByRole('link', { name: /5\. Ejercicio/ }).click();
-    await pagina.getByRole('button', { name: 'Cambiar corte' }).click();
-    await pagina.getByLabel('Nueva fecha de corte').fill('2025-05-31');
-    await pagina.getByLabel('Justificación').fill('Prueba de recorrido');
-    await pagina.getByRole('button', { name: 'Cambiar fecha' }).click();
-    await expect(pagina.getByText('31/05/2025')).toBeVisible();
+    // 5. Inventario, un cálculo y el informe: las pantallas nuevas tampoco pueden romperse.
+    await seccion(pagina, 'Inventario').click();
+    await expect(pagina.getByRole('heading', { name: '1 · El barrido — PL-03' })).toBeVisible();
+    await pagina.getByRole('link', { name: 'Barridos y servicios' }).click();
+    await expect(pagina.getByRole('heading', { name: 'Historial de barridos' })).toBeVisible();
+    await seccion(pagina, 'Calcular').click();
+    await pagina.getByRole('button', { name: 'Calcular 50 bienes al 30/06/2025' }).click();
+    await expect(pagina.locator('[data-prueba="calculo-hecho"]')).toBeVisible();
+    await seccion(pagina, 'Bajas').click();
+    await expect(pagina.getByRole('heading', { name: 'Bajas registradas' })).toBeVisible();
+    await seccion(pagina, 'Informe').click();
+    await expect(pagina.getByRole('heading', { name: 'Vista previa' })).toBeVisible();
 
     expect(errores, errores.join('\n')).toEqual([]);
   } finally {

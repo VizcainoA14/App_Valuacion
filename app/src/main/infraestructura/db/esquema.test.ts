@@ -10,8 +10,8 @@ const tablasDrizzle = Object.values(esquema as Record<string, unknown>).filter(
 );
 
 describe('esquema Drizzle ↔ base migrada', () => {
-  it('define 44 tablas', () => {
-    expect(tablasDrizzle).toHaveLength(44);
+  it('define 18 tablas (ADR-028)', () => {
+    expect(tablasDrizzle).toHaveLength(18);
   });
 
   it('toda columna del esquema existe en la base con el mismo nombre', async () => {
@@ -47,8 +47,8 @@ describe('esquema Drizzle ↔ base migrada', () => {
     const catalogo = TODOS_LOS_CATALOGOS.find((c) => c.nombre === 'nivel_complejidad');
     expect(catalogo).toBeDefined();
     const insertar = sqlite.prepare(
-      `INSERT INTO entidad (id, razon_social, nit, municipio, departamento, nivel_complejidad, nombre_gerente, direccion)
-       VALUES (?, 'X', ?, 'M', 'D', ?, 'G', 'Dir')`,
+      `INSERT INTO proceso (id, nombre, fecha_corte, razon_social, nit, municipio, departamento, nivel_complejidad, nombre_gerente, direccion)
+       VALUES (?, 'P', '2025-06-30', 'X', ?, 'M', 'D', ?, 'G', 'Dir')`,
     );
     expect(() => insertar.run('a', '1', 'II')).not.toThrow();
     expect(() => insertar.run('b', '2', 'IV')).toThrow(/CHECK/);

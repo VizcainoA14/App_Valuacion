@@ -6,15 +6,15 @@
  */
 import type { ContextoIpc } from '../../ipc/registroIpc';
 import type { ResultadoValidacion, ResultadoValidaciones } from '../../../compartido/dtos/configuracion';
-import { validacionesDelPaso, VALIDACIONES } from '../../../compartido/reglas/validaciones';
+import { VALIDACIONES } from '../../../compartido/reglas/validaciones';
 
 export interface Veredicto {
   readonly cumple: boolean;
-  /** Qué falta exactamente, cuando no cumple: el usuario debe entender qué le impide avanzar. */
+  /** Qué falta exactamente, cuando no cumple: el usuario debe entender qué corregir. */
   readonly detalle?: string;
 }
 
-export type Predicado = (ctx: ContextoIpc, entidadId: string, ejercicioId: string | null) => Veredicto;
+export type Predicado = (ctx: ContextoIpc, procesoId: string) => Veredicto;
 export type MapaPredicados = Readonly<Record<string, Predicado>>;
 
 export const OK: Veredicto = { cumple: true };
@@ -32,17 +32,18 @@ export function registrarPredicados(mapa: MapaPredicados): void {
   }
 }
 
-/** Códigos definidos que aún no tienen predicado (deben ser cero al cerrar cada hito). */
+/** Códigos definidos que aún no tienen predicado (deben ser cero). */
 export function codigosSinPredicado(): string[] {
   return VALIDACIONES.map((v) => v.codigo).filter((c) => !predicados.has(c));
 }
 
-export function evaluarPaso(paso: number, entidadId: string, ejercicioId: string | null, ctx: ContextoIpc): ResultadoValidaciones {
-  const resultados: ResultadoValidacion[] = validacionesDelPaso(paso).map((def) => {
+/** Revisa la configuración de la entidad: qué le falta para que el cálculo tenga sentido. */
+export function evaluarConfiguracion(procesoId: string, ctx: ContextoIpc): ResultadoValidaciones {
+  const resultados: ResultadoValidacion[] = VALIDACIONES.map((def) => {
     const predicado = predicados.get(def.codigo);
     let v: Veredicto;
     try {
-      v = predicado === undefined ? falla('Validación aún no implementada en la aplicación') : predicado(ctx, entidadId, ejercicioId);
+      v = predicado === undefined ? falla('Validación aún no implementada en la aplicación') : predicado(ctx, procesoId);
     } catch (e) {
       v = falla(`No se pudo evaluar: ${e instanceof Error ? e.message : String(e)}`);
     }
@@ -50,7 +51,7 @@ export function evaluarPaso(paso: number, entidadId: string, ejercicioId: string
   });
   const bloqueantesPendientes = resultados.filter((r) => r.severidad === 'BLOQUEANTE' && !r.cumple).length;
   const advertencias = resultados.filter((r) => r.severidad === 'ADVERTENCIA' && !r.cumple).length;
-  return { paso, resultados, bloqueantesPendientes, advertencias, puedeAvanzar: bloqueantesPendientes === 0 };
+  return { resultados, bloqueantesPendientes, advertencias, lista: bloqueantesPendientes === 0 };
 }
 
 /** Formatea una lista de códigos para el detalle sin desbordar la interfaz. */

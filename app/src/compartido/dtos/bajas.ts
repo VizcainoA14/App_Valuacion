@@ -1,9 +1,16 @@
-/** DTOs del paso 09 (ANEXO_B §4.6; paso 09 §10.1). */
+/**
+ * DTOs de las bajas (ADR-028).
+ *
+ * La aplicación **señala** candidatos con su motivo y **registra** las bajas
+ * que el hospital decidió. El trámite —comité, resolución, acta, disposición
+ * final— ocurre fuera de ella y no la bloquea: de él solo se anota, si se
+ * quiere, la referencia del documento.
+ */
 import type { Centavos, FechaIso, MarcaTiempo, Uuid } from '../tipos/basicos';
-import type { CausalBaja, DestinoFinal, EstadoActual, Semaforo } from '../enums/catalogos';
-import type { EstadoPropuestaBaja } from '../enums/estados';
+import type { CausalBaja, EstadoActual, Semaforo } from '../enums/catalogos';
+import type { EstadoBien } from '../enums/estados';
 
-/** Un bien que el motor señaló como candidato, con lo que hace falta para decidir. */
+/** Un bien que el motor señaló como candidato en un corte, con lo que hace falta para decidir. */
 export interface CandidatoBajaDto {
   readonly bienId: Uuid;
   readonly codigoInstitucional: string;
@@ -12,7 +19,8 @@ export interface CandidatoBajaDto {
   readonly claseNombre: string;
   readonly servicioCodigo: string;
   readonly estadoActual: EstadoActual;
-  readonly estadoRegistro: string;
+  /** Estado de hoy: puede que ya se haya registrado su baja. */
+  readonly estadoRegistro: EstadoBien;
   readonly indiceObsolescencia: number | null;
   readonly semaforo: Semaforo | null;
   readonly obsolescenciaFuncional: boolean;
@@ -22,57 +30,22 @@ export interface CandidatoBajaDto {
   readonly valorNetoLibros: Centavos | null;
   readonly saldoFinalAjustado: Centavos | null;
   readonly totalmenteDepreciado: boolean;
-  /** Ya tiene propuesta abierta: no se propone dos veces el mismo bien. */
-  readonly propuestaId: Uuid | null;
-  readonly estadoPropuesta: EstadoPropuestaBaja | null;
 }
 
-export interface EfectoContableDto {
-  readonly valorBruto: Centavos;
-  readonly depreciacionAsociada: Centavos;
-  readonly deterioroAsociado: Centavos;
-  readonly valorNeto: Centavos;
-  readonly valorRecuperado: Centavos;
-  readonly perdidaReconocida: Centavos;
-}
-
-export interface PropuestaBajaDto {
+/** Una baja que el hospital decidió y registró. */
+export interface BajaDto {
   readonly id: Uuid;
-  readonly ejercicioId: Uuid;
   readonly bienId: Uuid;
   readonly codigoInstitucional: string;
   readonly descripcionFuncional: string;
   readonly claseCodigo: string;
   readonly servicioCodigo: string;
+  readonly fecha: FechaIso;
   readonly causal: CausalBaja;
-  readonly justificacionTecnica: string;
-  readonly costoReparacionEstimado: Centavos | null;
-  readonly valorReposicion: Centavos | null;
-  /** Fracción con 4 decimales; nula si no hay cotización (RN-09-03). */
-  readonly relacionReparacionReposicion: number | null;
-  readonly procedeBajaPorEconomia: boolean | null;
-  readonly recomendacionEconomica: string | null;
-  readonly valorSalvamento: Centavos | null;
-  readonly destinoFinalPropuesto: DestinoFinal | null;
-  readonly especialistaId: Uuid;
-  readonly especialistaNombre: string;
-  readonly fechaPropuesta: FechaIso;
-  readonly estadoAprobacion: EstadoPropuestaBaja;
-  readonly observacionComite: string | null;
-  readonly efectoContable: EfectoContableDto;
-  readonly creadoEn: MarcaTiempo;
-  readonly actualizadoEn: MarcaTiempo;
-}
-
-export interface ResumenBajasDto {
-  readonly ejercicioId: Uuid;
-  readonly candidatosSinProponer: number;
-  readonly porEstado: Readonly<Record<EstadoPropuestaBaja, number>>;
-  readonly totalPropuestas: number;
-  /** Agregados sobre las propuestas que siguen vivas (no rechazadas). */
-  readonly valorBrutoTotal: Centavos;
-  readonly depreciacionTotal: Centavos;
-  readonly valorNetoTotal: Centavos;
-  readonly perdidaTotal: Centavos;
-  readonly valorRecuperadoTotal: Centavos;
+  readonly justificacion: string;
+  /** Número del acto o del acta con que el hospital la aprobó, si quiere anotarlo. */
+  readonly referencia: string | null;
+  readonly registradaEn: MarcaTiempo;
+  readonly anuladaEn: MarcaTiempo | null;
+  readonly motivoAnulacion: string | null;
 }

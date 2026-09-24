@@ -1,22 +1,25 @@
 import { useParams } from 'react-router';
 import { useCanal } from '../../ipc/consultas';
 
-/** Entidad activa según la ruta `/entidad/:entidadId/...`. */
-export function useEntidadId(): string {
-  const { entidadId } = useParams();
-  if (entidadId === undefined) throw new Error('Ruta sin entidadId');
-  return entidadId;
+/** El proceso de la ruta `/proceso/:procesoId/...`. */
+export function useProcesoId(): string {
+  const { procesoId } = useParams();
+  if (procesoId === undefined) throw new Error('Ruta sin procesoId');
+  return procesoId;
 }
 
-/** El ejercicio "vigente" del paso 01 es el más reciente de la entidad, si existe. */
-export function useEjercicioVigente(entidadId: string) {
-  const ejercicios = useCanal('ejercicio:listar', { entidadId });
-  const vigente = ejercicios.data?.[0] ?? null;
-  return { ...ejercicios, vigente };
+/**
+ * ADR-029 — un proceso finalizado es de solo lectura. La base ya lo impide;
+ * la interfaz lo dice antes, para no ofrecer botones que van a fallar.
+ */
+export function useSoloLectura(procesoId: string): boolean {
+  const proceso = useCanal('proceso:porId', { id: procesoId });
+  return proceso.data?.estado === 'FINALIZADO';
 }
 
-export function useValidaciones(paso: number, entidadId: string, ejercicioId: string | null) {
-  return useCanal('validaciones:evaluar', { paso, entidadId, ejercicioId });
+/** Qué le falta a la configuración del proceso para que el cálculo tenga sentido. */
+export function useValidaciones(procesoId: string) {
+  return useCanal('validaciones:evaluar', { procesoId });
 }
 
 export function mensajeError(e: unknown): string {

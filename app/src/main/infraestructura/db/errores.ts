@@ -23,6 +23,10 @@ export function traducirErrorSqlite(e: unknown): unknown {
   if (esErrorAplicacion(e) || !esErrorSqlite(e)) return e;
 
   if (e.code.startsWith('SQLITE_CONSTRAINT')) {
+    // ADR-029: el mensaje más frecuente de los disparadores merece un código propio.
+    if (e.message.includes('FINALIZADO y es de solo lectura')) {
+      return new ErrorIntegridad('PROCESO_FINALIZADO', 'El proceso está finalizado y es de solo lectura. Para valorar otra vez, inicie un proceso nuevo.');
+    }
     const m = /((?:INT|RN|VAL)-\d{2}(?:-\d{2})?):\s*(.+)$/.exec(e.message);
     if (m?.[1] !== undefined && m[2] !== undefined) return new ErrorIntegridad(m[1], m[2]);
     if (e.code === 'SQLITE_CONSTRAINT_UNIQUE') {

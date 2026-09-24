@@ -1,4 +1,4 @@
-/** Enums de configuración, auditoría y responsables (`ANEXO_B` §2, §4.1, §7). */
+/** Enums de configuración y auditoría (`ANEXO_B` §2, §4.1, §7). */
 import { definirCatalogo, type ValoresDe } from './definirCatalogo';
 
 export const NIVEL_COMPLEJIDAD = definirCatalogo('nivel_complejidad', 'ANEXO_B §2.1', {
@@ -33,21 +33,6 @@ export const ACCION_BITACORA = definirCatalogo('accion_bitacora', 'ANEXO_B §7.1
   CERRAR: 'Cerrar',
 });
 export type AccionBitacora = ValoresDe<typeof ACCION_BITACORA>;
-
-/** Catálogo de atribución de firmas, NO roles de acceso (ADR-016, ANEXO_B §7.2). */
-export const PERFIL_RESPONSABLE = definirCatalogo('perfil_responsable', 'ANEXO_B §7.2', {
-  COORDINADOR: 'Coordinador',
-  ESPECIALISTA_BIOMEDICO: 'Especialista biomédico',
-  ESPECIALISTA_SISTEMAS: 'Especialista en sistemas',
-  ESPECIALISTA_FISICOS: 'Especialista en recursos físicos',
-  CONTADOR: 'Contador',
-  PERITO: 'Perito avaluador (externo)',
-  MIEMBRO_COMITE: 'Miembro del Comité',
-  GERENTE: 'Gerente',
-  ASESOR_JURIDICO: 'Asesor jurídico',
-  SUPERVISOR: 'Supervisor',
-});
-export type PerfilResponsable = ValoresDe<typeof PERFIL_RESPONSABLE>;
 
 /**
  * Los 8 campos cuya modificación exige justificación en bitácora (ANEXO_B §7.1).

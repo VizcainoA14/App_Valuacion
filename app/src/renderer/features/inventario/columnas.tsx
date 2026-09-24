@@ -1,6 +1,7 @@
 import type { JSX } from 'react';
 import type { BienListadoDto } from '@compartido/dtos/inventario';
-import { ESTADO_ACTUAL, CONDICION_TENENCIA, ESTADO_REGISTRO } from '@compartido/enums/catalogos';
+import { ESTADO_ACTUAL, CONDICION_TENENCIA } from '@compartido/enums/catalogos';
+import { ESTADO_BIEN } from '@compartido/enums/estados';
 import type { ColumnaDatos } from '../../componentes/TablaDatos/TablaDatos';
 import { Insignia } from '../../componentes/ui';
 import { formatearDinero, formatearFecha } from '../../formato';
@@ -34,10 +35,10 @@ export const COLUMNAS_BIEN: readonly ColumnaDatos<BienListadoDto>[] = [
   { clave: 'fechaAdq', titulo: 'Adquisición', anchoPx: 110, celda: (b) => formatearFecha(b.fechaAdquisicion), textoPlano: (b) => formatearFecha(b.fechaAdquisicion) },
   {
     clave: 'registro',
-    titulo: 'Estado del registro',
+    titulo: 'En el inventario',
     ordenPor: 'estadoRegistro',
     anchoPx: 150,
-    celda: (b) => <Insignia tono={b.estadoRegistro === 'INCOMPLETO' ? 'aviso' : b.estadoRegistro === 'ACTIVO' ? 'exito' : 'neutro'}>{ESTADO_REGISTRO.etiqueta(b.estadoRegistro)}</Insignia>,
-    textoPlano: (b) => ESTADO_REGISTRO.etiqueta(b.estadoRegistro),
+    celda: (b) => <Insignia tono={b.estadoRegistro === 'NO_ENCONTRADO' ? 'aviso' : b.estadoRegistro === 'ACTIVO' ? 'exito' : 'neutro'}>{ESTADO_BIEN.etiqueta(b.estadoRegistro)}</Insignia>,
+    textoPlano: (b) => ESTADO_BIEN.etiqueta(b.estadoRegistro),
   },
 ];

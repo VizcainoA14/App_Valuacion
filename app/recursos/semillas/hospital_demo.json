@@ -12,15 +12,6 @@
     "telefono": "(600) 000 0000",
     "email": "demo@ejemplo.invalid"
   },
-  "responsables": [
-    { "nombreCompleto": "Ana Coordinadora Ejemplo", "documentoIdentidad": "10000001", "perfil": "COORDINADOR", "cargo": "Líder de valuación" },
-    { "nombreCompleto": "Carlos Contador Ejemplo", "documentoIdentidad": "10000002", "perfil": "CONTADOR", "cargo": "Contador", "tarjetaProfesional": "TP-00001" },
-    { "nombreCompleto": "Beatriz Biomédica Ejemplo", "documentoIdentidad": "10000003", "perfil": "ESPECIALISTA_BIOMEDICO", "cargo": "Ingeniera biomédica" },
-    { "nombreCompleto": "Samuel Sistemas Ejemplo", "documentoIdentidad": "10000004", "perfil": "ESPECIALISTA_SISTEMAS", "cargo": "Ingeniero de sistemas" },
-    { "nombreCompleto": "Fabio Físicos Ejemplo", "documentoIdentidad": "10000005", "perfil": "ESPECIALISTA_FISICOS", "cargo": "Coordinador de recursos físicos" },
-    { "nombreCompleto": "Patricia Perito Ejemplo", "documentoIdentidad": "10000006", "perfil": "PERITO", "cargo": "Avaluadora", "registroRaa": "AVAL-00000-DEMO", "esExterno": true },
-    { "nombreCompleto": "Gabriel Gerente Ejemplo", "documentoIdentidad": "10000007", "perfil": "GERENTE", "cargo": "Gerente" }
-  ],
   "sedes": [
     {
       "codigo": "01",
@@ -48,7 +39,6 @@
     }
   ],
   "clases": ["EMC", "MEO", "MAQ", "COM", "EDI", "TER"],
-  "ejercicio": { "nombre": "Valuación de demostración — corte 2025-06-30", "fechaCorte": "2025-06-30", "contratoNumero": "DEMO-001" },
   "bienes": [
     ["EMC", "MON", "Monitor de signos vitales", "Mindray", "uMEC12", "01", "URG", "BUENO", "2019-03-15", 14500000],
     ["EMC", "DES", "Desfibrilador bifásico", "Philips", "HeartStart XL", "01", "URG", "BUENO", "2018-11-02", 28900000],
@@ -100,36 +90,5 @@
     ["MAQ", "NEV", "Nevera para vacunas", "Haier", "HBC-80", "01", "CEX", "BUENO", "2021-07-07", 6200000],
     ["MAQ", "MAQ", "Esterilizador de calor seco", "Genérico", "Digital 30 L", "01", "CEX", "INSERVIBLE", "2008-01-01", 1500000],
     ["MAQ", "VEH", "Ambulancia TAB", "Chevrolet", "N300", "01", "URG", "REGULAR", "2017-02-14", 78000000]
-  ],
-  "inmueble": {
-    "codigoInmueble": "INM-01",
-    "nombre": "Sede principal — edificio y lote",
-    "tipoInmueble": "Edificación hospitalaria",
-    "direccion": "Calle Ficticia 1-23",
-    "municipio": "Villa Ejemplo",
-    "departamento": "Departamento de Prueba",
-    "destinacion": "Prestación de servicios de salud",
-    "usoActual": "Hospital nivel II",
-    "matriculaInmobiliaria": "000-00000",
-    "codigoCatastral": "00-00-0000-0000-000",
-    "tituloAdquisicion": "Escritura pública 000 de 1995 (ficticia)",
-    "fechaAdquisicion": "1995-06-01",
-    "estadoLegalizacion": "LEGALIZADO",
-    "areaTerrenoM2": 4500,
-    "areaConstruidaM2": 2800.5,
-    "numeroPisos": 2,
-    "vetustezAnios": 30,
-    "vidaUtilTotalAnios": 70,
-    "estadoConservacion": "2_BUENO",
-    "avaluo": {
-      "metodoTerreno": "Comparación de mercado",
-      "valorM2Terreno": 350000,
-      "metodoConstruccion": "Costo de reposición depreciado",
-      "costoReposicionM2": 3200000,
-      "factorDepreciacion": 0.5714,
-      "fechaVisita": "2025-05-20",
-      "fechaInforme": "2025-06-10",
-      "valorLibrosAnterior": 4100000000
-    }
-  }
+  ]
 }

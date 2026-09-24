@@ -11,16 +11,15 @@ import {
 } from './parametrosCalculo';
 
 describe('valores por defecto', () => {
-  it('son los de ANEXO_B §2.5 (dias_exactos sugerido, NO confirmado)', () => {
+  it('son los 16 de ANEXO_B §2.5 (dias_exactos sugerido)', () => {
     expect(PARAMETROS_POR_DEFECTO.metodo_conteo_meses).toBe('dias_exactos');
-    expect(PARAMETROS_POR_DEFECTO.metodo_conteo_meses_confirmado).toBe(false);
     expect(PARAMETROS_POR_DEFECTO.base_comparacion_avaluo).toBe('valor_neto_libros');
     expect(PARAMETROS_POR_DEFECTO.umbral_semaforo_verde).toBe(0.5);
     expect(PARAMETROS_POR_DEFECTO.umbral_semaforo_amarillo).toBe(0.8);
     expect(PARAMETROS_POR_DEFECTO.umbral_semaforo_naranja).toBe(0.99);
     expect(PARAMETROS_POR_DEFECTO.vigencia_avaluo_meses).toBe(12);
     expect(PARAMETROS_POR_DEFECTO.moneda).toBe('COP');
-    expect(CLAVES_PARAMETRO).toHaveLength(17);
+    expect(CLAVES_PARAMETRO).toHaveLength(16);
   });
 
   it('la semilla JSON y el código son la misma fuente', () => {

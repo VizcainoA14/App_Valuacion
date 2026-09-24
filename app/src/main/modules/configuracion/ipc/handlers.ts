@@ -1,20 +1,19 @@
 import type { RegistroIpc } from '../../../ipc/registroIpc';
-import { listarEntidades, entidadPorId, crearEntidad, actualizarEntidad, eliminarEntidad, clonarParametrizacion } from '../casos-uso/entidades';
+import { listarProcesos, procesoPorId, crearProceso, actualizarProceso, eliminarProceso, finalizarProceso } from '../casos-uso/procesos';
 import { listarSedes, crearSede, actualizarSede, listarServicios, crearServicio, actualizarServicio } from '../casos-uso/sedesServicios';
 import { listarClases, crearClase, actualizarClase, precargarSugeridas } from '../casos-uso/clases';
 import { obtenerParametros, actualizarParametros } from '../casos-uso/parametros';
 import { obtenerConvencion, guardarConvencion, previsualizarCodigo, listarAbreviaturas, guardarAbreviaturas } from '../casos-uso/convencion';
-import { listarEjercicios, ejercicioPorId, crearEjercicio, cambiarFechaCorte } from '../casos-uso/ejercicios';
 import { cargarDemostracion, borrarDemostracion } from '../casos-uso/demostracion';
 
-/** Canales del paso 01 (MOD-02). Cada uno es solo su caso de uso: el middleware pone el resto. */
+/** Canales de la configuración (MOD-02). Cada uno es solo su caso de uso: el middleware pone el resto. */
 export function registrarCanalesConfiguracion(registro: RegistroIpc): void {
-  registro.registrar('entidad:listar', listarEntidades);
-  registro.registrar('entidad:porId', entidadPorId);
-  registro.registrar('entidad:crear', crearEntidad);
-  registro.registrar('entidad:actualizar', actualizarEntidad);
-  registro.registrar('entidad:eliminar', eliminarEntidad);
-  registro.registrar('entidad:clonarParametrizacion', clonarParametrizacion);
+  registro.registrar('proceso:listar', listarProcesos);
+  registro.registrar('proceso:porId', procesoPorId);
+  registro.registrar('proceso:crear', crearProceso);
+  registro.registrar('proceso:actualizar', actualizarProceso);
+  registro.registrar('proceso:eliminar', eliminarProceso);
+  registro.registrar('proceso:finalizar', finalizarProceso);
 
   registro.registrar('sede:listar', listarSedes);
   registro.registrar('sede:crear', crearSede);
@@ -37,13 +36,8 @@ export function registrarCanalesConfiguracion(registro: RegistroIpc): void {
   registro.registrar('abreviatura:listar', listarAbreviaturas);
   registro.registrar('abreviatura:guardar', guardarAbreviaturas);
 
-  registro.registrar('ejercicio:listar', listarEjercicios);
-  registro.registrar('ejercicio:porId', ejercicioPorId);
-  registro.registrar('ejercicio:crear', crearEjercicio);
-  registro.registrar('ejercicio:cambiarFechaCorte', cambiarFechaCorte);
-
   // `importacion:*` se registra en registrarHandlers: la orquestación es común a
-  // todas las plantillas, no propiedad del paso 01.
+  // todas las plantillas, no propiedad de la configuración.
 
   registro.registrar('demo:cargar', cargarDemostracion);
   registro.registrar('demo:borrar', borrarDemostracion);

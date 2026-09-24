@@ -3,7 +3,6 @@
   "parametros": {
     "metodo_depreciacion": "linea_recta",
     "metodo_conteo_meses": "dias_exactos",
-    "metodo_conteo_meses_confirmado": false,
     "deprecia_mes_adquisicion": true,
     "usa_puesta_en_servicio": false,
     "enfoque_adiciones": "simplificado",

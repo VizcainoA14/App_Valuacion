@@ -69,12 +69,12 @@ mueve un día cambia la depreciación de miles de bienes. Con día juliano no ha
 | `dias_exactos` | **Por defecto** |
 | `fraccion_anual` | |
 
-**El método debe confirmarse por acta antes de calcular** (`VAL-01-07`, CT-02). No basta con que
-haya un valor sugerido: `calcularEjercicio` se niega a ejecutarse si
-`metodo_conteo_meses_confirmado` es falso. Cambiar el método después invalida la confirmación.
-
-Es deliberadamente incómodo. El método de conteo cambia las cifras, y la entidad debe haberlo
-decidido conscientemente, no heredado de un valor por defecto.
+El método de conteo cambia las cifras, así que conviene acordarlo con el contador **antes** de
+calcular. Hasta ADR-028 el cálculo se negaba a correr sin una "confirmación por acta"
+(`metodo_conteo_meses_confirmado`); se retiró porque hacía depender la aplicación de un documento
+externo. Lo que garantiza la trazabilidad ahora es que **cada corte guarda el método que usó** —en
+sus parámetros y en cada fila de depreciación— y el informe lo declara en el encabezado y en el pie
+de cada página.
 
 ## Depreciación
 
@@ -86,7 +86,7 @@ Valor residual configurable, **0 % por defecto** (`ANEXO_C` §210).
 
 ## Obsolescencia y semáforo
 
-`clasificarSemaforo` usa **tres umbrales**, todos parámetros de la entidad.
+`clasificarSemaforo` usa **tres umbrales**, todos parámetros del proceso.
 
 > **CT-20.** El parámetro `umbral_semaforo_naranja` existía en `ANEXO_B`, pero `ANEXO_C` §2.6 usaba
 > un `1,0` literal. Se resolvió a favor del parámetro y quedó documentado como contradicción.
@@ -114,6 +114,18 @@ Si un test del motor falla, la primera hipótesis es que el código está mal, n
 
 ## Dónde acaba el motor y empieza la aplicación
 
-`main/modules/calculo/` orquesta; **no contiene aritmética**. `calcularEjercicio` lee los parámetros
-congelados del ejercicio, llama al motor bien por bien y persiste. Si encuentra aritmética en un caso
-de uso, está en el sitio equivocado.
+`main/modules/calculo/` orquesta; **no contiene aritmética**. `calcularCorte` lee la fecha de corte y
+los parámetros vigentes del proceso, llama al motor bien por bien y guarda un **corte** —que
+reemplaza al anterior del mismo proceso (ADR-029)— con una copia de
+esos parámetros, sus resultados y sus exclusiones. Si encuentra aritmética en un caso de uso, está en
+el sitio equivocado.
+
+Dos decisiones del caso de uso, no del motor:
+
+- **Un bien adquirido después de la fecha de corte no existía ese día.** No se le pide al motor
+  (que respondería `ERROR_DATOS`, "edad negativa"): se excluye con `NO_APLICA` y ámbito `GENERAL`.
+- **No se reconoce deterioro.** Exige indicios y un avalúo que la aplicación no hace; el acumulado
+  entra al motor en cero y el informe lo dice.
+
+ADR-028 no tocó el motor: **ni un carácter de `compartido/motor/`** cambió, y sus casos de
+verificación pasan con los mismos valores esperados.

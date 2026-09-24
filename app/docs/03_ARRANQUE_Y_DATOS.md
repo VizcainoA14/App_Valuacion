@@ -12,7 +12,7 @@ secuencia entera se prueba sin arrancar Electron.
 4. ¿Unidad de red?           →  si lo es, la app NO abre la base y se cierra (código 3)
 5. Base migrada              →  con respaldo previo si hay migraciones que aplicar
 6. Respaldo diario           →  uno por día, con rotación
-7. Registrar los 55 canales
+7. Registrar los 53 canales
 ```
 
 ## Dónde acaban los datos
@@ -75,10 +75,9 @@ Cuatro, aplicadas en orden por nombre:
 
 | Archivo | Qué trae |
 |---|---|
-| `0000_esquema_inicial.sql` | Las 44 tablas |
+| `0000_esquema_inicial.sql` | Las 18 tablas (regeneradas desde cero con ADR-028) |
 | `0001_indices_fts.sql` | Búsqueda de texto completo (FTS5) sobre el inventario |
-| `0002_triggers_integridad.sql` | Los **119 disparadores** |
-| `0003_firmantes_entidad.sql` | Gerente y Contador en la entidad (ADR-027) |
+| `0002_triggers_integridad.sql` | Los **13 disparadores** de integridad, estado e inmutabilidad |
 
 Se **incrustan en el paquete como texto** (`import.meta.glob` con `?raw`): en la app instalada no
 hay archivos `.sql` sueltos que puedan faltar o que alguien pueda editar. Los scripts de consola

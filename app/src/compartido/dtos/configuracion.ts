@@ -1,10 +1,14 @@
 import type { Uuid, FechaIso, MarcaTiempo } from '../tipos/basicos';
+import type { EstadoProceso } from '../enums/estados';
 import type { NivelComplejidad, TipoServicio } from '../enums/plataforma';
-import type { EstadoEjercicio } from '../enums/estados';
-import type { ParametrosCalculo } from '../parametros/parametrosCalculo';
 
-export interface EntidadDto {
+/** ADR-029 — el proceso de valuación: independiente, con sus propios datos del hospital. */
+export interface ProcesoDto {
   readonly id: Uuid;
+  readonly nombre: string;
+  readonly fechaCorte: FechaIso;
+  readonly estado: EstadoProceso;
+  readonly finalizadoEn: MarcaTiempo | null;
   readonly razonSocial: string;
   readonly nit: string;
   readonly municipio: string;
@@ -12,9 +16,6 @@ export interface EntidadDto {
   readonly nivelComplejidad: NivelComplejidad;
   readonly nombreGerente: string;
   readonly actoNombramientoGerente: string | null;
-  /** Firmante contable del informe (ADR-027). */
-  readonly nombreContador: string | null;
-  readonly tarjetaProfesionalContador: string | null;
   readonly direccion: string;
   readonly telefono: string | null;
   readonly email: string | null;
@@ -26,7 +27,7 @@ export interface EntidadDto {
 
 export interface SedeDto {
   readonly id: Uuid;
-  readonly entidadId: Uuid;
+  readonly procesoId: Uuid;
   readonly codigo: string;
   readonly nombre: string;
   readonly direccion: string;
@@ -46,7 +47,7 @@ export interface ServicioDto {
 
 export interface ClaseActivoDto {
   readonly id: Uuid;
-  readonly entidadId: Uuid;
+  readonly procesoId: Uuid;
   readonly codigo: string;
   readonly nombre: string;
   readonly subcuentaContable: string;
@@ -69,7 +70,7 @@ export type SegmentoCodigo =
   | { readonly tipo: 'SEPARADOR'; readonly valor: string };
 
 export interface ConvencionCodigoDto {
-  readonly entidadId: Uuid;
+  readonly procesoId: Uuid;
   readonly segmentos: readonly SegmentoCodigo[];
   readonly longitudConsecutivo: number;
   /** Falsa cuando la entidad aún no definió convención (VAL-01-10): se usa la genérica. */
@@ -80,21 +81,6 @@ export interface AbreviaturaDto {
   readonly id: Uuid;
   readonly abreviatura: string;
   readonly descripcion: string;
-}
-
-export interface EjercicioDto {
-  readonly id: Uuid;
-  readonly entidadId: Uuid;
-  readonly nombre: string;
-  readonly fechaCorte: FechaIso;
-  readonly estado: EstadoEjercicio;
-  readonly pasoActual: number;
-  readonly parametrosCongelados: ParametrosCalculo;
-  readonly contratoNumero: string | null;
-  readonly creadoPorResponsableId: Uuid;
-  readonly creadoEn: MarcaTiempo;
-  readonly cerradoEn: MarcaTiempo | null;
-  readonly inmutable: boolean;
 }
 
 export type SeveridadValidacion = 'BLOQUEANTE' | 'ADVERTENCIA';
@@ -108,11 +94,11 @@ export interface ResultadoValidacion {
   readonly detalle: string | null;
 }
 
+/** Revisión de la configuración: qué le falta a la entidad para que el cálculo tenga sentido. */
 export interface ResultadoValidaciones {
-  readonly paso: number;
   readonly resultados: readonly ResultadoValidacion[];
   readonly bloqueantesPendientes: number;
   readonly advertencias: number;
-  /** RF-01-06: verdadero solo si ninguna bloqueante falla. */
-  readonly puedeAvanzar: boolean;
+  /** Verdadero solo si ninguna bloqueante falla. */
+  readonly lista: boolean;
 }

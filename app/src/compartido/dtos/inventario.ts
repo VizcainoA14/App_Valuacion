@@ -1,5 +1,6 @@
 import type { Uuid, FechaIso, Centavos, MarcaTiempo } from '../tipos/basicos';
-import type { EstadoActual, CondicionTenencia, EstadoRegistro } from '../enums/catalogos';
+import type { EstadoActual, CondicionTenencia } from '../enums/catalogos';
+import type { EstadoBien } from '../enums/estados';
 
 /** Fila del listado de bienes: lo mínimo que pinta `<TablaDatos>` (TR-10). */
 export interface BienListadoDto {
@@ -19,17 +20,18 @@ export interface BienListadoDto {
   readonly estadoActual: EstadoActual;
   readonly condicionTenencia: CondicionTenencia;
   readonly responsableCustodia: string | null;
-  readonly estadoRegistro: EstadoRegistro;
-  /** Nulo mientras el bien no tenga hoja de vida (paso 03). */
+  readonly estadoRegistro: EstadoBien;
+  /** Nulo mientras el bien no tenga sus datos económicos (PL-05). */
   readonly costoAdquisicion: Centavos | null;
   readonly fechaAdquisicion: FechaIso | null;
   readonly tieneHojaVida: boolean;
-  readonly numeroFotos: number;
+  /** Juicio del hospital (RN-05-03): pesa en los candidatos a baja de todo cálculo posterior. */
+  readonly obsolescenciaFuncional: boolean;
 }
 
-/** Ficha completa del bien (pantalla 3 del paso 02). */
+/** Ficha completa del bien. */
 export interface BienDto extends BienListadoDto {
-  readonly ejercicioId: Uuid;
+  readonly procesoId: Uuid;
   readonly claseActivoId: Uuid;
   readonly sedeId: Uuid;
   readonly servicioId: Uuid;
@@ -37,6 +39,7 @@ export interface BienDto extends BienListadoDto {
   readonly fechaToma: FechaIso;
   readonly funcionarioConteo: string;
   readonly observaciones: string | null;
+  readonly justificacionFuncional: string | null;
   readonly creadoEn: MarcaTiempo;
   readonly actualizadoEn: MarcaTiempo;
 }
@@ -49,7 +52,7 @@ export interface FiltrosBien {
   readonly claseActivoId?: string | undefined;
   readonly estadoActual?: EstadoActual | undefined;
   readonly condicionTenencia?: CondicionTenencia | undefined;
-  readonly estadoRegistro?: EstadoRegistro | undefined;
+  readonly estadoRegistro?: EstadoBien | undefined;
   readonly sinHojaVida?: boolean | undefined;
 }
 
@@ -76,7 +79,7 @@ export interface Pagina<T> {
   readonly tamano: number;
 }
 
-/** Resumen para el tablero de cobertura por sede y servicio (RF-02-08, VAL-02-05). */
+/** Cuántos bienes hay en cada servicio, para saber qué se ha barrido y qué no. */
 export interface CoberturaServicio {
   readonly sedeId: Uuid;
   readonly sedeCodigo: string;
@@ -85,13 +88,32 @@ export interface CoberturaServicio {
   readonly servicioCodigo: string;
   readonly servicioNombre: string;
   readonly bienes: number;
-  readonly conActa: boolean;
-  readonly recorrido: boolean;
+  readonly noEncontrados: number;
+  /** Fecha de la toma más reciente registrada en el servicio; nula si nunca se barrió. */
+  readonly ultimaToma: FechaIso | null;
 }
 
 export interface Cobertura {
   readonly servicios: readonly CoberturaServicio[];
   readonly serviciosActivos: number;
-  readonly serviciosRecorridos: number;
+  readonly serviciosConBienes: number;
   readonly totalBienes: number;
+}
+
+/**
+ * Un barrido es una importación de `PL-03`: la foto de lo que había en los
+ * servicios que se recorrieron. No reemplaza el inventario; lo actualiza.
+ */
+export interface BarridoDto {
+  readonly id: Uuid;
+  readonly procesoId: Uuid;
+  /** La toma más reciente que trae el archivo. */
+  readonly fecha: FechaIso;
+  readonly archivo: string;
+  readonly bienesNuevos: number;
+  readonly bienesActualizados: number;
+  /** Bienes de los servicios recorridos que no aparecieron en el archivo. */
+  readonly bienesNoEncontrados: number;
+  readonly serviciosRecorridos: number;
+  readonly creadoEn: MarcaTiempo;
 }

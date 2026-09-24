@@ -1,57 +1,25 @@
 /**
- * Estados de las máquinas de `ANEXO_B` §6 (salvo `estado_registro`, que es
- * catálogo canónico y vive en catalogos.ts). Las transiciones válidas se
- * definen como datos en `estados/` (T-B-05); aquí solo los valores.
+ * Estados propios de la aplicación (ADR-028). Las transiciones válidas se
+ * definen como datos en `estados/`; aquí solo los valores.
+ *
+ * `ESTADO_REGISTRO` de `ANEXO_B` §6.2 sigue declarado en `catalogos.ts` como
+ * reflejo literal de `/especificacion/teoria`, pero el bien ya no lo usa: su
+ * ciclo BORRADOR → VALIDADO → ACTIVO → PROPUESTO_BAJA era el de un expediente
+ * por ejercicio. Con un inventario vivo que se actualiza en cada barrido, lo
+ * único que importa de un bien es si está, si no apareció o si se dio de baja.
  */
 import { definirCatalogo, type ValoresDe } from './definirCatalogo';
 
-export const ESTADO_EJERCICIO = definirCatalogo('estado_ejercicio', 'ANEXO_B §6.1', {
-  ABIERTO: 'Abierto',
-  EN_LEVANTAMIENTO: 'En levantamiento',
-  EN_CONCILIACION: 'En conciliación',
-  EN_CALCULO: 'En cálculo',
-  EN_VALUACION: 'En valuación',
-  EN_APROBACION: 'En aprobación',
-  CERRADO: 'Cerrado',
+export const ESTADO_BIEN = definirCatalogo('estado_bien', 'ADR-028', {
+  ACTIVO: 'Activo',
+  NO_ENCONTRADO: 'No encontrado en el último barrido',
+  DADO_DE_BAJA: 'Dado de baja',
 });
-export type EstadoEjercicio = ValoresDe<typeof ESTADO_EJERCICIO>;
+export type EstadoBien = ValoresDe<typeof ESTADO_BIEN>;
 
-export const ESTADO_PROPUESTA_BAJA = definirCatalogo('estado_propuesta_baja', 'ANEXO_B §6.3', {
-  PROPUESTO: 'Propuesto',
-  EN_REVISION: 'En revisión',
-  APROBADO_COMITE: 'Aprobado por el Comité',
-  RESOLUCION_EMITIDA: 'Resolución emitida',
-  EJECUTADO: 'Ejecutado',
-  DISPOSICION_DOCUMENTADA: 'Disposición documentada',
-  RECHAZADO: 'Rechazado',
+/** ADR-029 — un proceso se trabaja hasta que alguien lo finaliza; entonces queda de solo lectura. */
+export const ESTADO_PROCESO = definirCatalogo('estado_proceso', 'ADR-029', {
+  EN_CURSO: 'En curso',
+  FINALIZADO: 'Finalizado',
 });
-export type EstadoPropuestaBaja = ValoresDe<typeof ESTADO_PROPUESTA_BAJA>;
-
-export const ESTADO_ACTO_ADMINISTRATIVO = definirCatalogo(
-  'estado_acto_administrativo',
-  'ANEXO_B §6.4',
-  {
-    PROYECTADO: 'Proyectado',
-    EN_REVISION_JURIDICA: 'En revisión jurídica',
-    APROBADO_COMITE: 'Aprobado por el Comité',
-    FIRMADO: 'Firmado',
-    PUBLICADO: 'Publicado',
-  },
-);
-export type EstadoActoAdministrativo = ValoresDe<typeof ESTADO_ACTO_ADMINISTRATIVO>;
-
-/**
- * `ValuacionMueble.estado_aprobacion` figura como enum en ANEXO_B §4.4 pero
- * /especificacion/teoria no enumera sus valores. Provisional según CT-16 (plan 1.4), a
- * confirmar por el propietario antes del hito E.
- */
-export const ESTADO_APROBACION_VALUACION = definirCatalogo(
-  'estado_aprobacion_valuacion',
-  'ANEXO_B §4.4 · CT-16 (provisional)',
-  {
-    PENDIENTE: 'Pendiente',
-    APROBADA: 'Aprobada',
-    RECHAZADA: 'Rechazada',
-  },
-);
-export type EstadoAprobacionValuacion = ValoresDe<typeof ESTADO_APROBACION_VALUACION>;
+export type EstadoProceso = ValoresDe<typeof ESTADO_PROCESO>;

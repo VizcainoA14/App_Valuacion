@@ -64,23 +64,25 @@ export const PL_01_HOJA = { nombre: 'PARAMETROS', columnas: ['campo', 'valor', '
 export interface ClavePl01 {
   readonly tipo: TipoColumna;
   readonly catalogo?: readonly string[];
-  readonly destino: 'entidad' | 'parametro' | 'ejercicio' | 'ignorar';
+  /** `proceso`: la fecha de corte; crea el proceso si no existe, y si existe solo se compara. */
+  readonly destino: 'hospital' | 'parametro' | 'proceso' | 'ignorar';
   readonly campo: string;
 }
 
 export const CLAVES_PL_01: Readonly<Record<string, ClavePl01>> = {
-  razon_social: { tipo: 'texto', destino: 'entidad', campo: 'razonSocial' },
-  nit: { tipo: 'texto', destino: 'entidad', campo: 'nit' },
-  municipio: { tipo: 'texto', destino: 'entidad', campo: 'municipio' },
-  departamento: { tipo: 'texto', destino: 'entidad', campo: 'departamento' },
-  nivel_complejidad: { tipo: 'lista', catalogo: NIVEL_COMPLEJIDAD.valores, destino: 'entidad', campo: 'nivelComplejidad' },
-  nombre_gerente: { tipo: 'texto', destino: 'entidad', campo: 'nombreGerente' },
-  acto_nombramiento_gerente: { tipo: 'texto', destino: 'entidad', campo: 'actoNombramientoGerente' },
-  direccion: { tipo: 'texto', destino: 'entidad', campo: 'direccion' },
-  telefono: { tipo: 'texto', destino: 'entidad', campo: 'telefono' },
-  email: { tipo: 'texto', destino: 'entidad', campo: 'email' },
+  razon_social: { tipo: 'texto', destino: 'hospital', campo: 'razonSocial' },
+  nit: { tipo: 'texto', destino: 'hospital', campo: 'nit' },
+  municipio: { tipo: 'texto', destino: 'hospital', campo: 'municipio' },
+  departamento: { tipo: 'texto', destino: 'hospital', campo: 'departamento' },
+  nivel_complejidad: { tipo: 'lista', catalogo: NIVEL_COMPLEJIDAD.valores, destino: 'hospital', campo: 'nivelComplejidad' },
+  nombre_gerente: { tipo: 'texto', destino: 'hospital', campo: 'nombreGerente' },
+  acto_nombramiento_gerente: { tipo: 'texto', destino: 'hospital', campo: 'actoNombramientoGerente' },
+  direccion: { tipo: 'texto', destino: 'hospital', campo: 'direccion' },
+  telefono: { tipo: 'texto', destino: 'hospital', campo: 'telefono' },
+  email: { tipo: 'texto', destino: 'hospital', campo: 'email' },
   ruta_logo: { tipo: 'texto', destino: 'ignorar', campo: 'logoUrl' },
-  fecha_corte_ejercicio: { tipo: 'fecha', destino: 'ejercicio', campo: 'fechaCorte' },
+  // ADR-029: la fecha de corte del proceso. Al crear el proceso desde PL-01 es obligatoria.
+  fecha_corte_ejercicio: { tipo: 'fecha', destino: 'proceso', campo: 'fechaCorte' },
   metodo_depreciacion: { tipo: 'lista', catalogo: METODO_DEPRECIACION.valores, destino: 'parametro', campo: 'metodo_depreciacion' },
   metodo_conteo_meses: { tipo: 'lista', catalogo: METODO_CONTEO_MESES.valores, destino: 'parametro', campo: 'metodo_conteo_meses' },
   deprecia_mes_adquisicion: { tipo: 'si_no', destino: 'parametro', campo: 'deprecia_mes_adquisicion' },

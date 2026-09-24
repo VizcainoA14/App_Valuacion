@@ -5,7 +5,7 @@
  *  1. ¿El canal existe en el contrato?           → si no, error registrado
  *  2. Validar la entrada con Zod                  → ErrorValidacion con campo
  *  3/4. (sin sesión ni permisos: ADR-016)
- *  5. Si `muta` y hay `ejercicioId`: ¿ejercicio CERRADO?  → INT-09
+ *  5. (sin ejercicio que cerrar: la inmutabilidad la garantizan los triggers, ADR-028)
  *  6. Ejecutar el caso de uso (si `muta`, dentro de una transacción)
  *  7. Bitácora en la MISMA transacción (el caso de uso escribe con `ctx.bitacora`)
  *  8. Serializar la salida en un sobre `RespuestaIpc`
@@ -23,7 +23,6 @@ import {
 import {
   aDtoError,
   ErrorInfraestructura,
-  ErrorReglaNegocio,
   ErrorValidacion,
 } from '../../compartido/errores';
 import type { BaseDatos, ConexionSqlite } from '../infraestructura/db/conexion';
@@ -80,13 +79,6 @@ export interface RegistroIpc {
   invocar<C extends Canal>(canal: C, entrada: unknown, evento?: EventoInvocacion): Promise<RespuestaIpc<SalidaDe<C>>>;
 }
 
-function estadoEjercicio(sqlite: ConexionSqlite, ejercicioId: string): string | undefined {
-  const fila = sqlite.prepare('SELECT estado FROM ejercicio WHERE id = ?').get(ejercicioId) as
-    | { estado: string }
-    | undefined;
-  return fila?.estado;
-}
-
 export function crearRegistroIpc(deps: {
   readonly receptor: ReceptorIpc;
   readonly contexto: ContextoIpc;
@@ -119,14 +111,6 @@ export function crearRegistroIpc(deps: {
         });
       }
       const entrada = validacion.data as EntradaValidadaDe<C>;
-
-      // 5
-      if (definicion.muta) {
-        const ejercicioId = (entrada as { ejercicioId?: unknown }).ejercicioId;
-        if (typeof ejercicioId === 'string' && estadoEjercicio(deps.contexto.sqlite, ejercicioId) === 'CERRADO') {
-          throw new ErrorReglaNegocio('INT-09', 'El ejercicio está CERRADO y es inmutable.');
-        }
-      }
 
       // 6 + 7
       let valor: SalidaDe<C>;

@@ -1,6 +1,6 @@
 {
-  "id": "3a527511-d784-4c95-a32c-c64eae9d0dc4",
-  "prevId": "ab4f33f3-17cc-49d3-8226-56e91198e2de",
+  "id": "17a34f12-b286-4bf5-b365-48671b5f7b51",
+  "prevId": "f5d0fc60-2128-4b76-a327-3036304e4d70",
   "version": "6",
   "dialect": "sqlite",
   "tables": {
@@ -14,8 +14,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "entidad_id": {
-          "name": "entidad_id",
+        "proceso_id": {
+          "name": "proceso_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -40,20 +40,20 @@
         "ux_abreviatura": {
           "name": "ux_abreviatura",
           "columns": [
-            "entidad_id",
+            "proceso_id",
             "abreviatura"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "abreviatura_tipo_entidad_id_entidad_id_fk": {
-          "name": "abreviatura_tipo_entidad_id_entidad_id_fk",
+        "abreviatura_tipo_proceso_id_proceso_id_fk": {
+          "name": "abreviatura_tipo_proceso_id_proceso_id_fk",
           "tableFrom": "abreviatura_tipo",
           "columnsFrom": [
-            "entidad_id"
+            "proceso_id"
           ],
-          "tableTo": "entidad",
+          "tableTo": "proceso",
           "columnsTo": [
             "id"
           ],
@@ -75,8 +75,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "entidad_id": {
-          "name": "entidad_id",
+        "proceso_id": {
+          "name": "proceso_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -177,20 +177,20 @@
         "ux_clase_codigo": {
           "name": "ux_clase_codigo",
           "columns": [
-            "entidad_id",
+            "proceso_id",
             "codigo"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "clase_activo_entidad_id_entidad_id_fk": {
-          "name": "clase_activo_entidad_id_entidad_id_fk",
+        "clase_activo_proceso_id_proceso_id_fk": {
+          "name": "clase_activo_proceso_id_proceso_id_fk",
           "tableFrom": "clase_activo",
           "columnsFrom": [
-            "entidad_id"
+            "proceso_id"
           ],
-          "tableTo": "entidad",
+          "tableTo": "proceso",
           "columnsTo": [
             "id"
           ],
@@ -229,8 +229,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "entidad_id": {
-          "name": "entidad_id",
+        "proceso_id": {
+          "name": "proceso_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -260,22 +260,22 @@
         }
       },
       "indexes": {
-        "ux_convencion_entidad": {
-          "name": "ux_convencion_entidad",
+        "ux_convencion_proceso": {
+          "name": "ux_convencion_proceso",
           "columns": [
-            "entidad_id"
+            "proceso_id"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "convencion_codigo_entidad_id_entidad_id_fk": {
-          "name": "convencion_codigo_entidad_id_entidad_id_fk",
+        "convencion_codigo_proceso_id_proceso_id_fk": {
+          "name": "convencion_codigo_proceso_id_proceso_id_fk",
           "tableFrom": "convencion_codigo",
           "columnsFrom": [
-            "entidad_id"
+            "proceso_id"
           ],
-          "tableTo": "entidad",
+          "tableTo": "proceso",
           "columnsTo": [
             "id"
           ],
@@ -287,8 +287,8 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "ejercicio": {
-      "name": "ejercicio",
+    "parametro_calculo": {
+      "name": "parametro_calculo",
       "columns": {
         "id": {
           "name": "id",
@@ -297,10 +297,84 @@
           "notNull": true,
           "autoincrement": false
         },
-        "entidad_id": {
-          "name": "entidad_id",
+        "proceso_id": {
+          "name": "proceso_id",
           "type": "text",
           "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "clave": {
+          "name": "clave",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "valor": {
+          "name": "valor",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "tipo_dato": {
+          "name": "tipo_dato",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "actualizado_en": {
+          "name": "actualizado_en",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+        }
+      },
+      "indexes": {
+        "ux_parametro_clave": {
+          "name": "ux_parametro_clave",
+          "columns": [
+            "proceso_id",
+            "clave"
+          ],
+          "isUnique": true
+        }
+      },
+      "foreignKeys": {
+        "parametro_calculo_proceso_id_proceso_id_fk": {
+          "name": "parametro_calculo_proceso_id_proceso_id_fk",
+          "tableFrom": "parametro_calculo",
+          "columnsFrom": [
+            "proceso_id"
+          ],
+          "tableTo": "proceso",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "chk_parametro_tipo": {
+          "name": "chk_parametro_tipo",
+          "value": "\"parametro_calculo\".\"tipo_dato\" IN ('texto', 'numero', 'booleano', 'enum')"
+        }
+      }
+    },
+    "proceso": {
+      "name": "proceso",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
           "notNull": true,
           "autoincrement": false
         },
@@ -324,120 +398,13 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'ABIERTO'"
+          "default": "'EN_CURSO'"
         },
-        "paso_actual": {
-          "name": "paso_actual",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 1
-        },
-        "parametros_congelados_json": {
-          "name": "parametros_congelados_json",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "contrato_numero": {
-          "name": "contrato_numero",
+        "finalizado_en": {
+          "name": "finalizado_en",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
-          "autoincrement": false
-        },
-        "creado_por_responsable_id": {
-          "name": "creado_por_responsable_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        },
-        "cerrado_en": {
-          "name": "cerrado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "inmutable": {
-          "name": "inmutable",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        }
-      },
-      "indexes": {
-        "ix_ejercicio_entidad": {
-          "name": "ix_ejercicio_entidad",
-          "columns": [
-            "entidad_id",
-            "fecha_corte"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "ejercicio_entidad_id_entidad_id_fk": {
-          "name": "ejercicio_entidad_id_entidad_id_fk",
-          "tableFrom": "ejercicio",
-          "columnsFrom": [
-            "entidad_id"
-          ],
-          "tableTo": "entidad",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "ejercicio_creado_por_responsable_id_responsable_id_fk": {
-          "name": "ejercicio_creado_por_responsable_id_responsable_id_fk",
-          "tableFrom": "ejercicio",
-          "columnsFrom": [
-            "creado_por_responsable_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_ejercicio_estado": {
-          "name": "chk_ejercicio_estado",
-          "value": "\"ejercicio\".\"estado\" IN ('ABIERTO', 'EN_LEVANTAMIENTO', 'EN_CONCILIACION', 'EN_CALCULO', 'EN_VALUACION', 'EN_APROBACION', 'CERRADO')"
-        },
-        "chk_ejercicio_inmutable": {
-          "name": "chk_ejercicio_inmutable",
-          "value": "\"ejercicio\".\"inmutable\" IN (0, 1)"
-        }
-      }
-    },
-    "entidad": {
-      "name": "entidad",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
           "autoincrement": false
         },
         "razon_social": {
@@ -543,306 +510,30 @@
         }
       },
       "indexes": {
-        "ux_entidad_nit": {
-          "name": "ux_entidad_nit",
+        "ix_proceso_estado": {
+          "name": "ix_proceso_estado",
           "columns": [
-            "nit"
+            "estado",
+            "creado_en"
           ],
-          "isUnique": true
+          "isUnique": false
         }
       },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {
-        "chk_entidad_nivel": {
-          "name": "chk_entidad_nivel",
-          "value": "\"entidad\".\"nivel_complejidad\" IN ('I', 'II', 'III')"
+        "chk_proceso_estado": {
+          "name": "chk_proceso_estado",
+          "value": "\"proceso\".\"estado\" IN ('EN_CURSO', 'FINALIZADO')"
         },
-        "chk_entidad_demo": {
-          "name": "chk_entidad_demo",
-          "value": "\"entidad\".\"es_demostracion\" IN (0, 1)"
-        }
-      }
-    },
-    "factor_estado": {
-      "name": "factor_estado",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
+        "chk_proceso_nivel": {
+          "name": "chk_proceso_nivel",
+          "value": "\"proceso\".\"nivel_complejidad\" IN ('I', 'II', 'III')"
         },
-        "entidad_id": {
-          "name": "entidad_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "estado": {
-          "name": "estado",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "factor_x10k": {
-          "name": "factor_x10k",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "ux_factor_estado": {
-          "name": "ux_factor_estado",
-          "columns": [
-            "entidad_id",
-            "estado"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "factor_estado_entidad_id_entidad_id_fk": {
-          "name": "factor_estado_entidad_id_entidad_id_fk",
-          "tableFrom": "factor_estado",
-          "columnsFrom": [
-            "entidad_id"
-          ],
-          "tableTo": "entidad",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_factor_estado": {
-          "name": "chk_factor_estado",
-          "value": "\"factor_estado\".\"estado\" IN ('BUENO', 'REGULAR', 'MALO', 'INSERVIBLE')"
-        }
-      }
-    },
-    "parametro_calculo": {
-      "name": "parametro_calculo",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "entidad_id": {
-          "name": "entidad_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "clave": {
-          "name": "clave",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "valor": {
-          "name": "valor",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tipo_dato": {
-          "name": "tipo_dato",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "actualizado_en": {
-          "name": "actualizado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ux_parametro_clave": {
-          "name": "ux_parametro_clave",
-          "columns": [
-            "entidad_id",
-            "clave"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "parametro_calculo_entidad_id_entidad_id_fk": {
-          "name": "parametro_calculo_entidad_id_entidad_id_fk",
-          "tableFrom": "parametro_calculo",
-          "columnsFrom": [
-            "entidad_id"
-          ],
-          "tableTo": "entidad",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_parametro_tipo": {
-          "name": "chk_parametro_tipo",
-          "value": "\"parametro_calculo\".\"tipo_dato\" IN ('texto', 'numero', 'booleano', 'enum')"
-        }
-      }
-    },
-    "responsable": {
-      "name": "responsable",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "entidad_id": {
-          "name": "entidad_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "nombre_completo": {
-          "name": "nombre_completo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "documento_identidad": {
-          "name": "documento_identidad",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "perfil": {
-          "name": "perfil",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "cargo": {
-          "name": "cargo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tarjeta_profesional": {
-          "name": "tarjeta_profesional",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "registro_raa": {
-          "name": "registro_raa",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "es_externo": {
-          "name": "es_externo",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        },
-        "activo": {
-          "name": "activo",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        },
-        "actualizado_en": {
-          "name": "actualizado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ix_responsable_entidad": {
-          "name": "ix_responsable_entidad",
-          "columns": [
-            "entidad_id",
-            "perfil"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "responsable_entidad_id_entidad_id_fk": {
-          "name": "responsable_entidad_id_entidad_id_fk",
-          "tableFrom": "responsable",
-          "columnsFrom": [
-            "entidad_id"
-          ],
-          "tableTo": "entidad",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_responsable_perfil": {
-          "name": "chk_responsable_perfil",
-          "value": "\"responsable\".\"perfil\" IN ('COORDINADOR', 'ESPECIALISTA_BIOMEDICO', 'ESPECIALISTA_SISTEMAS', 'ESPECIALISTA_FISICOS', 'CONTADOR', 'PERITO', 'MIEMBRO_COMITE', 'GERENTE', 'ASESOR_JURIDICO', 'SUPERVISOR')"
-        },
-        "chk_responsable_externo": {
-          "name": "chk_responsable_externo",
-          "value": "\"responsable\".\"es_externo\" IN (0, 1)"
-        },
-        "chk_responsable_activo": {
-          "name": "chk_responsable_activo",
-          "value": "\"responsable\".\"activo\" IN (0, 1)"
+        "chk_proceso_demo": {
+          "name": "chk_proceso_demo",
+          "value": "\"proceso\".\"es_demostracion\" IN (0, 1)"
         }
       }
     },
@@ -856,8 +547,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "entidad_id": {
-          "name": "entidad_id",
+        "proceso_id": {
+          "name": "proceso_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -920,20 +611,20 @@
         "ux_sede_codigo": {
           "name": "ux_sede_codigo",
           "columns": [
-            "entidad_id",
+            "proceso_id",
             "codigo"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "sede_entidad_id_entidad_id_fk": {
-          "name": "sede_entidad_id_entidad_id_fk",
+        "sede_proceso_id_proceso_id_fk": {
+          "name": "sede_proceso_id_proceso_id_fk",
           "tableFrom": "sede",
           "columnsFrom": [
-            "entidad_id"
+            "proceso_id"
           ],
-          "tableTo": "entidad",
+          "tableTo": "proceso",
           "columnsTo": [
             "id"
           ],
@@ -1058,8 +749,8 @@
         }
       }
     },
-    "acta_custodia": {
-      "name": "acta_custodia",
+    "barrido": {
+      "name": "barrido",
       "columns": {
         "id": {
           "name": "id",
@@ -1068,22 +759,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "servicio_id": {
-          "name": "servicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "responsable": {
-          "name": "responsable",
+        "proceso_id": {
+          "name": "proceso_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -1096,16 +773,51 @@
           "notNull": true,
           "autoincrement": false
         },
-        "documento_url": {
-          "name": "documento_url",
+        "archivo": {
+          "name": "archivo",
           "type": "text",
           "primaryKey": false,
-          "notNull": false,
+          "notNull": true,
           "autoincrement": false
         },
-        "estado_firma": {
-          "name": "estado_firma",
+        "archivo_conservado": {
+          "name": "archivo_conservado",
           "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "hash_sha256": {
+          "name": "hash_sha256",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "bienes_nuevos": {
+          "name": "bienes_nuevos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "bienes_actualizados": {
+          "name": "bienes_actualizados",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "bienes_no_encontrados": {
+          "name": "bienes_no_encontrados",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "servicios_recorridos": {
+          "name": "servicios_recorridos",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -1120,46 +832,46 @@
         }
       },
       "indexes": {
-        "ix_acta_custodia": {
-          "name": "ix_acta_custodia",
+        "ix_barrido_proceso": {
+          "name": "ix_barrido_proceso",
           "columns": [
-            "ejercicio_id",
-            "servicio_id"
+            "proceso_id",
+            "fecha"
           ],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "acta_custodia_ejercicio_id_ejercicio_id_fk": {
-          "name": "acta_custodia_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "acta_custodia",
+        "barrido_proceso_id_proceso_id_fk": {
+          "name": "barrido_proceso_id_proceso_id_fk",
+          "tableFrom": "barrido",
           "columnsFrom": [
-            "ejercicio_id"
+            "proceso_id"
           ],
-          "tableTo": "ejercicio",
+          "tableTo": "proceso",
           "columnsTo": [
             "id"
           ],
           "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "acta_custodia_servicio_id_servicio_id_fk": {
-          "name": "acta_custodia_servicio_id_servicio_id_fk",
-          "tableFrom": "acta_custodia",
-          "columnsFrom": [
-            "servicio_id"
-          ],
-          "tableTo": "servicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
+          "onDelete": "cascade"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
-      "checkConstraints": {}
+      "checkConstraints": {
+        "chk_barrido_nuevos": {
+          "name": "chk_barrido_nuevos",
+          "value": "\"barrido\".\"bienes_nuevos\" >= 0"
+        },
+        "chk_barrido_actualizados": {
+          "name": "chk_barrido_actualizados",
+          "value": "\"barrido\".\"bienes_actualizados\" >= 0"
+        },
+        "chk_barrido_no_encontrados": {
+          "name": "chk_barrido_no_encontrados",
+          "value": "\"barrido\".\"bienes_no_encontrados\" >= 0"
+        }
+      }
     },
     "bien": {
       "name": "bien",
@@ -1171,8 +883,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
+        "proceso_id": {
+          "name": "proceso_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -1297,7 +1009,29 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false,
-          "default": "'BORRADOR'"
+          "default": "'ACTIVO'"
+        },
+        "ultimo_barrido_id": {
+          "name": "ultimo_barrido_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "obsolescencia_funcional": {
+          "name": "obsolescencia_funcional",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false,
+          "default": false
+        },
+        "justificacion_funcional": {
+          "name": "justificacion_funcional",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         },
         "creado_en": {
           "name": "creado_en",
@@ -1320,7 +1054,7 @@
         "ux_bien_codigo": {
           "name": "ux_bien_codigo",
           "columns": [
-            "ejercicio_id",
+            "proceso_id",
             "codigo_institucional"
           ],
           "isUnique": true
@@ -1328,7 +1062,7 @@
         "ux_bien_placa": {
           "name": "ux_bien_placa",
           "columns": [
-            "ejercicio_id",
+            "proceso_id",
             "placa"
           ],
           "isUnique": true
@@ -1336,7 +1070,7 @@
         "ix_bien_clase": {
           "name": "ix_bien_clase",
           "columns": [
-            "ejercicio_id",
+            "proceso_id",
             "clase_activo_id"
           ],
           "isUnique": false
@@ -1344,7 +1078,7 @@
         "ix_bien_servicio": {
           "name": "ix_bien_servicio",
           "columns": [
-            "ejercicio_id",
+            "proceso_id",
             "servicio_id"
           ],
           "isUnique": false
@@ -1359,20 +1093,20 @@
         "ix_bien_estado": {
           "name": "ix_bien_estado",
           "columns": [
-            "ejercicio_id",
+            "proceso_id",
             "estado_registro"
           ],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "bien_ejercicio_id_ejercicio_id_fk": {
-          "name": "bien_ejercicio_id_ejercicio_id_fk",
+        "bien_proceso_id_proceso_id_fk": {
+          "name": "bien_proceso_id_proceso_id_fk",
           "tableFrom": "bien",
           "columnsFrom": [
-            "ejercicio_id"
+            "proceso_id"
           ],
-          "tableTo": "ejercicio",
+          "tableTo": "proceso",
           "columnsTo": [
             "id"
           ],
@@ -1417,6 +1151,19 @@
           ],
           "onUpdate": "no action",
           "onDelete": "restrict"
+        },
+        "bien_ultimo_barrido_id_barrido_id_fk": {
+          "name": "bien_ultimo_barrido_id_barrido_id_fk",
+          "tableFrom": "bien",
+          "columnsFrom": [
+            "ultimo_barrido_id"
+          ],
+          "tableTo": "barrido",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -1432,342 +1179,17 @@
         },
         "chk_bien_estado_registro": {
           "name": "chk_bien_estado_registro",
-          "value": "\"bien\".\"estado_registro\" IN ('BORRADOR', 'VALIDADO', 'ACTIVO', 'INCOMPLETO', 'PROPUESTO_BAJA', 'DADO_DE_BAJA')"
+          "value": "\"bien\".\"estado_registro\" IN ('ACTIVO', 'NO_ENCONTRADO', 'DADO_DE_BAJA')"
+        },
+        "chk_bien_funcional": {
+          "name": "chk_bien_funcional",
+          "value": "\"bien\".\"obsolescencia_funcional\" IN (0, 1)"
         },
         "chk_bien_cantidad": {
           "name": "chk_bien_cantidad",
           "value": "\"bien\".\"cantidad\" >= 1"
         }
       }
-    },
-    "bien_en_custodia": {
-      "name": "bien_en_custodia",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "bien_id": {
-          "name": "bien_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "motivo": {
-          "name": "motivo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha_ingreso_custodia": {
-          "name": "fecha_ingreso_custodia",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "proxima_revision": {
-          "name": "proxima_revision",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "estado_funcional": {
-          "name": "estado_funcional",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "responsable": {
-          "name": "responsable",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "activo": {
-          "name": "activo",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ix_custodia_bien": {
-          "name": "ix_custodia_bien",
-          "columns": [
-            "ejercicio_id",
-            "bien_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "bien_en_custodia_ejercicio_id_ejercicio_id_fk": {
-          "name": "bien_en_custodia_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "bien_en_custodia",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "bien_en_custodia_bien_id_bien_id_fk": {
-          "name": "bien_en_custodia_bien_id_bien_id_fk",
-          "tableFrom": "bien_en_custodia",
-          "columnsFrom": [
-            "bien_id"
-          ],
-          "tableTo": "bien",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "foto_bien": {
-      "name": "foto_bien",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "bien_id": {
-          "name": "bien_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tipo": {
-          "name": "tipo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "hash_sha256": {
-          "name": "hash_sha256",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tomada_en": {
-          "name": "tomada_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ix_foto_bien": {
-          "name": "ix_foto_bien",
-          "columns": [
-            "bien_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "foto_bien_bien_id_bien_id_fk": {
-          "name": "foto_bien_bien_id_bien_id_fk",
-          "tableFrom": "foto_bien",
-          "columnsFrom": [
-            "bien_id"
-          ],
-          "tableTo": "bien",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "movimiento_bien": {
-      "name": "movimiento_bien",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "bien_id": {
-          "name": "bien_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "servicio_origen_id": {
-          "name": "servicio_origen_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "servicio_destino_id": {
-          "name": "servicio_destino_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha": {
-          "name": "fecha",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "motivo": {
-          "name": "motivo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "responsable_id": {
-          "name": "responsable_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ix_movimiento_bien": {
-          "name": "ix_movimiento_bien",
-          "columns": [
-            "bien_id",
-            "fecha"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "movimiento_bien_bien_id_bien_id_fk": {
-          "name": "movimiento_bien_bien_id_bien_id_fk",
-          "tableFrom": "movimiento_bien",
-          "columnsFrom": [
-            "bien_id"
-          ],
-          "tableTo": "bien",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "movimiento_bien_servicio_origen_id_servicio_id_fk": {
-          "name": "movimiento_bien_servicio_origen_id_servicio_id_fk",
-          "tableFrom": "movimiento_bien",
-          "columnsFrom": [
-            "servicio_origen_id"
-          ],
-          "tableTo": "servicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "movimiento_bien_servicio_destino_id_servicio_id_fk": {
-          "name": "movimiento_bien_servicio_destino_id_servicio_id_fk",
-          "tableFrom": "movimiento_bien",
-          "columnsFrom": [
-            "servicio_destino_id"
-          ],
-          "tableTo": "servicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "movimiento_bien_responsable_id_responsable_id_fk": {
-          "name": "movimiento_bien_responsable_id_responsable_id_fk",
-          "tableFrom": "movimiento_bien",
-          "columnsFrom": [
-            "responsable_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
     },
     "hoja_vida": {
       "name": "hoja_vida",
@@ -2072,115 +1494,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "override_vida_util": {
-      "name": "override_vida_util",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "bien_id": {
-          "name": "bien_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "vida_util_catalogo_x10k": {
-          "name": "vida_util_catalogo_x10k",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "vida_util_ajustada_x10k": {
-          "name": "vida_util_ajustada_x10k",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fuente": {
-          "name": "fuente",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "justificacion": {
-          "name": "justificacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "especialista_id": {
-          "name": "especialista_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "soporte_url": {
-          "name": "soporte_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ix_override_bien": {
-          "name": "ix_override_bien",
-          "columns": [
-            "bien_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "override_vida_util_bien_id_bien_id_fk": {
-          "name": "override_vida_util_bien_id_bien_id_fk",
-          "tableFrom": "override_vida_util",
-          "columnsFrom": [
-            "bien_id"
-          ],
-          "tableTo": "bien",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "override_vida_util_especialista_id_responsable_id_fk": {
-          "name": "override_vida_util_especialista_id_responsable_id_fk",
-          "tableFrom": "override_vida_util",
-          "columnsFrom": [
-            "especialista_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "soporte_documental": {
       "name": "soporte_documental",
       "columns": {
@@ -2219,13 +1532,6 @@
           "notNull": true,
           "autoincrement": false
         },
-        "cargado_por_responsable_id": {
-          "name": "cargado_por_responsable_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "cargado_en": {
           "name": "cargado_en",
           "type": "text",
@@ -2256,536 +1562,6 @@
           ],
           "onUpdate": "no action",
           "onDelete": "restrict"
-        },
-        "soporte_documental_cargado_por_responsable_id_responsable_id_fk": {
-          "name": "soporte_documental_cargado_por_responsable_id_responsable_id_fk",
-          "tableFrom": "soporte_documental",
-          "columnsFrom": [
-            "cargado_por_responsable_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "activo_contable": {
-      "name": "activo_contable",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "identificador_contable": {
-          "name": "identificador_contable",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "descripcion_contable": {
-          "name": "descripcion_contable",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "subcuenta": {
-          "name": "subcuenta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha_adquisicion_libros": {
-          "name": "fecha_adquisicion_libros",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_libros_cent": {
-          "name": "valor_libros_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "depreciacion_acum_libros_cent": {
-          "name": "depreciacion_acum_libros_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "bien_id_emparejado": {
-          "name": "bien_id_emparejado",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "metodo_emparejamiento": {
-          "name": "metodo_emparejamiento",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ux_activo_contable_id": {
-          "name": "ux_activo_contable_id",
-          "columns": [
-            "ejercicio_id",
-            "identificador_contable"
-          ],
-          "isUnique": true
-        },
-        "ix_activo_contable_bien": {
-          "name": "ix_activo_contable_bien",
-          "columns": [
-            "bien_id_emparejado"
-          ],
-          "isUnique": false
-        },
-        "ix_activo_contable_subcuenta": {
-          "name": "ix_activo_contable_subcuenta",
-          "columns": [
-            "ejercicio_id",
-            "subcuenta"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "activo_contable_ejercicio_id_ejercicio_id_fk": {
-          "name": "activo_contable_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "activo_contable",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "activo_contable_bien_id_emparejado_bien_id_fk": {
-          "name": "activo_contable_bien_id_emparejado_bien_id_fk",
-          "tableFrom": "activo_contable",
-          "columnsFrom": [
-            "bien_id_emparejado"
-          ],
-          "tableTo": "bien",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "conciliacion": {
-      "name": "conciliacion",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "subcuenta": {
-          "name": "subcuenta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "cantidad_libros": {
-          "name": "cantidad_libros",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "cantidad_fisico": {
-          "name": "cantidad_fisico",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "valor_libros_cent": {
-          "name": "valor_libros_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "valor_fisico_cent": {
-          "name": "valor_fisico_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "diferencia_valor_cent": {
-          "name": "diferencia_valor_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "depreciacion_libros_cent": {
-          "name": "depreciacion_libros_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "depreciacion_recalculada_cent": {
-          "name": "depreciacion_recalculada_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "calculado_en": {
-          "name": "calculado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "ux_conciliacion_subcuenta": {
-          "name": "ux_conciliacion_subcuenta",
-          "columns": [
-            "ejercicio_id",
-            "subcuenta"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "conciliacion_ejercicio_id_ejercicio_id_fk": {
-          "name": "conciliacion_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "conciliacion",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "partida_conciliatoria": {
-      "name": "partida_conciliatoria",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "bien_id": {
-          "name": "bien_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "activo_contable_id": {
-          "name": "activo_contable_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "tipo_diferencia": {
-          "name": "tipo_diferencia",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "valor_involucrado_cent": {
-          "name": "valor_involucrado_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "causa_probable": {
-          "name": "causa_probable",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "accion_propuesta": {
-          "name": "accion_propuesta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "soporte_url": {
-          "name": "soporte_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "estado": {
-          "name": "estado",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "resuelta_en": {
-          "name": "resuelta_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ix_partida_ejercicio": {
-          "name": "ix_partida_ejercicio",
-          "columns": [
-            "ejercicio_id",
-            "tipo_diferencia"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "partida_conciliatoria_ejercicio_id_ejercicio_id_fk": {
-          "name": "partida_conciliatoria_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "partida_conciliatoria",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "partida_conciliatoria_bien_id_bien_id_fk": {
-          "name": "partida_conciliatoria_bien_id_bien_id_fk",
-          "tableFrom": "partida_conciliatoria",
-          "columnsFrom": [
-            "bien_id"
-          ],
-          "tableTo": "bien",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "partida_conciliatoria_activo_contable_id_activo_contable_id_fk": {
-          "name": "partida_conciliatoria_activo_contable_id_activo_contable_id_fk",
-          "tableFrom": "partida_conciliatoria",
-          "columnsFrom": [
-            "activo_contable_id"
-          ],
-          "tableTo": "activo_contable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_partida_tipo": {
-          "name": "chk_partida_tipo",
-          "value": "\"partida_conciliatoria\".\"tipo_diferencia\" IN ('SOBRANTE_FISICO', 'FALTANTE_FISICO', 'DIFERENCIA_VALOR', 'DIFERENCIA_FECHA', 'DIFERENCIA_DEPRECIACION', 'CLASIFICACION_ERRONEA', 'DUPLICADO_LIBROS', 'BIEN_TERCERO')"
-        },
-        "chk_partida_accion": {
-          "name": "chk_partida_accion",
-          "value": "\"partida_conciliatoria\".\"accion_propuesta\" IN ('INCORPORAR', 'DAR_DE_BAJA', 'AJUSTAR_VALOR', 'AJUSTAR_DEPRECIACION', 'RECLASIFICAR')"
-        }
-      }
-    },
-    "saldo_contable": {
-      "name": "saldo_contable",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "subcuenta": {
-          "name": "subcuenta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "nombre_subcuenta": {
-          "name": "nombre_subcuenta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "saldo_inicial_cent": {
-          "name": "saldo_inicial_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "movimientos_debito_cent": {
-          "name": "movimientos_debito_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "movimientos_credito_cent": {
-          "name": "movimientos_credito_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "saldo_libros_corte_cent": {
-          "name": "saldo_libros_corte_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "depreciacion_acum_libros_cent": {
-          "name": "depreciacion_acum_libros_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "deterioro_libros_cent": {
-          "name": "deterioro_libros_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "importado_en": {
-          "name": "importado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "ux_saldo_subcuenta": {
-          "name": "ux_saldo_subcuenta",
-          "columns": [
-            "ejercicio_id",
-            "subcuenta"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "saldo_contable_ejercicio_id_ejercicio_id_fk": {
-          "name": "saldo_contable_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "saldo_contable",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
@@ -2802,8 +1578,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
+        "corte_id": {
+          "name": "corte_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -2811,13 +1587,6 @@
         },
         "bien_id": {
           "name": "bien_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha_corte": {
-          "name": "fecha_corte",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -2931,52 +1700,31 @@
           "notNull": true,
           "autoincrement": false,
           "default": false
-        },
-        "entrada_hash": {
-          "name": "entrada_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "parametros_hash": {
-          "name": "parametros_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "calculado_en": {
-          "name": "calculado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
         }
       },
       "indexes": {
         "ux_calc_dep_bien": {
           "name": "ux_calc_dep_bien",
           "columns": [
-            "ejercicio_id",
+            "corte_id",
             "bien_id"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "calculo_depreciacion_ejercicio_id_ejercicio_id_fk": {
-          "name": "calculo_depreciacion_ejercicio_id_ejercicio_id_fk",
+        "calculo_depreciacion_corte_id_corte_id_fk": {
+          "name": "calculo_depreciacion_corte_id_corte_id_fk",
           "tableFrom": "calculo_depreciacion",
           "columnsFrom": [
-            "ejercicio_id"
+            "corte_id"
           ],
-          "tableTo": "ejercicio",
+          "tableTo": "corte",
           "columnsTo": [
             "id"
           ],
           "onUpdate": "no action",
-          "onDelete": "restrict"
+          "onDelete": "cascade"
         },
         "calculo_depreciacion_bien_id_bien_id_fk": {
           "name": "calculo_depreciacion_bien_id_bien_id_fk",
@@ -3021,8 +1769,8 @@
         }
       }
     },
-    "calculo_obsolescencia": {
-      "name": "calculo_obsolescencia",
+    "calculo_exclusion": {
+      "name": "calculo_exclusion",
       "columns": {
         "id": {
           "name": "id",
@@ -3031,8 +1779,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
+        "corte_id": {
+          "name": "corte_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -3045,8 +1793,98 @@
           "notNull": true,
           "autoincrement": false
         },
-        "fecha_corte": {
-          "name": "fecha_corte",
+        "ambito": {
+          "name": "ambito",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "estado": {
+          "name": "estado",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "motivo": {
+          "name": "motivo",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "ix_calc_exclusion": {
+          "name": "ix_calc_exclusion",
+          "columns": [
+            "corte_id",
+            "bien_id"
+          ],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {
+        "calculo_exclusion_corte_id_corte_id_fk": {
+          "name": "calculo_exclusion_corte_id_corte_id_fk",
+          "tableFrom": "calculo_exclusion",
+          "columnsFrom": [
+            "corte_id"
+          ],
+          "tableTo": "corte",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "cascade"
+        },
+        "calculo_exclusion_bien_id_bien_id_fk": {
+          "name": "calculo_exclusion_bien_id_bien_id_fk",
+          "tableFrom": "calculo_exclusion",
+          "columnsFrom": [
+            "bien_id"
+          ],
+          "tableTo": "bien",
+          "columnsTo": [
+            "id"
+          ],
+          "onUpdate": "no action",
+          "onDelete": "restrict"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {
+        "chk_exclusion_ambito": {
+          "name": "chk_exclusion_ambito",
+          "value": "\"calculo_exclusion\".\"ambito\" IN ('GENERAL', 'OBSOLESCENCIA', 'DEPRECIACION')"
+        },
+        "chk_exclusion_estado": {
+          "name": "chk_exclusion_estado",
+          "value": "\"calculo_exclusion\".\"estado\" IN ('NO_APLICA', 'NO_CALCULABLE', 'ERROR_DATOS')"
+        }
+      }
+    },
+    "calculo_obsolescencia": {
+      "name": "calculo_obsolescencia",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "corte_id": {
+          "name": "corte_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "bien_id": {
+          "name": "bien_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -3102,13 +1940,6 @@
           "autoincrement": false,
           "default": false
         },
-        "justificacion_funcional": {
-          "name": "justificacion_funcional",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "candidato_baja": {
           "name": "candidato_baja",
           "type": "integer",
@@ -3117,36 +1948,8 @@
           "autoincrement": false,
           "default": false
         },
-        "concepto_especialista": {
-          "name": "concepto_especialista",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "entrada_hash": {
-          "name": "entrada_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "parametros_hash": {
-          "name": "parametros_hash",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "calculado_en": {
-          "name": "calculado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "calculado_por_responsable_id": {
-          "name": "calculado_por_responsable_id",
+        "motivos_baja": {
+          "name": "motivos_baja",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -3157,7 +1960,7 @@
         "ux_calc_obs_bien": {
           "name": "ux_calc_obs_bien",
           "columns": [
-            "ejercicio_id",
+            "corte_id",
             "bien_id"
           ],
           "isUnique": true
@@ -3165,25 +1968,25 @@
         "ix_calc_obs_semaforo": {
           "name": "ix_calc_obs_semaforo",
           "columns": [
-            "ejercicio_id",
+            "corte_id",
             "semaforo"
           ],
           "isUnique": false
         }
       },
       "foreignKeys": {
-        "calculo_obsolescencia_ejercicio_id_ejercicio_id_fk": {
-          "name": "calculo_obsolescencia_ejercicio_id_ejercicio_id_fk",
+        "calculo_obsolescencia_corte_id_corte_id_fk": {
+          "name": "calculo_obsolescencia_corte_id_corte_id_fk",
           "tableFrom": "calculo_obsolescencia",
           "columnsFrom": [
-            "ejercicio_id"
+            "corte_id"
           ],
-          "tableTo": "ejercicio",
+          "tableTo": "corte",
           "columnsTo": [
             "id"
           ],
           "onUpdate": "no action",
-          "onDelete": "restrict"
+          "onDelete": "cascade"
         },
         "calculo_obsolescencia_bien_id_bien_id_fk": {
           "name": "calculo_obsolescencia_bien_id_bien_id_fk",
@@ -3197,19 +2000,6 @@
           ],
           "onUpdate": "no action",
           "onDelete": "restrict"
-        },
-        "calculo_obsolescencia_calculado_por_responsable_id_responsable_id_fk": {
-          "name": "calculo_obsolescencia_calculado_por_responsable_id_responsable_id_fk",
-          "tableFrom": "calculo_obsolescencia",
-          "columnsFrom": [
-            "calculado_por_responsable_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
         }
       },
       "compositePrimaryKeys": {},
@@ -3233,8 +2023,8 @@
         }
       }
     },
-    "deterioro": {
-      "name": "deterioro",
+    "corte": {
+      "name": "corte",
       "columns": {
         "id": {
           "name": "id",
@@ -3243,71 +2033,22 @@
           "notNull": true,
           "autoincrement": false
         },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
+        "proceso_id": {
+          "name": "proceso_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "bien_id": {
-          "name": "bien_id",
+        "fecha_corte": {
+          "name": "fecha_corte",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "valor_neto_antes_cent": {
-          "name": "valor_neto_antes_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "valor_recuperable_cent": {
-          "name": "valor_recuperable_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "deterioro_reconocido_cent": {
-          "name": "deterioro_reconocido_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "indicio": {
-          "name": "indicio",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "justificacion": {
-          "name": "justificacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "especialista_id": {
-          "name": "especialista_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "soporte_url": {
-          "name": "soporte_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "reconocido_en": {
-          "name": "reconocido_en",
+        "parametros_json": {
+          "name": "parametros_json",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -3323,670 +2064,22 @@
         }
       },
       "indexes": {
-        "ux_deterioro_bien": {
-          "name": "ux_deterioro_bien",
+        "ux_corte_proceso": {
+          "name": "ux_corte_proceso",
           "columns": [
-            "ejercicio_id",
-            "bien_id"
+            "proceso_id"
           ],
           "isUnique": true
         }
       },
       "foreignKeys": {
-        "deterioro_ejercicio_id_ejercicio_id_fk": {
-          "name": "deterioro_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "deterioro",
+        "corte_proceso_id_proceso_id_fk": {
+          "name": "corte_proceso_id_proceso_id_fk",
+          "tableFrom": "corte",
           "columnsFrom": [
-            "ejercicio_id"
+            "proceso_id"
           ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "deterioro_bien_id_bien_id_fk": {
-          "name": "deterioro_bien_id_bien_id_fk",
-          "tableFrom": "deterioro",
-          "columnsFrom": [
-            "bien_id"
-          ],
-          "tableTo": "bien",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "deterioro_especialista_id_responsable_id_fk": {
-          "name": "deterioro_especialista_id_responsable_id_fk",
-          "tableFrom": "deterioro",
-          "columnsFrom": [
-            "especialista_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_deterioro_indicio": {
-          "name": "chk_deterioro_indicio",
-          "value": "\"deterioro\".\"indicio\" IN ('DANO_FISICO', 'OBSOLESCENCIA', 'DESUSO', 'CAMBIO_NORMATIVO')"
-        },
-        "chk_deterioro_valor": {
-          "name": "chk_deterioro_valor",
-          "value": "\"deterioro\".\"deterioro_reconocido_cent\" >= 0"
-        }
-      }
-    },
-    "referencia_mercado": {
-      "name": "referencia_mercado",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "familia_equipo": {
-          "name": "familia_equipo",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "especificacion": {
-          "name": "especificacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "proveedor": {
-          "name": "proveedor",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "valor_cotizado_cent": {
-          "name": "valor_cotizado_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha_cotizacion": {
-          "name": "fecha_cotizacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "vigencia_hasta": {
-          "name": "vigencia_hasta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "soporte_url": {
-          "name": "soporte_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ix_referencia_familia": {
-          "name": "ix_referencia_familia",
-          "columns": [
-            "ejercicio_id",
-            "familia_equipo"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "referencia_mercado_ejercicio_id_ejercicio_id_fk": {
-          "name": "referencia_mercado_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "referencia_mercado",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "valuacion_mueble": {
-      "name": "valuacion_mueble",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "bien_id": {
-          "name": "bien_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "metodo_valuacion": {
-          "name": "metodo_valuacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "valor_equipo_nuevo_equivalente_cent": {
-          "name": "valor_equipo_nuevo_equivalente_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "factor_estado_x10k": {
-          "name": "factor_estado_x10k",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "factor_vida_restante_x10k": {
-          "name": "factor_vida_restante_x10k",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_avaluo_calculado_cent": {
-          "name": "valor_avaluo_calculado_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_avaluo_final_cent": {
-          "name": "valor_avaluo_final_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "diferencia_vs_libros_cent": {
-          "name": "diferencia_vs_libros_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tipo_ajuste": {
-          "name": "tipo_ajuste",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "justificacion_tecnica": {
-          "name": "justificacion_tecnica",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "especialista_id": {
-          "name": "especialista_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha_valuacion": {
-          "name": "fecha_valuacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "soporte_mercado_url": {
-          "name": "soporte_mercado_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "estado_aprobacion": {
-          "name": "estado_aprobacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'PENDIENTE'"
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ux_valuacion_bien": {
-          "name": "ux_valuacion_bien",
-          "columns": [
-            "ejercicio_id",
-            "bien_id"
-          ],
-          "isUnique": true
-        },
-        "ix_valuacion_especialista": {
-          "name": "ix_valuacion_especialista",
-          "columns": [
-            "ejercicio_id",
-            "especialista_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "valuacion_mueble_ejercicio_id_ejercicio_id_fk": {
-          "name": "valuacion_mueble_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "valuacion_mueble",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "valuacion_mueble_bien_id_bien_id_fk": {
-          "name": "valuacion_mueble_bien_id_bien_id_fk",
-          "tableFrom": "valuacion_mueble",
-          "columnsFrom": [
-            "bien_id"
-          ],
-          "tableTo": "bien",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "valuacion_mueble_especialista_id_responsable_id_fk": {
-          "name": "valuacion_mueble_especialista_id_responsable_id_fk",
-          "tableFrom": "valuacion_mueble",
-          "columnsFrom": [
-            "especialista_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_val_metodo": {
-          "name": "chk_val_metodo",
-          "value": "\"valuacion_mueble\".\"metodo_valuacion\" IN ('COSTO_REPOSICION_DEPRECIADO', 'COMPARACION_MERCADO', 'VALOR_EN_LIBROS', 'VALOR_RESIDUAL_CHATARRA', 'VALOR_CERO')"
-        },
-        "chk_val_ajuste": {
-          "name": "chk_val_ajuste",
-          "value": "\"valuacion_mueble\".\"tipo_ajuste\" IN ('VALORIZACION', 'DESVALORIZACION', 'SIN_CAMBIO')"
-        },
-        "chk_val_aprobacion": {
-          "name": "chk_val_aprobacion",
-          "value": "\"valuacion_mueble\".\"estado_aprobacion\" IN ('PENDIENTE', 'APROBADA', 'RECHAZADA')"
-        },
-        "chk_val_final": {
-          "name": "chk_val_final",
-          "value": "\"valuacion_mueble\".\"valor_avaluo_final_cent\" >= 0"
-        }
-      }
-    },
-    "avaluo_inmueble": {
-      "name": "avaluo_inmueble",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "inmueble_id": {
-          "name": "inmueble_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "metodo_terreno": {
-          "name": "metodo_terreno",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_m2_terreno_cent": {
-          "name": "valor_m2_terreno_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_total_terreno_cent": {
-          "name": "valor_total_terreno_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "metodo_construccion": {
-          "name": "metodo_construccion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "costo_reposicion_m2_cent": {
-          "name": "costo_reposicion_m2_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "factor_depreciacion_x10k": {
-          "name": "factor_depreciacion_x10k",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_m2_construccion_depreciado_cent": {
-          "name": "valor_m2_construccion_depreciado_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_total_construccion_cent": {
-          "name": "valor_total_construccion_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_total_inmueble_cent": {
-          "name": "valor_total_inmueble_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "perito_id": {
-          "name": "perito_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "perito_nombre": {
-          "name": "perito_nombre",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "perito_registro_raa": {
-          "name": "perito_registro_raa",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha_visita": {
-          "name": "fecha_visita",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "fecha_informe": {
-          "name": "fecha_informe",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "vigencia_hasta": {
-          "name": "vigencia_hasta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "informe_url": {
-          "name": "informe_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_libros_anterior_cent": {
-          "name": "valor_libros_anterior_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "diferencia_valuacion_cent": {
-          "name": "diferencia_valuacion_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ux_avaluo_inmueble_ejercicio": {
-          "name": "ux_avaluo_inmueble_ejercicio",
-          "columns": [
-            "inmueble_id",
-            "ejercicio_id"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "avaluo_inmueble_inmueble_id_inmueble_id_fk": {
-          "name": "avaluo_inmueble_inmueble_id_inmueble_id_fk",
-          "tableFrom": "avaluo_inmueble",
-          "columnsFrom": [
-            "inmueble_id"
-          ],
-          "tableTo": "inmueble",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "avaluo_inmueble_ejercicio_id_ejercicio_id_fk": {
-          "name": "avaluo_inmueble_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "avaluo_inmueble",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "avaluo_inmueble_perito_id_responsable_id_fk": {
-          "name": "avaluo_inmueble_perito_id_responsable_id_fk",
-          "tableFrom": "avaluo_inmueble",
-          "columnsFrom": [
-            "perito_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "documento_inmueble": {
-      "name": "documento_inmueble",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "inmueble_id": {
-          "name": "inmueble_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tipo_documento": {
-          "name": "tipo_documento",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "url": {
-          "name": "url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "hash_sha256": {
-          "name": "hash_sha256",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha_expedicion": {
-          "name": "fecha_expedicion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "vigencia_hasta": {
-          "name": "vigencia_hasta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ix_documento_inmueble": {
-          "name": "ix_documento_inmueble",
-          "columns": [
-            "inmueble_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "documento_inmueble_inmueble_id_inmueble_id_fk": {
-          "name": "documento_inmueble_inmueble_id_inmueble_id_fk",
-          "tableFrom": "documento_inmueble",
-          "columnsFrom": [
-            "inmueble_id"
-          ],
-          "tableTo": "inmueble",
+          "tableTo": "proceso",
           "columnsTo": [
             "id"
           ],
@@ -3998,572 +2091,25 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "inmueble": {
-      "name": "inmueble",
+    "baja": {
+      "name": "baja",
       "columns": {
         "id": {
           "name": "id",
           "type": "text",
           "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "entidad_id": {
-          "name": "entidad_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "codigo_inmueble": {
-          "name": "codigo_inmueble",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "nombre": {
-          "name": "nombre",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tipo_inmueble": {
-          "name": "tipo_inmueble",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "direccion": {
-          "name": "direccion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "municipio": {
-          "name": "municipio",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "departamento": {
-          "name": "departamento",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "destinacion": {
-          "name": "destinacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "uso_actual": {
-          "name": "uso_actual",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "matricula_inmobiliaria": {
-          "name": "matricula_inmobiliaria",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "codigo_catastral": {
-          "name": "codigo_catastral",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "titulo_adquisicion": {
-          "name": "titulo_adquisicion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "fecha_adquisicion": {
-          "name": "fecha_adquisicion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "afectaciones": {
-          "name": "afectaciones",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "estado_legalizacion": {
-          "name": "estado_legalizacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "area_terreno_m2_x10k": {
-          "name": "area_terreno_m2_x10k",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "area_construida_m2_x10k": {
-          "name": "area_construida_m2_x10k",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "numero_pisos": {
-          "name": "numero_pisos",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "vetustez_anios": {
-          "name": "vetustez_anios",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "vida_util_total_anios": {
-          "name": "vida_util_total_anios",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "estado_conservacion": {
-          "name": "estado_conservacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        },
-        "actualizado_en": {
-          "name": "actualizado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ux_inmueble_codigo": {
-          "name": "ux_inmueble_codigo",
-          "columns": [
-            "entidad_id",
-            "codigo_inmueble"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "inmueble_entidad_id_entidad_id_fk": {
-          "name": "inmueble_entidad_id_entidad_id_fk",
-          "tableFrom": "inmueble",
-          "columnsFrom": [
-            "entidad_id"
-          ],
-          "tableTo": "entidad",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_inmueble_legalizacion": {
-          "name": "chk_inmueble_legalizacion",
-          "value": "\"inmueble\".\"estado_legalizacion\" IN ('LEGALIZADO', 'EN_TRAMITE', 'SIN_TITULO')"
-        },
-        "chk_inmueble_conservacion": {
-          "name": "chk_inmueble_conservacion",
-          "value": "\"inmueble\".\"estado_conservacion\" IN ('1_NUEVO', '2_BUENO', '3_REGULAR', '4_DEFICIENTE', '5_INSERVIBLE')"
-        }
-      }
-    },
-    "oferta_comparable": {
-      "name": "oferta_comparable",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "avaluo_id": {
-          "name": "avaluo_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "direccion": {
-          "name": "direccion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "descripcion": {
-          "name": "descripcion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "area_terreno_m2_x10k": {
-          "name": "area_terreno_m2_x10k",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "area_construida_m2_x10k": {
-          "name": "area_construida_m2_x10k",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_ofertado_cent": {
-          "name": "valor_ofertado_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "factor_negociacion_x10k": {
-          "name": "factor_negociacion_x10k",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_depurado_cent": {
-          "name": "valor_depurado_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_m2_homogeneizado_cent": {
-          "name": "valor_m2_homogeneizado_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "incluida": {
-          "name": "incluida",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        },
-        "motivo_descarte": {
-          "name": "motivo_descarte",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "fuente": {
-          "name": "fuente",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "link": {
-          "name": "link",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "ix_oferta_avaluo": {
-          "name": "ix_oferta_avaluo",
-          "columns": [
-            "avaluo_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "oferta_comparable_avaluo_id_avaluo_inmueble_id_fk": {
-          "name": "oferta_comparable_avaluo_id_avaluo_inmueble_id_fk",
-          "tableFrom": "oferta_comparable",
-          "columnsFrom": [
-            "avaluo_id"
-          ],
-          "tableTo": "avaluo_inmueble",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_oferta_incluida": {
-          "name": "chk_oferta_incluida",
-          "value": "\"oferta_comparable\".\"incluida\" IN (0, 1)"
-        }
-      }
-    },
-    "disposicion_final": {
-      "name": "disposicion_final",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "propuesta_baja_id": {
-          "name": "propuesta_baja_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "destino_final": {
-          "name": "destino_final",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha_disposicion": {
-          "name": "fecha_disposicion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "responsable_entrega": {
-          "name": "responsable_entrega",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "responsable_recibe": {
-          "name": "responsable_recibe",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "gestor_autorizado": {
-          "name": "gestor_autorizado",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "certificado_url": {
-          "name": "certificado_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ux_disposicion_propuesta": {
-          "name": "ux_disposicion_propuesta",
-          "columns": [
-            "propuesta_baja_id"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "disposicion_final_propuesta_baja_id_propuesta_baja_id_fk": {
-          "name": "disposicion_final_propuesta_baja_id_propuesta_baja_id_fk",
-          "tableFrom": "disposicion_final",
-          "columnsFrom": [
-            "propuesta_baja_id"
-          ],
-          "tableTo": "propuesta_baja",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_disposicion_destino": {
-          "name": "chk_disposicion_destino",
-          "value": "\"disposicion_final\".\"destino_final\" IN ('VENTA', 'REMATE', 'DESTRUCCION', 'DONACION', 'RECICLAJE_RAEE', 'GESTOR_AMBIENTAL')"
-        }
-      }
-    },
-    "efecto_contable_baja": {
-      "name": "efecto_contable_baja",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "propuesta_baja_id": {
-          "name": "propuesta_baja_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "valor_bruto_cent": {
-          "name": "valor_bruto_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "depreciacion_asociada_cent": {
-          "name": "depreciacion_asociada_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "deterioro_asociado_cent": {
-          "name": "deterioro_asociado_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "valor_neto_cent": {
-          "name": "valor_neto_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "valor_recuperado_cent": {
-          "name": "valor_recuperado_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "perdida_reconocida_cent": {
-          "name": "perdida_reconocida_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ux_efecto_propuesta": {
-          "name": "ux_efecto_propuesta",
-          "columns": [
-            "propuesta_baja_id"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "efecto_contable_baja_propuesta_baja_id_propuesta_baja_id_fk": {
-          "name": "efecto_contable_baja_propuesta_baja_id_propuesta_baja_id_fk",
-          "tableFrom": "efecto_contable_baja",
-          "columnsFrom": [
-            "propuesta_baja_id"
-          ],
-          "tableTo": "propuesta_baja",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "propuesta_baja": {
-      "name": "propuesta_baja",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
         "bien_id": {
           "name": "bien_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "fecha": {
+          "name": "fecha",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -4576,93 +2122,15 @@
           "notNull": true,
           "autoincrement": false
         },
-        "justificacion_tecnica": {
-          "name": "justificacion_tecnica",
+        "justificacion": {
+          "name": "justificacion",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "costo_reparacion_estimado_cent": {
-          "name": "costo_reparacion_estimado_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_reposicion_cent": {
-          "name": "valor_reposicion_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "relacion_reparacion_reposicion_x10k": {
-          "name": "relacion_reparacion_reposicion_x10k",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "valor_salvamento_cent": {
-          "name": "valor_salvamento_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "destino_final_propuesto": {
-          "name": "destino_final_propuesto",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "soporte_url": {
-          "name": "soporte_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "especialista_id": {
-          "name": "especialista_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha_propuesta": {
-          "name": "fecha_propuesta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "estado_aprobacion": {
-          "name": "estado_aprobacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'PROPUESTO'"
-        },
-        "acta_comite_id": {
-          "name": "acta_comite_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "resolucion_id": {
-          "name": "resolucion_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "observacion_comite": {
-          "name": "observacion_comite",
+        "referencia": {
+          "name": "referencia",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -4676,50 +2144,42 @@
           "autoincrement": false,
           "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
         },
-        "actualizado_en": {
-          "name": "actualizado_en",
+        "anulada_en": {
+          "name": "anulada_en",
           "type": "text",
           "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
+          "notNull": false,
+          "autoincrement": false
+        },
+        "motivo_anulacion": {
+          "name": "motivo_anulacion",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {
-        "ix_propuesta_bien": {
-          "name": "ix_propuesta_bien",
+        "ix_baja_bien": {
+          "name": "ix_baja_bien",
           "columns": [
-            "ejercicio_id",
             "bien_id"
           ],
           "isUnique": false
         },
-        "ix_propuesta_estado": {
-          "name": "ix_propuesta_estado",
+        "ux_baja_vigente": {
+          "name": "ux_baja_vigente",
           "columns": [
-            "ejercicio_id",
-            "estado_aprobacion"
+            "bien_id"
           ],
-          "isUnique": false
+          "where": "\"baja\".\"anulada_en\" IS NULL",
+          "isUnique": true
         }
       },
       "foreignKeys": {
-        "propuesta_baja_ejercicio_id_ejercicio_id_fk": {
-          "name": "propuesta_baja_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "propuesta_baja",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "propuesta_baja_bien_id_bien_id_fk": {
-          "name": "propuesta_baja_bien_id_bien_id_fk",
-          "tableFrom": "propuesta_baja",
+        "baja_bien_id_bien_id_fk": {
+          "name": "baja_bien_id_bien_id_fk",
+          "tableFrom": "baja",
           "columnsFrom": [
             "bien_id"
           ],
@@ -4729,1153 +2189,16 @@
           ],
           "onUpdate": "no action",
           "onDelete": "restrict"
-        },
-        "propuesta_baja_especialista_id_responsable_id_fk": {
-          "name": "propuesta_baja_especialista_id_responsable_id_fk",
-          "tableFrom": "propuesta_baja",
-          "columnsFrom": [
-            "especialista_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "propuesta_baja_acta_comite_id_acta_comite_id_fk": {
-          "name": "propuesta_baja_acta_comite_id_acta_comite_id_fk",
-          "tableFrom": "propuesta_baja",
-          "columnsFrom": [
-            "acta_comite_id"
-          ],
-          "tableTo": "acta_comite",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "propuesta_baja_resolucion_id_acto_administrativo_id_fk": {
-          "name": "propuesta_baja_resolucion_id_acto_administrativo_id_fk",
-          "tableFrom": "propuesta_baja",
-          "columnsFrom": [
-            "resolucion_id"
-          ],
-          "tableTo": "acto_administrativo",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {
-        "chk_propuesta_causal": {
-          "name": "chk_propuesta_causal",
-          "value": "\"propuesta_baja\".\"causal\" IN ('OBSOLESCENCIA', 'INSERVIBLE', 'CASO_FORTUITO', 'DESUSO', 'DONACION_O_TRASLADO')"
-        },
-        "chk_propuesta_destino": {
-          "name": "chk_propuesta_destino",
-          "value": "\"propuesta_baja\".\"destino_final_propuesto\" IN ('VENTA', 'REMATE', 'DESTRUCCION', 'DONACION', 'RECICLAJE_RAEE', 'GESTOR_AMBIENTAL')"
-        },
-        "chk_propuesta_estado": {
-          "name": "chk_propuesta_estado",
-          "value": "\"propuesta_baja\".\"estado_aprobacion\" IN ('PROPUESTO', 'EN_REVISION', 'APROBADO_COMITE', 'RESOLUCION_EMITIDA', 'EJECUTADO', 'DISPOSICION_DOCUMENTADA', 'RECHAZADO')"
+        "chk_baja_causal": {
+          "name": "chk_baja_causal",
+          "value": "\"baja\".\"causal\" IN ('OBSOLESCENCIA', 'INSERVIBLE', 'CASO_FORTUITO', 'DESUSO', 'DONACION_O_TRASLADO')"
         }
       }
-    },
-    "acta_comite": {
-      "name": "acta_comite",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "numero_acta": {
-          "name": "numero_acta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha": {
-          "name": "fecha",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "lugar": {
-          "name": "lugar",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "asistentes_json": {
-          "name": "asistentes_json",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "quorum_valido": {
-          "name": "quorum_valido",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "orden_del_dia": {
-          "name": "orden_del_dia",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "decisiones": {
-          "name": "decisiones",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "documento_url": {
-          "name": "documento_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "estado_firma": {
-          "name": "estado_firma",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        },
-        "actualizado_en": {
-          "name": "actualizado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ux_acta_numero": {
-          "name": "ux_acta_numero",
-          "columns": [
-            "ejercicio_id",
-            "numero_acta"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "acta_comite_ejercicio_id_ejercicio_id_fk": {
-          "name": "acta_comite_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "acta_comite",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_acta_quorum": {
-          "name": "chk_acta_quorum",
-          "value": "\"acta_comite\".\"quorum_valido\" IN (0, 1)"
-        }
-      }
-    },
-    "acto_administrativo": {
-      "name": "acto_administrativo",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tipo_resolucion": {
-          "name": "tipo_resolucion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "numero": {
-          "name": "numero",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "fecha": {
-          "name": "fecha",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "epigrafe": {
-          "name": "epigrafe",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "acta_comite_id": {
-          "name": "acta_comite_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "contenido_generado": {
-          "name": "contenido_generado",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "documento_url": {
-          "name": "documento_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "estado": {
-          "name": "estado",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "'PROYECTADO'"
-        },
-        "preparo_responsable_id": {
-          "name": "preparo_responsable_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "reviso_responsable_id": {
-          "name": "reviso_responsable_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "firmo_responsable_id": {
-          "name": "firmo_responsable_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "fecha_firma": {
-          "name": "fecha_firma",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "inmutable": {
-          "name": "inmutable",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        },
-        "actualizado_en": {
-          "name": "actualizado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ix_acto_ejercicio": {
-          "name": "ix_acto_ejercicio",
-          "columns": [
-            "ejercicio_id",
-            "estado"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "acto_administrativo_ejercicio_id_ejercicio_id_fk": {
-          "name": "acto_administrativo_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "acto_administrativo",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "acto_administrativo_acta_comite_id_acta_comite_id_fk": {
-          "name": "acto_administrativo_acta_comite_id_acta_comite_id_fk",
-          "tableFrom": "acto_administrativo",
-          "columnsFrom": [
-            "acta_comite_id"
-          ],
-          "tableTo": "acta_comite",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "acto_administrativo_preparo_responsable_id_responsable_id_fk": {
-          "name": "acto_administrativo_preparo_responsable_id_responsable_id_fk",
-          "tableFrom": "acto_administrativo",
-          "columnsFrom": [
-            "preparo_responsable_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
-        },
-        "acto_administrativo_reviso_responsable_id_responsable_id_fk": {
-          "name": "acto_administrativo_reviso_responsable_id_responsable_id_fk",
-          "tableFrom": "acto_administrativo",
-          "columnsFrom": [
-            "reviso_responsable_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
-        },
-        "acto_administrativo_firmo_responsable_id_responsable_id_fk": {
-          "name": "acto_administrativo_firmo_responsable_id_responsable_id_fk",
-          "tableFrom": "acto_administrativo",
-          "columnsFrom": [
-            "firmo_responsable_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_acto_estado": {
-          "name": "chk_acto_estado",
-          "value": "\"acto_administrativo\".\"estado\" IN ('PROYECTADO', 'EN_REVISION_JURIDICA', 'APROBADO_COMITE', 'FIRMADO', 'PUBLICADO')"
-        },
-        "chk_acto_inmutable": {
-          "name": "chk_acto_inmutable",
-          "value": "\"acto_administrativo\".\"inmutable\" IN (0, 1)"
-        }
-      }
-    },
-    "consolidado_subcuenta": {
-      "name": "consolidado_subcuenta",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "subcuenta": {
-          "name": "subcuenta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "nombre_subcuenta": {
-          "name": "nombre_subcuenta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "saldo_anterior_cent": {
-          "name": "saldo_anterior_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "incorporaciones_cent": {
-          "name": "incorporaciones_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "retiros_por_baja_cent": {
-          "name": "retiros_por_baja_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "ajustes_de_valor_cent": {
-          "name": "ajustes_de_valor_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "valorizaciones_cent": {
-          "name": "valorizaciones_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "desvalorizaciones_cent": {
-          "name": "desvalorizaciones_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "nuevo_saldo_bruto_cent": {
-          "name": "nuevo_saldo_bruto_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "depreciacion_acum_anterior_cent": {
-          "name": "depreciacion_acum_anterior_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ajuste_depreciacion_cent": {
-          "name": "ajuste_depreciacion_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "depreciacion_retirada_baja_cent": {
-          "name": "depreciacion_retirada_baja_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "nueva_depreciacion_acumulada_cent": {
-          "name": "nueva_depreciacion_acumulada_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "deterioro_anterior_cent": {
-          "name": "deterioro_anterior_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "nuevo_deterioro_cent": {
-          "name": "nuevo_deterioro_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "valor_neto_final_cent": {
-          "name": "valor_neto_final_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "cantidad_bienes": {
-          "name": "cantidad_bienes",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "calculado_en": {
-          "name": "calculado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "ux_consolidado_subcuenta": {
-          "name": "ux_consolidado_subcuenta",
-          "columns": [
-            "ejercicio_id",
-            "subcuenta"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "consolidado_subcuenta_ejercicio_id_ejercicio_id_fk": {
-          "name": "consolidado_subcuenta_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "consolidado_subcuenta",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "verificacion_cuadre": {
-      "name": "verificacion_cuadre",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "subcuenta": {
-          "name": "subcuenta",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "total_detalle_cent": {
-          "name": "total_detalle_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "total_auxiliar_cent": {
-          "name": "total_auxiliar_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "total_mayor_cent": {
-          "name": "total_mayor_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "cuadra": {
-          "name": "cuadra",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "diferencia_cent": {
-          "name": "diferencia_cent",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "verificado_en": {
-          "name": "verificado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "ix_cuadre_ejercicio": {
-          "name": "ix_cuadre_ejercicio",
-          "columns": [
-            "ejercicio_id",
-            "subcuenta"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "verificacion_cuadre_ejercicio_id_ejercicio_id_fk": {
-          "name": "verificacion_cuadre_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "verificacion_cuadre",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_cuadre_cuadra": {
-          "name": "chk_cuadre_cuadra",
-          "value": "\"verificacion_cuadre\".\"cuadra\" IN (0, 1)"
-        }
-      }
-    },
-    "acta_entrega": {
-      "name": "acta_entrega",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "numero_contrato": {
-          "name": "numero_contrato",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha": {
-          "name": "fecha",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "productos_json": {
-          "name": "productos_json",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "documento_url": {
-          "name": "documento_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "estado_firma": {
-          "name": "estado_firma",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ix_acta_entrega_ejercicio": {
-          "name": "ix_acta_entrega_ejercicio",
-          "columns": [
-            "ejercicio_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "acta_entrega_ejercicio_id_ejercicio_id_fk": {
-          "name": "acta_entrega_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "acta_entrega",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "capacitacion": {
-      "name": "capacitacion",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "sesion": {
-          "name": "sesion",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "tema": {
-          "name": "tema",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha": {
-          "name": "fecha",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "duracion_minutos": {
-          "name": "duracion_minutos",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "dirigido_a": {
-          "name": "dirigido_a",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "contenido": {
-          "name": "contenido",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "metodologia": {
-          "name": "metodologia",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "material_url": {
-          "name": "material_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "lista_asistencia_url": {
-          "name": "lista_asistencia_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "resultado_evaluacion": {
-          "name": "resultado_evaluacion",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ix_capacitacion_ejercicio": {
-          "name": "ix_capacitacion_ejercicio",
-          "columns": [
-            "ejercicio_id",
-            "sesion"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "capacitacion_ejercicio_id_ejercicio_id_fk": {
-          "name": "capacitacion_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "capacitacion",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "cierre_ejercicio": {
-      "name": "cierre_ejercicio",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "fecha_cierre": {
-          "name": "fecha_cierre",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "cerrado_por_responsable_id": {
-          "name": "cerrado_por_responsable_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "acta_liquidacion_url": {
-          "name": "acta_liquidacion_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "observaciones": {
-          "name": "observaciones",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "hash_contenido": {
-          "name": "hash_contenido",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "version_app": {
-          "name": "version_app",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "version_esquema": {
-          "name": "version_esquema",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "inmutable": {
-          "name": "inmutable",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
-        }
-      },
-      "indexes": {
-        "ux_cierre_ejercicio": {
-          "name": "ux_cierre_ejercicio",
-          "columns": [
-            "ejercicio_id"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "cierre_ejercicio_ejercicio_id_ejercicio_id_fk": {
-          "name": "cierre_ejercicio_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "cierre_ejercicio",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "cierre_ejercicio_cerrado_por_responsable_id_responsable_id_fk": {
-          "name": "cierre_ejercicio_cerrado_por_responsable_id_responsable_id_fk",
-          "tableFrom": "cierre_ejercicio",
-          "columnsFrom": [
-            "cerrado_por_responsable_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {
-        "chk_cierre_inmutable": {
-          "name": "chk_cierre_inmutable",
-          "value": "\"cierre_ejercicio\".\"inmutable\" IN (0, 1)"
-        }
-      }
-    },
-    "producto_contractual": {
-      "name": "producto_contractual",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "codigo_producto": {
-          "name": "codigo_producto",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "nombre": {
-          "name": "nombre",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "paso_origen": {
-          "name": "paso_origen",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "formato_requerido": {
-          "name": "formato_requerido",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "estado": {
-          "name": "estado",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "entregable_url": {
-          "name": "entregable_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "fecha_entrega": {
-          "name": "fecha_entrega",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "verificado_por_responsable_id": {
-          "name": "verificado_por_responsable_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "creado_en": {
-          "name": "creado_en",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": "(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))"
-        }
-      },
-      "indexes": {
-        "ux_producto_codigo": {
-          "name": "ux_producto_codigo",
-          "columns": [
-            "ejercicio_id",
-            "codigo_producto"
-          ],
-          "isUnique": true
-        }
-      },
-      "foreignKeys": {
-        "producto_contractual_ejercicio_id_ejercicio_id_fk": {
-          "name": "producto_contractual_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "producto_contractual",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "producto_contractual_verificado_por_responsable_id_responsable_id_fk": {
-          "name": "producto_contractual_verificado_por_responsable_id_responsable_id_fk",
-          "tableFrom": "producto_contractual",
-          "columnsFrom": [
-            "verificado_por_responsable_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
     },
     "bitacora": {
       "name": "bitacora",
@@ -5885,13 +2208,6 @@
           "type": "text",
           "primaryKey": true,
           "notNull": true,
-          "autoincrement": false
-        },
-        "ejercicio_id": {
-          "name": "ejercicio_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
           "autoincrement": false
         },
         "entidad_afectada": {
@@ -5936,13 +2252,6 @@
           "notNull": false,
           "autoincrement": false
         },
-        "responsable_id": {
-          "name": "responsable_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
         "fecha": {
           "name": "fecha",
           "type": "text",
@@ -5974,43 +2283,15 @@
           ],
           "isUnique": false
         },
-        "ix_bitacora_ejercicio": {
-          "name": "ix_bitacora_ejercicio",
+        "ix_bitacora_fecha": {
+          "name": "ix_bitacora_fecha",
           "columns": [
-            "ejercicio_id",
             "fecha"
           ],
           "isUnique": false
         }
       },
-      "foreignKeys": {
-        "bitacora_ejercicio_id_ejercicio_id_fk": {
-          "name": "bitacora_ejercicio_id_ejercicio_id_fk",
-          "tableFrom": "bitacora",
-          "columnsFrom": [
-            "ejercicio_id"
-          ],
-          "tableTo": "ejercicio",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "restrict"
-        },
-        "bitacora_responsable_id_responsable_id_fk": {
-          "name": "bitacora_responsable_id_responsable_id_fk",
-          "tableFrom": "bitacora",
-          "columnsFrom": [
-            "responsable_id"
-          ],
-          "tableTo": "responsable",
-          "columnsTo": [
-            "id"
-          ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
-        }
-      },
+      "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {

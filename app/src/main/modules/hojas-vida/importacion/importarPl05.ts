@@ -4,12 +4,15 @@
  * de dónde partir (RN-03-01), así que en el orden de ADR-026 va pegada a PL-03.
  *
  * Reglas que aplica:
- *   RN-03-01  sin fecha o sin costo el bien queda INCOMPLETO; con ambos, VALIDADO
- *   RN-03-02  un costo en cero es dato faltante, salvo donación con acta
+ *   RN-03-01  sin fecha o sin costo el bien queda fuera de la depreciación, y el
+ *             cálculo lo relaciona con su motivo (nunca como un cero)
+ *   RN-03-02  un costo en cero es dato faltante, salvo donación
  *   RN-03-04  la hoja SIN_SOPORTE es el avalúo de reconocimiento inicial, y el
- *             libro importado queda registrado como su acta (con su huella SHA-256)
+ *             libro importado queda registrado como su soporte (con su huella SHA-256)
  *   RN-03-06  sobrescribir la vida útil técnica exige justificación
- *   VAL-03-02 la fecha de adquisición no puede ser posterior a la fecha de corte
+ *   VAL-03-02 la fecha de adquisición no puede ser futura. Frente a la fecha de
+ *             corte la compara cada cálculo: un bien comprado después del corte
+ *             simplemente no entra a ese corte (ADR-028).
  */
 import type { ContextoIpc } from '../../../ipc/registroIpc';
 import type { IncidenciaImportacion } from '../../../../compartido/dtos/importacion';
@@ -20,7 +23,9 @@ import type { ArchivoImportado, AmbitoImportacion, ImportadorPlantilla, Resultad
 import { nuevoId } from '../../../infraestructura/db/identificadores';
 import { hojaVidaRepo, type HojaVidaParaEscribir, type MantenimientoParaEscribir, type SoporteParaEscribir } from '../repositorio/hojaVida.repo';
 import { HOJA_MANTENIMIENTOS, HOJA_SIN_SOPORTE, HOJA_VIDA, PL_05 } from './plantillaPl05';
-import { TIPO_SOPORTE_RECONOCIMIENTO_INICIAL } from '../validaciones/val-03';
+
+/** Tipo del soporte que deja la hoja SIN_SOPORTE (RN-03-04). */
+export const TIPO_SOPORTE_RECONOCIMIENTO_INICIAL = 'AVALUO_RECONOCIMIENTO_INICIAL';
 
 function clave(v: unknown): string {
   return String(v).trim().toUpperCase();
@@ -44,10 +49,9 @@ const bienesDeMantenimiento = new WeakMap<FilaNormalizada, string>();
 const bienesSinSoporte = new WeakMap<FilaNormalizada, string>();
 
 function validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, ctx: ContextoIpc): void {
-  const ejercicioId = ambito.ejercicioId;
-  if (ejercicioId === null) return;
-  const bienes = hojaVidaRepo.bienesPorCodigo(ctx.sqlite, ejercicioId);
-  const fechaCorte = (ctx.sqlite.prepare('SELECT fecha_corte FROM ejercicio WHERE id = ?').get(ejercicioId) as { fecha_corte: string } | undefined)?.fecha_corte ?? null;
+  if (ambito.procesoId === null) return;
+  const bienes = hojaVidaRepo.bienesPorCodigo(ctx.sqlite, ambito.procesoId);
+  const hoy = ctx.ahoraIso().slice(0, 10);
 
   if (bienes.size === 0) {
     lectura.incidencias.push({
@@ -55,7 +59,7 @@ function validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, 
       fila: 0,
       columna: null,
       valorRecibido: null,
-      motivo: 'El ejercicio todavía no tiene bienes. Importe primero PL-03 (toma de inventario físico); PL-05 se apoya en el código institucional de cada bien.',
+      motivo: 'La entidad todavía no tiene bienes. Importe primero un barrido (PL-03, toma de inventario físico); PL-05 se apoya en el código institucional de cada bien.',
       severidad: 'ERROR',
     });
   }
@@ -67,15 +71,14 @@ function validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, 
     const codigo = clave(d['codigo_institucional']);
     const bien = bienes.get(codigo);
     if (bien === undefined) {
-      rechazarFila(lectura, HOJA_VIDA, f.numero, error(HOJA_VIDA, f.numero, 'codigo_institucional', d['codigo_institucional'], 'No hay ningún bien con ese código en el ejercicio (impórtelo con PL-03 antes)'));
+      rechazarFila(lectura, HOJA_VIDA, f.numero, error(HOJA_VIDA, f.numero, 'codigo_institucional', d['codigo_institucional'], 'No hay ningún bien con ese código en el inventario (impórtelo con PL-03 antes)'));
       continue;
     }
 
-    // VAL-03-02 es bloqueante: una adquisición posterior al corte da meses
-    // negativos en el motor, así que no se admite.
+    // VAL-03-02: una compra con fecha futura es un error de digitación.
     const fechaAdq = typeof d['fecha_adquisicion'] === 'string' ? d['fecha_adquisicion'] : null;
-    if (fechaAdq !== null && fechaCorte !== null && fechaAdq > fechaCorte) {
-      rechazarFila(lectura, HOJA_VIDA, f.numero, error(HOJA_VIDA, f.numero, 'fecha_adquisicion', fechaAdq, `VAL-03-02: la adquisición es posterior a la fecha de corte (${fechaCorte})`));
+    if (fechaAdq !== null && fechaAdq > hoy) {
+      rechazarFila(lectura, HOJA_VIDA, f.numero, error(HOJA_VIDA, f.numero, 'fecha_adquisicion', fechaAdq, `VAL-03-02: la fecha de adquisición es futura (hoy es ${hoy})`));
       continue;
     }
 
@@ -89,10 +92,10 @@ function validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, 
     let costoCent: number | null = d['costo_adquisicion'] === null || d['costo_adquisicion'] === undefined ? null : aCentavos(String(d['costo_adquisicion']));
     if (costoCent === 0) {
       if (clave(d['forma_adquisicion']) === 'DONACION') {
-        lectura.incidencias.push({ hoja: HOJA_VIDA, fila: f.numero, columna: 'costo_adquisicion', valorRecibido: '0', motivo: 'RN-03-02: donación declarada en cero. Debe existir el acta que lo declare; sin ella VAL-03-03 no pasará.', severidad: 'ADVERTENCIA' });
+        lectura.incidencias.push({ hoja: HOJA_VIDA, fila: f.numero, columna: 'costo_adquisicion', valorRecibido: '0', motivo: 'RN-03-02: donación declarada en cero. Se registra así; conserve el acta de la donación.', severidad: 'ADVERTENCIA' });
       } else {
         costoCent = null;
-        lectura.incidencias.push({ hoja: HOJA_VIDA, fila: f.numero, columna: 'costo_adquisicion', valorRecibido: '0', motivo: 'RN-03-02: un costo en cero se trata como dato faltante, no como bien gratuito. El bien queda INCOMPLETO.', severidad: 'ADVERTENCIA' });
+        lectura.incidencias.push({ hoja: HOJA_VIDA, fila: f.numero, columna: 'costo_adquisicion', valorRecibido: '0', motivo: 'RN-03-02: un costo en cero se trata como dato faltante, no como bien gratuito. El bien no se depreciará hasta tener costo.', severidad: 'ADVERTENCIA' });
       }
     }
 
@@ -106,7 +109,7 @@ function validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, 
       fila: 0,
       columna: null,
       valorRecibido: String(sinDatosEconomicos),
-      motivo: `RN-03-01: ${sinDatosEconomicos} bienes quedan INCOMPLETOS por faltarles fecha o costo de adquisición. No entran al cálculo de depreciación hasta resolverlo (hoja SIN_SOPORTE o PL-05 corregido).`,
+      motivo: `RN-03-01: a ${sinDatosEconomicos} bienes les falta fecha o costo de adquisición. No entran al cálculo de depreciación hasta resolverlo (hoja SIN_SOPORTE o PL-05 corregido); el informe los relaciona.`,
       severidad: 'ADVERTENCIA',
     });
   }
@@ -114,7 +117,7 @@ function validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, 
   for (const f of [...(lectura.hojas[HOJA_MANTENIMIENTOS] ?? [])]) {
     const bien = bienes.get(clave(f.datos['codigo_institucional']));
     if (bien === undefined) {
-      rechazarFila(lectura, HOJA_MANTENIMIENTOS, f.numero, error(HOJA_MANTENIMIENTOS, f.numero, 'codigo_institucional', f.datos['codigo_institucional'], 'No hay ningún bien con ese código en el ejercicio'));
+      rechazarFila(lectura, HOJA_MANTENIMIENTOS, f.numero, error(HOJA_MANTENIMIENTOS, f.numero, 'codigo_institucional', f.datos['codigo_institucional'], 'No hay ningún bien con ese código en el inventario'));
       continue;
     }
     bienesDeMantenimiento.set(f, bien.id);
@@ -123,12 +126,12 @@ function validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, 
   for (const f of [...(lectura.hojas[HOJA_SIN_SOPORTE] ?? [])]) {
     const bien = bienes.get(clave(f.datos['codigo_institucional']));
     if (bien === undefined) {
-      rechazarFila(lectura, HOJA_SIN_SOPORTE, f.numero, error(HOJA_SIN_SOPORTE, f.numero, 'codigo_institucional', f.datos['codigo_institucional'], 'No hay ningún bien con ese código en el ejercicio'));
+      rechazarFila(lectura, HOJA_SIN_SOPORTE, f.numero, error(HOJA_SIN_SOPORTE, f.numero, 'codigo_institucional', f.datos['codigo_institucional'], 'No hay ningún bien con ese código en el inventario'));
       continue;
     }
     const fechaProbable = typeof f.datos['fecha_probable_adquisicion'] === 'string' ? f.datos['fecha_probable_adquisicion'] : null;
-    if (fechaProbable !== null && fechaCorte !== null && fechaProbable > fechaCorte) {
-      rechazarFila(lectura, HOJA_SIN_SOPORTE, f.numero, error(HOJA_SIN_SOPORTE, f.numero, 'fecha_probable_adquisicion', fechaProbable, `La fecha probable es posterior a la fecha de corte (${fechaCorte})`));
+    if (fechaProbable !== null && fechaProbable > hoy) {
+      rechazarFila(lectura, HOJA_SIN_SOPORTE, f.numero, error(HOJA_SIN_SOPORTE, f.numero, 'fecha_probable_adquisicion', fechaProbable, `La fecha probable es futura (hoy es ${hoy})`));
       continue;
     }
     bienesSinSoporte.set(f, bien.id);
@@ -141,19 +144,17 @@ function validarNegocio(ambito: AmbitoImportacion, lectura: LecturaNormalizada, 
       fila: 0,
       columna: null,
       valorRecibido: String(conReconocimiento),
-      motivo: `RN-03-04: ${conReconocimiento} bienes se valoran por avalúo técnico de reconocimiento inicial. El libro que está importando queda archivado como el acta que lo respalda.`,
+      motivo: `RN-03-04: ${conReconocimiento} bienes se valoran por avalúo técnico de reconocimiento inicial. El libro que está importando queda archivado como su soporte.`,
       severidad: 'ADVERTENCIA',
     });
   }
 }
 
 function aplicar(ambito: AmbitoImportacion, lectura: LecturaNormalizada, ctx: ContextoIpc, archivo: ArchivoImportado): ResultadoAplicacion {
-  if (ambito.ejercicioId === null) throw new ErrorValidacion('EJERCICIO_REQUERIDO', 'PL-05 se importa dentro de un ejercicio.', { campo: 'ejercicioId' });
+  if (ambito.procesoId === null) throw new ErrorValidacion('PROCESO_REQUERIDO', 'PL-05 se importa dentro de un proceso.', { campo: 'procesoId' });
   const ahora = ctx.ahoraIso();
 
   const hojas: HojaVidaParaEscribir[] = [];
-  /** Bienes que quedan con fecha Y costo: dejan de estar incompletos (RN-03-01). */
-  const completos: string[] = [];
 
   for (const f of lectura.hojas[HOJA_VIDA] ?? []) {
     const r = resueltos.get(f);
@@ -183,7 +184,6 @@ function aplicar(ambito: AmbitoImportacion, lectura: LecturaNormalizada, ctx: Co
       creadoEn: ahora,
       actualizadoEn: ahora,
     });
-    if (fechaAdquisicion !== null && r.costoCent !== null) completos.push(r.bienId);
   }
 
   // RN-03-04 — el avalúo de reconocimiento inicial sustituye a la factura que no
@@ -229,7 +229,6 @@ function aplicar(ambito: AmbitoImportacion, lectura: LecturaNormalizada, ctx: Co
         documentoAdquisicion: gestion,
       };
     }
-    if (!completos.includes(bienId)) completos.push(bienId);
     soportes.push({
       id: nuevoId(),
       bienId,
@@ -267,14 +266,12 @@ function aplicar(ambito: AmbitoImportacion, lectura: LecturaNormalizada, ctx: Co
     });
   }
   hojaVidaRepo.insertarMantenimientos(ctx.sqlite, mantenimientos);
-  hojaVidaRepo.marcarValidados(ctx.sqlite, completos, ahora);
 
   return { creados: creadas + soportes.length + mantenimientos.length, actualizados: actualizadas };
 }
 
 export const IMPORTADOR_PL_05: ImportadorPlantilla = {
   codigo: 'PL-05',
-  requiereEjercicio: true,
   leer: (archivo, formatoFecha) => leerYNormalizar(archivo, PL_05, formatoFecha),
   validarNegocio,
   aplicar,

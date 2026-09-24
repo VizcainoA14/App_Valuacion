@@ -1,21 +1,87 @@
 /**
- * Lectura de lo ya calculado: el resumen del ejercicio y el listado bien a bien.
- * Nada de aritmética de negocio; las sumas son de presentación y siguen `RED-05`
- * (se suman los valores redondeados de detalle, para que el total mostrado
- * coincida con la suma de las filas visibles).
+ * Lectura de lo ya calculado: los cortes, el resumen de uno y su listado bien a
+ * bien. Nada de aritmética de negocio; las sumas son de presentación y siguen
+ * `RED-05` (se suman los valores redondeados de detalle, para que el total
+ * mostrado coincida con la suma de las filas visibles).
  */
 import type { ContextoIpc } from '../../../ipc/registroIpc';
 import type { EntradaValidadaDe } from '../../../../compartido/ipc/contrato';
-import type { FilaCalculoDto, ResumenCalculoDto } from '../../../../compartido/dtos/calculo';
+import type { AmbitoExclusion, CorteDto, ExclusionCalculoDto, FilaCalculoDto, ResumenCalculoDto } from '../../../../compartido/dtos/calculo';
 import type { Pagina } from '../../../../compartido/dtos/inventario';
 import type { Centavos, FechaIso, MarcaTiempo, Uuid } from '../../../../compartido/tipos/basicos';
 import { comoCentavos } from '../../../../compartido/tipos/basicos';
 import { SEMAFORO, type Semaforo } from '../../../../compartido/enums/catalogos';
-import type { MetodoConteoMeses } from '../../../../compartido/enums/parametros';
+import type { MotivoNoCalculado } from '../../../../compartido/motor/resultado';
 import { ErrorValidacion } from '../../../../compartido/errores';
-import { calculoRepo } from '../repositorio/calculo.repo';
+import { EsquemaParametrosCalculo } from '../../../../compartido/parametros/parametrosCalculo';
 
 const X10K = 10_000;
+
+/**
+ * Los bienes que entraron al corte. Todo bien que entra tiene exactamente una
+ * fila de obsolescencia o una exclusión de obsolescencia (así lo escribe
+ * `calcularCorte`); los que ni existían a la fecha solo tienen una exclusión
+ * GENERAL y quedan fuera.
+ */
+const BIENES_DEL_CORTE = `
+  SELECT bien_id FROM calculo_obsolescencia WHERE corte_id = @corte
+  UNION ALL SELECT bien_id FROM calculo_exclusion WHERE corte_id = @corte AND ambito = 'OBSOLESCENCIA'`;
+
+interface FilaCorte {
+  id: string;
+  proceso_id: string;
+  fecha_corte: string;
+  parametros_json: string;
+  creado_en: string;
+  considerados: number;
+  con_depreciacion: number;
+  exclusiones: number;
+  neto: number;
+}
+
+const SELECT_CORTE = `
+  SELECT c.id, c.proceso_id, c.fecha_corte, c.parametros_json, c.creado_en,
+         (SELECT COUNT(*) FROM calculo_obsolescencia o WHERE o.corte_id = c.id)
+           + (SELECT COUNT(*) FROM calculo_exclusion x WHERE x.corte_id = c.id AND x.ambito = 'OBSOLESCENCIA') AS considerados,
+         (SELECT COUNT(*) FROM calculo_depreciacion d WHERE d.corte_id = c.id) AS con_depreciacion,
+         (SELECT COUNT(*) FROM calculo_exclusion x WHERE x.corte_id = c.id) AS exclusiones,
+         (SELECT COALESCE(SUM(d.valor_neto_libros_cent), 0) FROM calculo_depreciacion d WHERE d.corte_id = c.id) AS neto
+  FROM corte c`;
+
+function aCorteDto(f: FilaCorte): CorteDto {
+  return {
+    id: f.id as Uuid,
+    procesoId: f.proceso_id as Uuid,
+    fechaCorte: f.fecha_corte as FechaIso,
+    parametros: EsquemaParametrosCalculo.parse(JSON.parse(f.parametros_json)),
+    calculadoEn: f.creado_en as MarcaTiempo,
+    bienesConsiderados: f.considerados,
+    conDepreciacion: f.con_depreciacion,
+    exclusiones: f.exclusiones,
+    totalValorNetoLibros: comoCentavos(f.neto),
+  };
+}
+
+export function corteDto(ctx: ContextoIpc, id: string): CorteDto | null {
+  const f = ctx.sqlite.prepare(`${SELECT_CORTE} WHERE c.id = ?`).get(id) as FilaCorte | undefined;
+  return f === undefined ? null : aCorteDto(f);
+}
+
+export function exigirCorte(ctx: ContextoIpc, id: string): CorteDto {
+  const c = corteDto(ctx, id);
+  if (c === null) throw new ErrorValidacion('CORTE_INEXISTENTE', 'El corte no existe.', { campo: 'corteId' });
+  return c;
+}
+
+/** El cálculo del proceso, si ya se hizo. */
+export function corteActual(e: EntradaValidadaDe<'corte:actual'>, ctx: ContextoIpc): CorteDto | null {
+  const f = ctx.sqlite.prepare(`${SELECT_CORTE} WHERE c.proceso_id = ?`).get(e.procesoId) as FilaCorte | undefined;
+  return f === undefined ? null : aCorteDto(f);
+}
+
+export function cortePorId(e: EntradaValidadaDe<'corte:porId'>, ctx: ContextoIpc): CorteDto | null {
+  return corteDto(ctx, e.id);
+}
 
 const SELECT_FILAS = `
   SELECT b.id AS bien_id, b.codigo_institucional, b.descripcion_funcional,
@@ -29,8 +95,8 @@ const SELECT_FILAS = `
     JOIN clase_activo k ON k.id = b.clase_activo_id
     JOIN servicio v ON v.id = b.servicio_id
     LEFT JOIN hoja_vida h ON h.bien_id = b.id
-    LEFT JOIN calculo_obsolescencia o ON o.bien_id = b.id AND o.ejercicio_id = b.ejercicio_id
-    LEFT JOIN calculo_depreciacion d ON d.bien_id = b.id AND d.ejercicio_id = b.ejercicio_id`;
+    LEFT JOIN calculo_obsolescencia o ON o.bien_id = b.id AND o.corte_id = @corte
+    LEFT JOIN calculo_depreciacion d ON d.bien_id = b.id AND d.corte_id = @corte`;
 
 interface FilaCruda {
   bien_id: string;
@@ -86,17 +152,18 @@ function aDto(f: FilaCruda): FilaCalculoDto {
 }
 
 export function listarCalculo(e: EntradaValidadaDe<'calculo:listar'>, ctx: ContextoIpc): Pagina<FilaCalculoDto> {
-  const condiciones = [`b.ejercicio_id = ?`, `b.estado_registro <> 'DADO_DE_BAJA'`];
-  const params: unknown[] = [e.ejercicioId];
+  exigirCorte(ctx, e.corteId);
+  const condiciones = [`b.id IN (${BIENES_DEL_CORTE})`];
+  const params: Record<string, unknown> = { corte: e.corteId };
   if (e.semaforo !== undefined) {
-    condiciones.push('o.semaforo = ?');
-    params.push(e.semaforo);
+    condiciones.push('o.semaforo = @semaforo');
+    params['semaforo'] = e.semaforo;
   }
   if (e.soloCandidatosBaja) condiciones.push('o.candidato_baja = 1');
   const texto = e.texto?.trim() ?? '';
   if (texto !== '') {
-    condiciones.push('(b.codigo_institucional LIKE ? OR b.descripcion_funcional LIKE ?)');
-    params.push(`%${texto}%`, `%${texto}%`);
+    condiciones.push('(b.codigo_institucional LIKE @texto OR b.descripcion_funcional LIKE @texto)');
+    params['texto'] = `%${texto}%`;
   }
   const donde = condiciones.join(' AND ');
 
@@ -104,36 +171,51 @@ export function listarCalculo(e: EntradaValidadaDe<'calculo:listar'>, ctx: Conte
     ctx.sqlite
       .prepare(
         `SELECT COUNT(*) AS n FROM bien b
-           LEFT JOIN calculo_obsolescencia o ON o.bien_id = b.id AND o.ejercicio_id = b.ejercicio_id
+           LEFT JOIN calculo_obsolescencia o ON o.bien_id = b.id AND o.corte_id = @corte
           WHERE ${donde}`,
       )
-      .get(...params) as { n: number }
+      .get(params) as { n: number }
   ).n;
 
   // Los más obsoletos primero: son los que hay que mirar, y los nulos (no
   // calculables) van al final para que no tapen el trabajo pendiente de verdad.
   const filas = ctx.sqlite
-    .prepare(`${SELECT_FILAS} WHERE ${donde} ORDER BY o.indice_obsolescencia_x10k IS NULL, o.indice_obsolescencia_x10k DESC, b.codigo_institucional LIMIT ? OFFSET ?`)
-    .all(...params, e.tamano, e.pagina * e.tamano) as FilaCruda[];
+    .prepare(`${SELECT_FILAS} WHERE ${donde} ORDER BY o.indice_obsolescencia_x10k IS NULL, o.indice_obsolescencia_x10k DESC, b.codigo_institucional LIMIT @limite OFFSET @desde`)
+    .all({ ...params, limite: e.tamano, desde: e.pagina * e.tamano }) as FilaCruda[];
 
   return { filas: filas.map(aDto), total, pagina: e.pagina, tamano: e.tamano };
 }
 
+export function listarExclusiones(e: EntradaValidadaDe<'calculo:exclusiones'>, ctx: ContextoIpc): ExclusionCalculoDto[] {
+  exigirCorte(ctx, e.corteId);
+  return (
+    ctx.sqlite
+      .prepare(
+        `SELECT x.bien_id, b.codigo_institucional, x.ambito, x.estado, x.motivo
+           FROM calculo_exclusion x JOIN bien b ON b.id = x.bien_id
+          WHERE x.corte_id = ?
+          ORDER BY x.ambito, b.codigo_institucional`,
+      )
+      .all(e.corteId) as { bien_id: string; codigo_institucional: string; ambito: string; estado: string; motivo: string }[]
+  ).map((f) => ({
+    bienId: f.bien_id as Uuid,
+    codigoInstitucional: f.codigo_institucional,
+    ambito: f.ambito as AmbitoExclusion,
+    estado: f.estado as MotivoNoCalculado,
+    motivo: f.motivo,
+  }));
+}
+
 export function resumenCalculo(e: EntradaValidadaDe<'calculo:resumen'>, ctx: ContextoIpc): ResumenCalculoDto {
-  const ejercicio = ctx.sqlite.prepare('SELECT id, fecha_corte FROM ejercicio WHERE id = ?').get(e.ejercicioId) as { id: string; fecha_corte: string } | undefined;
-  if (ejercicio === undefined) throw new ErrorValidacion('EJERCICIO_INEXISTENTE', 'El ejercicio no existe.', { campo: 'ejercicioId' });
+  const corte = exigirCorte(ctx, e.corteId);
+  const id = e.corteId;
 
-  const vivos = (ctx.sqlite.prepare(`SELECT COUNT(*) AS n FROM bien WHERE ejercicio_id = ? AND estado_registro <> 'DADO_DE_BAJA'`).get(e.ejercicioId) as { n: number }).n;
+  const obs = ctx.sqlite.prepare('SELECT COUNT(*) AS n, COALESCE(SUM(candidato_baja), 0) AS candidatos FROM calculo_obsolescencia WHERE corte_id = ?').get(id) as {
+    n: number;
+    candidatos: number;
+  };
 
-  const obs = ctx.sqlite
-    .prepare(
-      `SELECT COUNT(*) AS n, SUM(candidato_baja) AS candidatos, MAX(calculado_en) AS calculado_en,
-              SUM(entrada_hash IS NULL) AS sin_hash
-         FROM calculo_obsolescencia WHERE ejercicio_id = ?`,
-    )
-    .get(e.ejercicioId) as { n: number; candidatos: number | null; calculado_en: string | null; sin_hash: number };
-
-  const porSemaforoFilas = ctx.sqlite.prepare('SELECT semaforo, COUNT(*) AS n FROM calculo_obsolescencia WHERE ejercicio_id = ? GROUP BY semaforo').all(e.ejercicioId) as {
+  const porSemaforoFilas = ctx.sqlite.prepare('SELECT semaforo, COUNT(*) AS n FROM calculo_obsolescencia WHERE corte_id = ? GROUP BY semaforo').all(id) as {
     semaforo: string;
     n: number;
   }[];
@@ -146,81 +228,54 @@ export function resumenCalculo(e: EntradaValidadaDe<'calculo:resumen'>, ctx: Con
               COALESCE(SUM(saldo_final_ajustado_cent), 0) AS saldo,
               COALESCE(SUM(depreciacion_acumulada_cent), 0) AS acumulada,
               COALESCE(SUM(deterioro_cent), 0) AS deterioro,
-              COALESCE(SUM(valor_neto_libros_cent), 0) AS neto,
-              MAX(metodo_conteo_aplicado) AS metodo, MAX(calculado_en) AS calculado_en
-         FROM calculo_depreciacion WHERE ejercicio_id = ?`,
+              COALESCE(SUM(valor_neto_libros_cent), 0) AS neto
+         FROM calculo_depreciacion WHERE corte_id = ?`,
     )
-    .get(e.ejercicioId) as { n: number; saldo: number; acumulada: number; deterioro: number; neto: number; metodo: string | null; calculado_en: string | null };
+    .get(id) as { n: number; saldo: number; acumulada: number; deterioro: number; neto: number };
 
-  // Un bien vivo sin fila de obsolescencia es uno que el motor no pudo evaluar;
-  // el detalle de POR QUÉ lo da `calculo:ejecutar` en sus exclusiones.
-  const noAplicaDepreciacion = (
-    ctx.sqlite
-      .prepare(
-        `SELECT COUNT(*) AS n FROM bien b JOIN clase_activo k ON k.id = b.clase_activo_id
-          WHERE b.ejercicio_id = ? AND b.estado_registro <> 'DADO_DE_BAJA'
-            AND (b.condicion_tenencia <> 'PROPIO' OR k.es_depreciable = 0)`,
-      )
-      .get(e.ejercicioId) as { n: number }
-  ).n;
-
-  const calculadoEn = obs.calculado_en ?? dep.calculado_en;
+  // A quién la depreciación no le corresponde (NO_APLICA) y a quién sí pero no se pudo calcular.
+  const excl = ctx.sqlite
+    .prepare(
+      `SELECT COALESCE(SUM(estado = 'NO_APLICA'), 0) AS no_aplica, COALESCE(SUM(estado <> 'NO_APLICA'), 0) AS sin_calculo
+         FROM calculo_exclusion WHERE corte_id = ? AND ambito = 'DEPRECIACION'`,
+    )
+    .get(id) as { no_aplica: number; sin_calculo: number };
 
   return {
-    ejercicioId: ejercicio.id as Uuid,
-    fechaCorte: ejercicio.fecha_corte as FechaIso,
-    calculadoEn: calculadoEn === null ? null : (calculadoEn as MarcaTiempo),
-    metodoConteoAplicado: dep.metodo === null ? null : (dep.metodo as MetodoConteoMeses),
-    bienesConsiderados: vivos,
+    corteId: corte.id,
+    fechaCorte: corte.fechaCorte,
+    calculadoEn: corte.calculadoEn,
+    metodoConteoAplicado: corte.parametros.metodo_conteo_meses,
+    bienesConsiderados: corte.bienesConsiderados,
     conObsolescencia: obs.n,
-    sinObsolescencia: vivos - obs.n,
+    sinObsolescencia: corte.bienesConsiderados - obs.n,
     conDepreciacion: dep.n,
-    noAplicaDepreciacion,
-    sinDepreciacion: Math.max(0, vivos - noAplicaDepreciacion - dep.n),
-    candidatosBaja: obs.candidatos ?? 0,
+    noAplicaDepreciacion: excl.no_aplica,
+    sinDepreciacion: excl.sin_calculo,
+    candidatosBaja: obs.candidatos,
     porSemaforo,
     totalSaldoAjustado: comoCentavos(dep.saldo),
     totalDepreciacionAcumulada: comoCentavos(dep.acumulada),
     totalDeterioro: comoCentavos(dep.deterioro),
     totalValorNetoLibros: comoCentavos(dep.neto),
-    desactualizado: calculadoEn !== null && hayEntradasCambiadas(ctx, e.ejercicioId),
+    inventarioCambio: inventarioCambioDesde(ctx, corte.procesoId, corte.calculadoEn),
   };
 }
 
 /**
- * Plan 2.6 §9 — el resultado queda desfasado si un bien se creó o se modificó
- * después de la última corrida. Se compara la marca de tiempo, no las huellas,
- * porque basta para avisar y no obliga a recorrer todo el inventario.
+ * El corte sigue siendo válido para su fecha, pero si el inventario cambió
+ * después —un barrido, un PL-05 corregido, una baja— sus cifras ya no lo
+ * reflejan. Se avisa; no se recalcula solo.
  */
-function hayEntradasCambiadas(ctx: ContextoIpc, ejercicioId: string): boolean {
+function inventarioCambioDesde(ctx: ContextoIpc, procesoId: string, calculadoEn: string): boolean {
   const fila = ctx.sqlite
     .prepare(
       `SELECT EXISTS (
-         SELECT 1 FROM bien b
-           LEFT JOIN hoja_vida h ON h.bien_id = b.id
-          WHERE b.ejercicio_id = ? AND b.estado_registro <> 'DADO_DE_BAJA'
-            AND MAX(b.actualizado_en, COALESCE(h.actualizado_en, b.actualizado_en)) >
-                COALESCE((SELECT MAX(calculado_en) FROM calculo_obsolescencia WHERE ejercicio_id = ?), '')
+         SELECT 1 FROM bien b LEFT JOIN hoja_vida h ON h.bien_id = b.id
+          WHERE b.proceso_id = ?
+            AND MAX(b.actualizado_en, COALESCE(h.actualizado_en, b.actualizado_en)) > ?
        ) AS cambiado`,
     )
-    .get(ejercicioId, ejercicioId) as { cambiado: number };
+    .get(procesoId, calculadoEn) as { cambiado: number };
   return fila.cambiado === 1;
-}
-
-export function marcarObsolescenciaFuncional(e: EntradaValidadaDe<'calculo:marcarObsolescenciaFuncional'>, ctx: ContextoIpc): FilaCalculoDto {
-  const cambios = calculoRepo.marcarObsolescenciaFuncional(ctx.sqlite, e.ejercicioId, e.bienId, e.funcional, e.justificacion);
-  if (cambios === 0) {
-    throw new ErrorValidacion('SIN_CALCULO', 'El bien todavía no tiene cálculo de obsolescencia; ejecute el cálculo antes de declarar obsolescencia funcional.', { campo: 'bienId' });
-  }
-  ctx.bitacora.registrar({
-    entidadAfectada: 'calculo_obsolescencia',
-    registroId: e.bienId,
-    accion: 'ACTUALIZAR',
-    campo: 'obsolescencia_funcional',
-    valorNuevo: e.funcional ? 'true' : 'false',
-    justificacion: e.justificacion,
-  });
-  const fila = ctx.sqlite.prepare(`${SELECT_FILAS} WHERE b.id = ? AND b.ejercicio_id = ?`).get(e.bienId, e.ejercicioId) as FilaCruda | undefined;
-  if (fila === undefined) throw new ErrorValidacion('BIEN_INEXISTENTE', 'El bien no existe en el ejercicio.', { campo: 'bienId' });
-  return aDto(fila);
 }

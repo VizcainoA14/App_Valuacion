@@ -1,5 +1,4 @@
-/** MOD-07/08 cálculo (pasos 05 y 06) — única superficie pública del módulo (regla D-6). */
+/** MOD-07/08 cálculo por cortes — única superficie pública del módulo (regla D-6). */
 export { registrarCanalesCalculo } from './ipc/handlers';
-export { calcularEjercicio } from './casos-uso/calcularEjercicio';
-export { resumenCalculo, listarCalculo } from './casos-uso/consultarCalculo';
-export { PREDICADOS_PASO_05, PREDICADOS_PASO_06 } from './validaciones/val-05-06';
+export { calcularCorte } from './casos-uso/calcularCorte';
+export { exigirCorte, resumenCalculo, listarCalculo } from './casos-uso/consultarCalculo';

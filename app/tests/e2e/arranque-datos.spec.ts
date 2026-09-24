@@ -22,7 +22,7 @@ test('con --user-data crea la base, la migra, respalda y registra el arranque', 
   try {
     const app = await lanzarApp({ argumentos: [`--user-data=${userData}`] });
     const ventana = await app.firstWindow();
-    await expect(ventana.getByRole('heading', { name: 'Entidades' })).toBeVisible();
+    await expect(ventana.getByRole('heading', { name: 'Procesos de valuación' })).toBeVisible();
     await app.close();
 
     expect(existsSync(join(userData, 'valuacion.db'))).toBe(true);

@@ -17,16 +17,14 @@ import type { ColumnaConCatalogo, DefinicionPlantillaEntregable } from './catalo
 import { PRIMERA_FILA_DATOS } from './catalogoPlantillas';
 
 /** Catálogos del hospital que se inyectan como listas desplegables. */
-export interface CatalogosEntidad {
+export interface CatalogosProceso {
   readonly clases: readonly string[];
   readonly sedes: readonly string[];
   readonly servicios: readonly string[];
-  readonly responsables: readonly string[];
 }
 
 export interface DatosMembrete {
   readonly razonSocial: string;
-  readonly fechaCorte: string | null;
 }
 
 /** Excel limita la lista literal a 255 caracteres; por encima se usa una hoja auxiliar. */
@@ -34,7 +32,7 @@ const LIMITE_LISTA_LITERAL = 250;
 const HOJA_CATALOGOS = 'CATALOGOS';
 const ULTIMA_FILA_VALIDACION = 2000;
 
-function valoresDe(catalogos: CatalogosEntidad, cual: ColumnaConCatalogo['catalogo']): readonly string[] {
+function valoresDe(catalogos: CatalogosProceso, cual: ColumnaConCatalogo['catalogo']): readonly string[] {
   return catalogos[cual];
 }
 
@@ -88,7 +86,8 @@ function inyectarLista(libro: ExcelJS.Workbook, def: ColumnaConCatalogo, valores
 function aplicarMembrete(libro: ExcelJS.Workbook, membrete: DatosMembrete): void {
   const sustituciones: Record<string, string> = {
     '{{ENTIDAD_RAZON_SOCIAL}}': membrete.razonSocial,
-    '{{FECHA_CORTE}}': membrete.fechaCorte ?? '',
+    // La fecha de corte se elige al calcular, no al descargar el formato (ADR-028).
+    '{{FECHA_CORTE}}': '',
   };
   for (const hoja of libro.worksheets) {
     for (let fila = 1; fila <= Math.min(hoja.rowCount, 6); fila++) {
@@ -116,7 +115,7 @@ export async function entregarPlantilla(
   plantilla: DefinicionPlantillaEntregable,
   rutaOrigen: string,
   rutaDestino: string,
-  catalogos: CatalogosEntidad,
+  catalogos: CatalogosProceso,
   membrete: DatosMembrete,
 ): Promise<ResultadoEntrega> {
   if (!existsSync(rutaOrigen)) {

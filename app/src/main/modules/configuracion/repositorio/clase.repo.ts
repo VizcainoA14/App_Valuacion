@@ -12,7 +12,7 @@ export type NuevaClase = typeof claseActivo.$inferInsert;
 function aDto(f: Fila): ClaseActivoDto {
   return {
     id: f.id as Uuid,
-    entidadId: f.entidadId as Uuid,
+    procesoId: f.procesoId as Uuid,
     codigo: f.codigo,
     nombre: f.nombre,
     subcuentaContable: f.subcuentaContable,
@@ -32,18 +32,18 @@ export function aniosAX10k(anios: number | null | undefined): number | null {
 }
 
 export const claseRepo = {
-  listar(db: BaseDatos, entidadId: string, incluirInactivas: boolean): ClaseActivoDto[] {
+  listar(db: BaseDatos, procesoId: string, incluirInactivas: boolean): ClaseActivoDto[] {
     const cond = incluirInactivas
-      ? eq(claseActivo.entidadId, entidadId)
-      : and(eq(claseActivo.entidadId, entidadId), eq(claseActivo.activo, true));
+      ? eq(claseActivo.procesoId, procesoId)
+      : and(eq(claseActivo.procesoId, procesoId), eq(claseActivo.activo, true));
     return db.select().from(claseActivo).where(cond).orderBy(claseActivo.codigo).all().map(aDto);
   },
   porId(db: BaseDatos, id: string): ClaseActivoDto | null {
     const f = db.select().from(claseActivo).where(eq(claseActivo.id, id)).get();
     return f === undefined ? null : aDto(f);
   },
-  porCodigo(db: BaseDatos, entidadId: string, codigo: string): ClaseActivoDto | null {
-    const f = db.select().from(claseActivo).where(and(eq(claseActivo.entidadId, entidadId), eq(claseActivo.codigo, codigo))).get();
+  porCodigo(db: BaseDatos, procesoId: string, codigo: string): ClaseActivoDto | null {
+    const f = db.select().from(claseActivo).where(and(eq(claseActivo.procesoId, procesoId), eq(claseActivo.codigo, codigo))).get();
     return f === undefined ? null : aDto(f);
   },
   insertar(db: BaseDatos, datos: NuevaClase): ClaseActivoDto {

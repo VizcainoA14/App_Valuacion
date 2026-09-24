@@ -10,7 +10,7 @@ export type NuevaSede = typeof sede.$inferInsert;
 function aDto(f: Fila): SedeDto {
   return {
     id: f.id as Uuid,
-    entidadId: f.entidadId as Uuid,
+    procesoId: f.procesoId as Uuid,
     codigo: f.codigo,
     nombre: f.nombre,
     direccion: f.direccion,
@@ -20,16 +20,16 @@ function aDto(f: Fila): SedeDto {
 }
 
 export const sedeRepo = {
-  listar(db: BaseDatos, entidadId: string, incluirInactivas: boolean): SedeDto[] {
-    const cond = incluirInactivas ? eq(sede.entidadId, entidadId) : and(eq(sede.entidadId, entidadId), eq(sede.activa, true));
+  listar(db: BaseDatos, procesoId: string, incluirInactivas: boolean): SedeDto[] {
+    const cond = incluirInactivas ? eq(sede.procesoId, procesoId) : and(eq(sede.procesoId, procesoId), eq(sede.activa, true));
     return db.select().from(sede).where(cond).orderBy(sede.codigo).all().map(aDto);
   },
   porId(db: BaseDatos, id: string): SedeDto | null {
     const f = db.select().from(sede).where(eq(sede.id, id)).get();
     return f === undefined ? null : aDto(f);
   },
-  porCodigo(db: BaseDatos, entidadId: string, codigo: string): SedeDto | null {
-    const f = db.select().from(sede).where(and(eq(sede.entidadId, entidadId), eq(sede.codigo, codigo))).get();
+  porCodigo(db: BaseDatos, procesoId: string, codigo: string): SedeDto | null {
+    const f = db.select().from(sede).where(and(eq(sede.procesoId, procesoId), eq(sede.codigo, codigo))).get();
     return f === undefined ? null : aDto(f);
   },
   insertar(db: BaseDatos, datos: NuevaSede): SedeDto {

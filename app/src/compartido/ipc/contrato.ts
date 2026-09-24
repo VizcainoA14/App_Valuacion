@@ -10,23 +10,22 @@
 import { z } from 'zod';
 import { zUuid, zFechaIso, zTexto, zTextoNulable, zCatalogo, zSinEntrada } from '../esquemas/basicos';
 import { NIVEL_COMPLEJIDAD, TIPO_SERVICIO } from '../enums/plataforma';
-import { ESTADO_ACTUAL, CONDICION_TENENCIA, ESTADO_REGISTRO, SEMAFORO, CAUSAL_BAJA, DESTINO_FINAL } from '../enums/catalogos';
-import { ESTADO_PROPUESTA_BAJA } from '../enums/estados';
+import { ESTADO_ACTUAL, CONDICION_TENENCIA, SEMAFORO, CAUSAL_BAJA } from '../enums/catalogos';
+import { ESTADO_BIEN } from '../enums/estados';
 import { EsquemaParametrosCalculo, type ParametrosCalculo } from '../parametros/parametrosCalculo';
 import type {
-  EntidadDto,
+  ProcesoDto,
   SedeDto,
   ServicioDto,
   ClaseActivoDto,
   ConvencionCodigoDto,
   AbreviaturaDto,
-  EjercicioDto,
   ResultadoValidaciones,
 } from '../dtos/configuracion';
 import type { InformeImportacion, ResultadoImportacion } from '../dtos/importacion';
-import type { BienDto, BienListadoDto, Cobertura, Pagina } from '../dtos/inventario';
-import type { FilaCalculoDto, ResumenCalculoDto, ResultadoEjecucionCalculoDto } from '../dtos/calculo';
-import type { CandidatoBajaDto, PropuestaBajaDto, ResumenBajasDto } from '../dtos/bajas';
+import type { BarridoDto, BienDto, BienListadoDto, Cobertura, Pagina } from '../dtos/inventario';
+import type { CorteDto, ExclusionCalculoDto, FilaCalculoDto, ResumenCalculoDto, ResultadoEjecucionCalculoDto } from '../dtos/calculo';
+import type { BajaDto, CandidatoBajaDto } from '../dtos/bajas';
 import type { PlantillaDto, ResultadoDescargaPlantilla } from '../dtos/plantillas';
 import type { DtoError } from '../errores';
 import { CANALES_PERMITIDOS, EVENTOS_PERMITIDOS, type Canal, type Evento } from './canales';
@@ -62,7 +61,12 @@ export interface EstadoAplicacion {
 // ── Esquemas reutilizados por varios canales y por los formularios (plan 2.5 §4) ──
 
 
-export const camposEntidad = {
+export const camposProceso = {
+  nombre: zTexto(150),
+  fechaCorte: zFechaIso,
+};
+
+export const camposHospital = {
   razonSocial: zTexto(200),
   nit: zTexto(20),
   municipio: zTexto(100),
@@ -70,8 +74,6 @@ export const camposEntidad = {
   nivelComplejidad: zCatalogo(NIVEL_COMPLEJIDAD),
   nombreGerente: zTexto(150),
   actoNombramientoGerente: zTextoNulable(200),
-  nombreContador: zTextoNulable(150),
-  tarjetaProfesionalContador: zTextoNulable(50),
   direccion: zTexto(200),
   telefono: zTextoNulable(50),
   email: zTextoNulable(150),
@@ -123,7 +125,7 @@ const zFiltrosBien = z.object({
   claseActivoId: zUuid.optional(),
   estadoActual: zCatalogo(ESTADO_ACTUAL).optional(),
   condicionTenencia: zCatalogo(CONDICION_TENENCIA).optional(),
-  estadoRegistro: zCatalogo(ESTADO_REGISTRO).optional(),
+  estadoRegistro: zCatalogo(ESTADO_BIEN).optional(),
   sinHojaVida: z.boolean().optional(),
 });
 
@@ -152,53 +154,42 @@ export const contrato = {
     muta: false,
   }),
 
-  // ── Paso 01 · entidad (RF-01-01, RF-01-03, RF-01-09) ──
-  'entidad:listar': definir({ entrada: zSinEntrada, salida: salida<EntidadDto[]>(), muta: false }),
-  'entidad:porId': definir({ entrada: z.object({ id: zUuid }), salida: salida<EntidadDto | null>(), muta: false }),
-  'entidad:crear': definir({
-    entrada: z.object({ ...camposEntidad, precargarSemillas: z.boolean().default(true) }),
-    salida: salida<EntidadDto>(),
+  // ── Configurar · entidad (RF-01-01, RF-01-03, RF-01-09) ──
+  'proceso:listar': definir({ entrada: zSinEntrada, salida: salida<ProcesoDto[]>(), muta: false }),
+  'proceso:porId': definir({ entrada: z.object({ id: zUuid }), salida: salida<ProcesoDto | null>(), muta: false }),
+  /** ADR-029: un proceso nace con su nombre, su fecha de corte y los datos del hospital. */
+  'proceso:crear': definir({
+    entrada: z.object({ ...camposProceso, ...camposHospital, precargarSemillas: z.boolean().default(true) }),
+    salida: salida<ProcesoDto>(),
     muta: true,
   }),
-  'entidad:actualizar': definir({
-    entrada: z.object({ id: zUuid, cambios: z.object(camposEntidad).partial(), justificacion: zTextoNulable(500) }),
-    salida: salida<EntidadDto>(),
+  /** Solo en curso. Cambiar la fecha de corte descarta el cálculo hecho. */
+  'proceso:actualizar': definir({
+    entrada: z.object({ id: zUuid, cambios: z.object({ ...camposProceso, ...camposHospital }).partial(), justificacion: zTextoNulable(500) }),
+    salida: salida<ProcesoDto>(),
     muta: true,
   }),
-  /**
-   * Solo mientras la valuación no haya empezado: en cuanto existe un ejercicio,
-   * la entidad tiene trabajo asociado y `ejercicio.entidad_id` es `restrict`.
-   */
-  'entidad:eliminar': definir({
+  /** Solo en curso: un proceso finalizado es evidencia de lo que se calculó. */
+  'proceso:eliminar': definir({
     entrada: z.object({ id: zUuid, justificacion: zTexto(500) }),
-    salida: salida<{ razonSocial: string }>(),
+    salida: salida<{ nombre: string }>(),
     muta: true,
   }),
-  'entidad:clonarParametrizacion': definir({
-    entrada: z.object({
-      origenId: zUuid,
-      destinoId: zUuid,
-      incluir: z
-        .object({
-          clases: z.boolean().default(true),
-          sedesYServicios: z.boolean().default(false),
-          parametros: z.boolean().default(true),
-          convencion: z.boolean().default(true),
-        })
-        .prefault({}),
-    }),
-    salida: salida<{ clases: number; sedes: number; servicios: number; parametros: number; abreviaturas: number }>(),
+  /** Deja el proceso de solo lectura. Exige que esté calculado. */
+  'proceso:finalizar': definir({
+    entrada: z.object({ id: zUuid }),
+    salida: salida<ProcesoDto>(),
     muta: true,
   }),
 
-  // ── Paso 01 · sedes y servicios ──
+  // ── Configurar · sedes y servicios ──
   'sede:listar': definir({
-    entrada: z.object({ entidadId: zUuid, incluirInactivas: z.boolean().default(false) }),
+    entrada: z.object({ procesoId: zUuid, incluirInactivas: z.boolean().default(false) }),
     salida: salida<SedeDto[]>(),
     muta: false,
   }),
   'sede:crear': definir({
-    entrada: z.object({ entidadId: zUuid, ...camposSede, activa: z.boolean().default(true) }),
+    entrada: z.object({ procesoId: zUuid, ...camposSede, activa: z.boolean().default(true) }),
     salida: salida<SedeDto>(),
     muta: true,
   }),
@@ -208,7 +199,7 @@ export const contrato = {
     muta: true,
   }),
   'servicio:listar': definir({
-    entrada: z.object({ entidadId: zUuid, incluirInactivos: z.boolean().default(false) }),
+    entrada: z.object({ procesoId: zUuid, incluirInactivos: z.boolean().default(false) }),
     salida: salida<ServicioDto[]>(),
     muta: false,
   }),
@@ -223,14 +214,14 @@ export const contrato = {
     muta: true,
   }),
 
-  // ── Paso 01 · clases de activo (RN-01-03) ──
+  // ── Configurar · clases de activo (RN-01-03) ──
   'clase:listar': definir({
-    entrada: z.object({ entidadId: zUuid, incluirInactivas: z.boolean().default(false) }),
+    entrada: z.object({ procesoId: zUuid, incluirInactivas: z.boolean().default(false) }),
     salida: salida<ClaseActivoDto[]>(),
     muta: false,
   }),
   'clase:crear': definir({
-    entrada: z.object({ entidadId: zUuid, ...camposClase, activo: z.boolean().default(true) }),
+    entrada: z.object({ procesoId: zUuid, ...camposClase, activo: z.boolean().default(true) }),
     salida: salida<ClaseActivoDto>(),
     muta: true,
   }),
@@ -240,32 +231,32 @@ export const contrato = {
     muta: true,
   }),
   'clase:precargarSugeridas': definir({
-    entrada: z.object({ entidadId: zUuid }),
+    entrada: z.object({ procesoId: zUuid }),
     salida: salida<{ creadas: number; omitidas: number }>(),
     muta: true,
   }),
 
-  // ── Paso 01 · parámetros de cálculo (RN-01-04, RN-01-05, RF-01-08) ──
+  // ── Configurar · parámetros de cálculo (RN-01-04, RN-01-05, RF-01-08) ──
   'parametros:obtener': definir({
-    entrada: z.object({ entidadId: zUuid }),
+    entrada: z.object({ procesoId: zUuid }),
     salida: salida<ParametrosCalculo>(),
     muta: false,
   }),
   'parametros:actualizar': definir({
-    entrada: z.object({ entidadId: zUuid, cambios: EsquemaParametrosCalculo.partial(), justificacion: zTextoNulable(500) }),
+    entrada: z.object({ procesoId: zUuid, cambios: EsquemaParametrosCalculo.partial(), justificacion: zTextoNulable(500) }),
     salida: salida<ParametrosCalculo>(),
     muta: true,
   }),
 
-  // ── Paso 01 · convención de codificación (RN-01-02, RF-01-04) ──
+  // ── Configurar · convención de codificación (RN-01-02, RF-01-04) ──
   'convencion:obtener': definir({
-    entrada: z.object({ entidadId: zUuid }),
+    entrada: z.object({ procesoId: zUuid }),
     salida: salida<ConvencionCodigoDto>(),
     muta: false,
   }),
   'convencion:guardar': definir({
     entrada: z.object({
-      entidadId: zUuid,
+      procesoId: zUuid,
       segmentos: z.array(zSegmentoCodigo).min(1).max(8),
       longitudConsecutivo: z.number().int().min(1).max(10),
     }),
@@ -282,53 +273,30 @@ export const contrato = {
     muta: false,
   }),
   'abreviatura:listar': definir({
-    entrada: z.object({ entidadId: zUuid }),
+    entrada: z.object({ procesoId: zUuid }),
     salida: salida<AbreviaturaDto[]>(),
     muta: false,
   }),
   'abreviatura:guardar': definir({
     entrada: z.object({
-      entidadId: zUuid,
+      procesoId: zUuid,
       abreviaturas: z.array(z.object({ abreviatura: zTexto(10), descripcion: zTexto(150) })).max(2000),
     }),
     salida: salida<AbreviaturaDto[]>(),
     muta: true,
   }),
 
-  // ── Paso 01 · ejercicio (RF-01-05, RN-01-01, RN-01-06) ──
-  'ejercicio:listar': definir({
-    entrada: z.object({ entidadId: zUuid }),
-    salida: salida<EjercicioDto[]>(),
-    muta: false,
-  }),
-  'ejercicio:porId': definir({ entrada: z.object({ id: zUuid }), salida: salida<EjercicioDto | null>(), muta: false }),
-  'ejercicio:crear': definir({
-    entrada: z.object({
-      entidadId: zUuid,
-      nombre: zTexto(150),
-      fechaCorte: zFechaIso,
-      contratoNumero: zTextoNulable(50),
-    }),
-    salida: salida<EjercicioDto>(),
-    muta: true,
-  }),
-  'ejercicio:cambiarFechaCorte': definir({
-    entrada: z.object({ id: zUuid, fechaCorte: zFechaIso, justificacion: zTexto(500) }),
-    salida: salida<EjercicioDto>(),
-    muta: true,
-  }),
-
-  // ── TR-01 · validaciones de cualquier paso (RF-01-06 y sucesivos) ──
+  // ── Revisión de la configuración: qué le falta a la entidad para calcular ──
   'validaciones:evaluar': definir({
-    entrada: z.object({ paso: z.number().int().min(1).max(11), entidadId: zUuid, ejercicioId: zUuid.nullish() }),
+    entrada: z.object({ procesoId: zUuid }),
     salida: salida<ResultadoValidaciones>(),
     muta: false,
   }),
 
-  // ── Paso 02 · inventario (TR-10: filtro y orden SIEMPRE en el main) ──
+  // ── Inventario vivo (ADR-028; TR-10: filtro y orden SIEMPRE en el main) ──
   'bien:listar': definir({
     entrada: z.object({
-      ejercicioId: zUuid,
+      procesoId: zUuid,
       filtros: zFiltrosBien.prefault({}),
       orden: z.object({ columna: zColumnaOrdenBien, ascendente: z.boolean() }).prefault({ columna: 'codigoInstitucional', ascendente: true }),
       pagina: z.number().int().min(0).default(0),
@@ -339,45 +307,66 @@ export const contrato = {
   }),
   'bien:porId': definir({ entrada: z.object({ id: zUuid }), salida: salida<BienDto | null>(), muta: false }),
   'bien:idsDelFiltro': definir({
-    entrada: z.object({ ejercicioId: zUuid, filtros: zFiltrosBien.prefault({}) }),
+    entrada: z.object({ procesoId: zUuid, filtros: zFiltrosBien.prefault({}) }),
     salida: salida<string[]>(),
     muta: false,
   }),
   'bien:cobertura': definir({
-    entrada: z.object({ entidadId: zUuid, ejercicioId: zUuid }),
+    entrada: z.object({ procesoId: zUuid }),
     salida: salida<Cobertura>(),
+    muta: false,
+  }),
+  /**
+   * RN-05-03: la obsolescencia funcional es juicio de una persona, no salida del
+   * motor. Es una propiedad del bien y pesa en todos los cortes que vengan.
+   */
+  'bien:marcarObsolescenciaFuncional': definir({
+    entrada: z.object({ bienId: zUuid, funcional: z.boolean(), justificacion: zTexto(500) }),
+    salida: salida<BienDto>(),
+    muta: true,
+  }),
+  'barrido:listar': definir({
+    entrada: z.object({ procesoId: zUuid }),
+    salida: salida<BarridoDto[]>(),
     muta: false,
   }),
 
   // ── TR-03 · plantillas que la aplicación entrega (ANEXO_A §6.1, ADR-026) ──
   'plantilla:listar': definir({ entrada: zSinEntrada, salida: salida<PlantillaDto[]>(), muta: false }),
   'plantilla:descargar': definir({
-    entrada: z.object({ codigo: zTexto(10), entidadId: zUuid.nullish(), ejercicioId: zUuid.nullish() }),
+    entrada: z.object({ codigo: zTexto(10), procesoId: zUuid.nullish() }),
     salida: salida<ResultadoDescargaPlantilla | null>(),
     muta: false,
   }),
   /** Entrega de una vez las plantillas que el hospital debe diligenciar. */
   'plantilla:descargarPaquete': definir({
-    entrada: z.object({ codigos: z.array(zTexto(10)).min(1).max(28), entidadId: zUuid.nullish(), ejercicioId: zUuid.nullish() }),
+    entrada: z.object({ codigos: z.array(zTexto(10)).min(1).max(28), procesoId: zUuid.nullish() }),
     salida: salida<{ carpeta: string; entregadas: ResultadoDescargaPlantilla[] } | null>(),
     muta: false,
   }),
 
-  // ── Pasos 05 y 06 · motor de cálculo (RF-05-01, RF-06-01) ──
-  /** Recalcula TODO el ejercicio: obsolescencia, depreciación y candidatos a baja. */
+  // ── Cálculo por cortes (ADR-028; RF-05-01, RF-06-01) ──
+  /** El cálculo del proceso: uno por proceso, a su fecha de corte (ADR-029). */
+  'corte:actual': definir({
+    entrada: z.object({ procesoId: zUuid }),
+    salida: salida<CorteDto | null>(),
+    muta: false,
+  }),
+  'corte:porId': definir({ entrada: z.object({ id: zUuid }), salida: salida<CorteDto | null>(), muta: false }),
+  /** Calcula todo el inventario del proceso a su fecha de corte; reemplaza el cálculo anterior. */
   'calculo:ejecutar': definir({
-    entrada: z.object({ entidadId: zUuid, ejercicioId: zUuid }),
+    entrada: z.object({ procesoId: zUuid }),
     salida: salida<ResultadoEjecucionCalculoDto>(),
     muta: true,
   }),
   'calculo:resumen': definir({
-    entrada: z.object({ ejercicioId: zUuid }),
+    entrada: z.object({ corteId: zUuid }),
     salida: salida<ResumenCalculoDto>(),
     muta: false,
   }),
   'calculo:listar': definir({
     entrada: z.object({
-      ejercicioId: zUuid,
+      corteId: zUuid,
       semaforo: zCatalogo(SEMAFORO).optional(),
       soloCandidatosBaja: z.boolean().default(false),
       texto: zTextoNulable(200).transform((v) => v ?? undefined),
@@ -387,91 +376,65 @@ export const contrato = {
     salida: salida<Pagina<FilaCalculoDto>>(),
     muta: false,
   }),
-  /** RN-05-03: la obsolescencia funcional la declara un especialista, no el motor. */
-  'calculo:marcarObsolescenciaFuncional': definir({
-    entrada: z.object({ ejercicioId: zUuid, bienId: zUuid, funcional: z.boolean(), justificacion: zTexto(500) }),
-    salida: salida<FilaCalculoDto>(),
-    muta: true,
+  /** Lo que quedó fuera del corte y por qué (nunca un cero). */
+  'calculo:exclusiones': definir({
+    entrada: z.object({ corteId: zUuid }),
+    salida: salida<ExclusionCalculoDto[]>(),
+    muta: false,
   }),
 
-  // ── Paso 09 · bajas (RF-09-01 … RF-09-04) ──
-  /** Bandeja de candidatos que alimenta el paso 05 (RF-09-01). */
+  // ── Bajas (ADR-028) ──
+  /** Los candidatos que el motor señaló en un corte, con su motivo. */
   'baja:candidatos': definir({
-    entrada: z.object({ ejercicioId: zUuid, incluirYaPropuestos: z.boolean().default(false) }),
+    entrada: z.object({ corteId: zUuid, incluirYaDadosDeBaja: z.boolean().default(false) }),
     salida: salida<CandidatoBajaDto[]>(),
     muta: false,
   }),
   'baja:listar': definir({
-    entrada: z.object({ ejercicioId: zUuid, estado: zCatalogo(ESTADO_PROPUESTA_BAJA).optional() }),
-    salida: salida<PropuestaBajaDto[]>(),
+    entrada: z.object({ procesoId: zUuid, incluirAnuladas: z.boolean().default(false) }),
+    salida: salida<BajaDto[]>(),
     muta: false,
   }),
-  'baja:resumen': definir({ entrada: z.object({ ejercicioId: zUuid }), salida: salida<ResumenBajasDto>(), muta: false }),
-  /** RN-09-06: la justificación es individual y obligatoria; no se admiten lotes. */
-  'baja:proponer': definir({
+  /**
+   * Registra una baja que el hospital ya decidió. La aplicación no la aprueba
+   * ni exige el acta; la justificación sí es individual (RN-09-06).
+   */
+  'baja:registrar': definir({
     entrada: z.object({
-      ejercicioId: zUuid,
       bienId: zUuid,
+      fecha: zFechaIso,
       causal: zCatalogo(CAUSAL_BAJA),
-      justificacionTecnica: zTexto(1000),
-      costoReparacionEstimado: z.number().int().min(0).nullish(),
-      valorReposicion: z.number().int().min(0).nullish(),
-      valorSalvamento: z.number().int().min(0).nullish(),
-      destinoFinalPropuesto: zCatalogo(DESTINO_FINAL).nullish(),
-      fechaPropuesta: zFechaIso,
+      justificacion: zTexto(1000),
+      referencia: zTextoNulable(200),
     }),
-    salida: salida<PropuestaBajaDto>(),
+    salida: salida<BajaDto>(),
     muta: true,
   }),
-  'baja:actualizar': definir({
-    entrada: z.object({
-      id: zUuid,
-      cambios: z.object({
-        causal: zCatalogo(CAUSAL_BAJA),
-        justificacionTecnica: zTexto(1000),
-        costoReparacionEstimado: z.number().int().min(0).nullable(),
-        valorReposicion: z.number().int().min(0).nullable(),
-        valorSalvamento: z.number().int().min(0).nullable(),
-        destinoFinalPropuesto: zCatalogo(DESTINO_FINAL).nullable(),
-      }).partial(),
-      justificacion: zTextoNulable(500),
-    }),
-    salida: salida<PropuestaBajaDto>(),
-    muta: true,
-  }),
-  /** RN-09-04: la app registra estados; la baja la aprueba el Comité. */
-  'baja:cambiarEstado': definir({
-    entrada: z.object({ id: zUuid, nuevoEstado: zCatalogo(ESTADO_PROPUESTA_BAJA), observacionComite: zTextoNulable(1000) }),
-    salida: salida<PropuestaBajaDto>(),
+  /** Deshace una baja registrada por error: el bien vuelve a ACTIVO. */
+  'baja:anular': definir({
+    entrada: z.object({ id: zUuid, motivo: zTexto(500) }),
+    salida: salida<BajaDto>(),
     muta: true,
   }),
 
-  /** Cierre del inventario: los bienes VALIDADOS pasan a ACTIVOS (ANEXO_B §6.2). */
-  'bien:activarValidados': definir({
-    entrada: z.object({ ejercicioId: zUuid }),
-    salida: salida<{ activados: number }>(),
-    muta: true,
-  }),
-
-  // ── Etapa 6 · informe de valuación (TR-05, RF-06-08) ──
+  // ── Informe de valuación (TR-05, RF-06-08): uno por corte ──
   'informe:previsualizar': definir({
-    entrada: z.object({ entidadId: zUuid, ejercicioId: zUuid }),
-    salida: salida<{ html: string; bienes: number; bajas: number }>(),
+    entrada: z.object({ corteId: zUuid }),
+    salida: salida<{ html: string; bienes: number; candidatos: number }>(),
     muta: false,
   }),
   /** El main abre el diálogo de guardado (P-1) y escribe el PDF. */
   'informe:generar': definir({
-    entrada: z.object({ entidadId: zUuid, ejercicioId: zUuid }),
+    entrada: z.object({ corteId: zUuid }),
     salida: salida<{ ruta: string; bytes: number } | null>(),
     muta: false,
   }),
 
-  // ── TR-02 · importación (RF-01-02 paso 01; RF-02-07 paso 02; RF-03-03 paso 03) ──
-  // `ejercicioId` solo lo exigen las plantillas que traen bienes (PL-03, PL-05).
+  // ── TR-02 · importación (RF-01-02 configuración; RF-02-07 barrido; RF-03-03 datos económicos) ──
   'importacion:previsualizar': definir({
-    // `entidadId` nulo solo lo admite PL-01, y significa "crear la entidad desde
+    // `procesoId` nulo solo lo admite PL-01, y significa "crear la entidad desde
     // la plantilla": es como llega un hospital que recibió el formato diligenciado.
-    entrada: z.object({ entidadId: zUuid.nullish(), plantilla: zPlantillaImportable, ejercicioId: zUuid.nullish() }),
+    entrada: z.object({ procesoId: zUuid.nullish(), plantilla: zPlantillaImportable }),
     salida: salida<InformeImportacion | null>(),
     muta: false,
   }),
@@ -482,9 +445,9 @@ export const contrato = {
   }),
 
   // ── T-B-11 · hospital de demostración ──
-  'demo:cargar': definir({ entrada: zSinEntrada, salida: salida<EntidadDto>(), muta: true }),
+  'demo:cargar': definir({ entrada: zSinEntrada, salida: salida<ProcesoDto>(), muta: true }),
   'demo:borrar': definir({
-    entrada: z.object({ entidadId: zUuid }),
+    entrada: z.object({ procesoId: zUuid }),
     salida: salida<{ eliminados: Record<string, number> }>(),
     muta: true,
   }),

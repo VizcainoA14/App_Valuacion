@@ -4,28 +4,62 @@
 > que retome el trabajo. Ver `.claude/config_sesion.json` § *protocolo_inicio*.
 
 **Última actualización:** 2026-09-24
-**Actualizado por:** Claude (reorganización de carpetas del repositorio)
-**Versión del plan:** 1.1 + **ADR-026** + **ADR-027** · **Versión de `/especificacion/teoria`:** 2.1
+**Actualizado por:** Claude (ADR-029: el proceso es lo principal)
+**Versión del plan:** 1.1 + **ADR-026** a **ADR-029** · **Versión de `/especificacion/teoria`:** 2.1
 
 ---
 
 ## 1. Resumen en una frase
 
-**El núcleo de [ADR-026](../plan/DECISIONES/adr_producto.md) está completo: las 6 etapas.**
-Un hospital configura la entidad, descarga sus formatos, importa el inventario, **calcula la
-depreciación y la obsolescencia**, propone y decide las bajas, y **se lleva su informe en PDF**. El
-motor reproduce las cifras de `ANEXO_C` al dígito y tarda 1,27 s en 20.000 bienes.
-**379 tests + 5 de rendimiento + 15 E2E**, también sobre el instalador. Lo que queda son las
-**extensiones**, que ya no son el camino principal.
-
-> **El orden de trabajo lo fija ADR-026**, no el grafo de hitos A→H. Ver
-> [`roadmap_progreso.md`](roadmap_progreso.md) § *Orden de trabajo vigente*.
+**Desde el 2026-09-24 rigen [ADR-028 y ADR-029](../plan/DECISIONES/adr_producto.md): lo principal es
+el proceso de valuación.** Lo primero que se ve es la lista de procesos: iniciar uno o continuar uno
+en curso. Cada proceso es independiente —sus datos del hospital, su catálogo, su inventario
+(importado de cero, por barridos), **un cálculo a su fecha de corte** (recalcular lo reemplaza), sus
+bajas y su **informe** sin firmas— y termina con **Finalizar**, que lo deja de solo lectura,
+garantizado por disparadores. **369 tests + 5 de rendimiento + 16 E2E en verde.** El motor no
+cambió: mismas cifras de `ANEXO_C`.
 
 ---
 
 ## 2. Última tarea realizada
 
-**Reorganización de carpetas del repositorio**, el 2026-09-24.
+**ADR-029 · el proceso es lo principal**, el 2026-09-24. Pedido del propietario: *«quita el tema de
+la entidad y quiero que lo principal sea un proceso […] los procesos deben ser independientes»*.
+Decidió: hospital dentro de cada proceso, botón «Finalizar», una fecha de corte por proceso,
+inventario de cero en cada proceso.
+
+| Qué | Dónde |
+|---|---|
+| **`entidad` → `proceso`** | `esquema/configuracion.ts`: nombre, `fecha_corte`, estado (`MAQUINA_PROCESO`: EN_CURSO → FINALIZADO), `finalizado_en` + datos del hospital. NIT ya no único. `proceso_id` en todas las tablas; canales `proceso:*` |
+| **Un cálculo por proceso** | `calcularCorte` calcula a la fecha del proceso y reemplaza el corte anterior (`ux_corte_proceso`). Cambiar la fecha descarta el cálculo. Canales `corte:actual`/`corte:porId`; se retiran `corte:listar`/`corte:eliminar` |
+| **Finalizar** | `proceso:finalizar` exige cálculo. `generar-triggers.ts` emite 50 disparadores que congelan todas las tablas de un proceso finalizado, y **falla la construcción** si una tabla no declara cómo llega a su proceso |
+| **Eliminar** | Solo en curso y sin inventario: `INT-03`/`RN-09-09` se conservan (se había retirado INT-03 a mitad del trabajo; se restauró al contrastarlo con `ANEXO_B`) |
+| **PL-01** | Inicia el proceso con su `fecha_corte_ejercicio` (obligatoria, no futura); sobre uno existente, una fecha distinta se advierte |
+| **Interfaz** | Inicio = lista de procesos (en curso / finalizados). `/proceso/:id` con **Resumen** (en qué va + Finalizar), banda de solo lectura, `Calcular`/`Recalcular` en una sola pantalla. No se recuerda un «proceso activo» |
+| **Retirado** | Selector de entidades, lista de cortes a varias fechas, clonación de parametrización (RF-01-09 → `FUERA_DE_ALCANCE (ADR-029)`) |
+| **Base** | 18 tablas, 68 disparadores (15 de reglas, 50 de finalización, 3 FTS). Migraciones regeneradas desde cero |
+| **Verificado** | `verificar:todo` (369 tests), `test:rendimiento` (5), **16 E2E** sobre `out/`, revisados con capturas. Los valores esperados del cálculo no cambiaron (`RG-01`) |
+
+**Antes**, el mismo día: **ADR-028 · desacople del proceso**. Pedido del propietario: *«que la persona haga el
+barrido de las cosas que hay, y el software calcule lo que tenga que calcular»*, sin depender de
+cosas externas. Decidió: ningún hospital tiene la app, se borran las extensiones, informe al final
+sin firmas.
+
+| Qué | Dónde |
+|---|---|
+| **Inventario vivo** | `bien.entidad_id` sustituye a `ejercicio_id`. Estado propio de la app (`ESTADO_BIEN`): ACTIVO, NO_ENCONTRADO, DADO_DE_BAJA |
+| **Barridos** | `importarPl03` crea lo nuevo, actualiza lo conocido y marca NO_ENCONTRADO lo que falta en los servicios que el archivo recorre. Tabla `barrido`, inmutable |
+| **Cortes** | `calcularCorte`: fecha elegida, copia de parámetros, resultados y **exclusiones con motivo** (`calculo_exclusion`). Inmutables por trigger; el que sobra se elimina entero |
+| **Bajas** | `baja:registrar` / `baja:anular` (causal, fecha, justificación individual, referencia opcional). Sin comité ni acta. Los motivos del candidato se guardan con el corte |
+| **Informe** | Uno por corte, sin firmas, con una nota que dice dónde va la firma (el acto de la entidad) |
+| **Retirado** | Ejercicio y su máquina, `responsable`, contador, `metodo_conteo_meses_confirmado`, propuestas de baja, deterioro, extensiones (26 tablas), 51 de las 58 validaciones, 23 de las 28 plantillas entregadas |
+| **Base** | 18 tablas, 16 disparadores. Migraciones **regeneradas desde cero** (`0000`–`0002`) |
+| **Interfaz** | Seis secciones sin ejercicio: Configurar · Formatos · Inventario · Calcular · Bajas · Informe |
+| **Verificado** | `verificar:todo` en verde (360 tests), `test:rendimiento` (5), **16 E2E** sobre `out/` y sobre el paquete (`npm run pack` + `PROBAR_PAQUETE=1`) |
+| **Recorrido con `datos_de_prueba`** | E2E nuevo `datosDePrueba.spec.ts`: PL-01 → catálogo → barrido → PL-05 → corte al 2025-12-31 → baja → PDF, revisado con capturas. Corrigió dos defectos de presentación: el aviso de importación desbordaba la sección, y el informe mostraba las horas en UTC |
+| **Defecto encontrado por la medición** | Actualizar 10.000 bienes en un barrido tardaba **17 s**: el trigger de FTS5 se disparaba aunque la descripción no cambiara. Ahora los campos indexados se escriben aparte y solo si cambian: **0,28 s** |
+
+**Antes**, el mismo día: **reorganización de carpetas del repositorio**.
 
 | Qué | Dónde |
 |---|---|
@@ -154,36 +188,25 @@ hito B completo (`T-B-01` … `T-B-11`).
 
 ## 3. Tarea actual en ejecución
 
-**Ninguna.** Checkpoint limpio y **cerrado sobre el paquete**: `verificar:todo` (379 tests; los 8 del catálogo retirado se fueron con él), `test:rendimiento` (5), 13 E2E
-en verde tanto sobre `out/` como sobre el paquete (`PROBAR_PAQUETE=1`), y `boundaries` en verde (218 módulos). Instalador reconstruido el 2026-09-04 a las 15:31.
+**Ninguna.** Checkpoint limpio tras ADR-029: `verificar:todo` (369 tests), `test:rendimiento` (5),
+**16 E2E** sobre `out/` **y sobre el instalador** (`npm run pack` + `PROBAR_PAQUETE=1`), y
+`boundaries` en verde (202 módulos). Instalador reconstruido el 2026-09-24.
 
-> **La CI corrió por primera vez el 2026-09-03 y encontró dos defectos**, ya corregidos: el detector
-> de unidades de red usaba el `path` del anfitrión en vez de la plataforma que recibe como parámetro
-> (falló en Linux), y el `checkout` de Windows convertía a CRLF la migración de triggers que se
-> compara byte a byte (se añadió `.gitattributes`). **Falta ver `pack` y los E2E en verde sobre
-> Linux:** en la segunda corrida llegó hasta los E2E y falló uno —la UNC dejaba de serlo al
-> resolverla con `path` de POSIX—, ya corregido. **Van tres defectos de la CI y los tres son el
-> mismo error de fondo: lógica que parecía determinista pero dependía del equipo.** Desconfíe de
-> cualquier uso de `node:path` sin plataforma explícita en el arranque.
+> **Una base de desarrollo anterior a ADR-029 no abre**: las migraciones se regeneraron desde cero.
+> Borrar la carpeta de datos de desarrollo (o usar `npm run dev:aislado`, que empieza en blanco).
+> Ningún hospital tenía datos.
 
 ---
 
 ## 4. Siguiente paso inmediato
 
-**El núcleo está cerrado.** No hay una etapa siguiente en el camino principal; lo que queda son
-mejoras y extensiones, y el orden lo decide el propietario. Por utilidad:
+1. **Commit** de ADR-028 y ADR-029 (todo está en el árbol de trabajo; el índice conserva lo que el
+   propietario había agregado antes, no se tocó).
+2. **`T-C-03`** — ficha editable del bien. Hoy corregir un dato exige un barrido o un PL-05 nuevos.
+3. Revisar con el propietario si `ESTADO_REGISTRO` (ANEXO_B §6.2) y las 23 plantillas que la app ya
+   no entrega deben anotarse en `CORRECCIONES.md` o basta con ADR-028 (hoy: basta con el ADR).
 
-1. **`T-C-03`** — ficha editable del bien. Hoy, corregir un dato exige arreglar el Excel y reimportar.
-   Es el fleco del núcleo y lo más útil de lo que queda.
-2. **Comité y resoluciones** (`T-F-03` … `T-F-09`) — desbloquean el final del paso 09: hoy una baja
-   llega hasta RESOLUCION_EMITIDA y no puede ejecutarse porque INT-07 exige el acta, que es correcto.
-3. **Conciliación contable** (`T-D-08`, `T-D-09`) — activa `VAL-06-07` y el cuadre en tres niveles.
-4. **Valuación de muebles e inmuebles** (hito E), **entrega contractual y cierre** (paso 11).
-
-Fleco del propietario: el primer **push** (`T-A-08`) para ver la CI en verde.
-
-Flecos del propietario: primer **push** (`T-A-08`); confirmar **CT-16**, **CT-17**, **CT-18** y
-**CT-19** cuando convenga.
+Flecos del propietario: primer **push** (`T-A-08`) para ver la CI en verde.
 
 ---
 
@@ -215,8 +238,11 @@ Flecos del propietario: primer **push** (`T-A-08`); confirmar **CT-16**, **CT-17
    ESLint bloquea `costoCent * 2`. Los parámetros monetarios de configuración (umbrales) son números
    en pesos: son configuración, no importes contables.
 3. **El motor es puro** y tres barreras lo garantizan (tsc, ESLint, dependency-cruiser).
-4. **La base defiende sola sus reglas** (119 triggers generados por `npm run db:triggers`; un test
-   exige que la migración 0002 coincida con el generador).
+4. **La base defiende sola sus reglas** (65 triggers generados por `npm run db:triggers`; un test
+   exige que la migración 0002 coincida con el generador). Lo calculado —corte, barrido, bitácora—
+   no admite UPDATE (ADR-028), y un proceso FINALIZADO no admite escritura en ninguna tabla
+   (ADR-029). **Una tabla nueva** debe tener `proceso_id` o una entrada en `INDIRECTAS` del
+   generador; si no, `db:triggers` falla a propósito.
 5. **Un canal IPC nuevo** = `canales.ts` + `contrato.ts` + `registro.registrar(...)` en el módulo.
    Los que mutan son síncronos (transacción) y escriben bitácora con `ctx.bitacora`. El renderer
    usa `useCanal` / `useMutacion` (`renderer/ipc/consultas.ts`) declarando qué claves invalida.
@@ -238,23 +264,26 @@ Flecos del propietario: primer **push** (`T-A-08`); confirmar **CT-16**, **CT-17
     instalada abierta, `npm run dev` ni arranca: comparte también el bloqueo de instancia única.
 9. Puerta de calidad: `npm run verificar:todo`; E2E: `npx electron-vite build && npx playwright test`;
    **al cerrar un hito**, además `npx electron-builder --dir && PROBAR_PAQUETE=1 npx playwright test`.
-10. **Una validación nueva** = entrada en `compartido/reglas/validaciones.ts` + predicado en el
-    `val-NN.ts` de su módulo. El motor no puede importar módulos de dominio (ciclo): los predicados
-    se inyectan desde `ipc/registrarHandlers.ts`.
+10. **Una validación nueva** = entrada en `compartido/reglas/validaciones.ts` + predicado en
+    `configuracion/validaciones/val-01.ts`. Desde ADR-028 solo se revisa la configuración; la calidad
+    del inventario la vigilan el importador y las exclusiones del cálculo.
 11. **Un listado nuevo** usa `<TablaDatos>` con un canal paginado que filtre y ordene **en el main**;
     nunca traer todo al renderer. Las mediciones van en `*.perf.test.ts` (`npm run test:rendimiento`),
     nunca mezcladas con la suite en paralelo.
 12. Si el usuario reporta "no muestra nada", mirar `userData/logs/app-*.log`: el límite de error del
     renderer registra ahí toda excepción con su pila.
-13. **El orden de trabajo lo fija ADR-026**, no el grafo de hitos. Antes de tomar una tarea, mirar la
-    sección *Orden de trabajo vigente* del roadmap: lo que no está en el núcleo va después.
+13. **El alcance lo fijan ADR-028 y ADR-029.** Las extensiones de ADR-026 se retiraron; antes de
+    tomar una tarea de los hitos D-H, comprobar en el roadmap que no esté omitida. **Todo cuelga de
+    un proceso** y el proceso es el de la ruta (`/proceso/:procesoId/...`); una pantalla que
+    modifica algo consulta `useSoloLectura` para no ofrecerlo en un proceso finalizado.
 14. **Una plantilla nueva** se declara en `documental/excel/catalogoPlantillas.ts` (dónde está, qué
     columna recibe qué catálogo, en qué etapa se usa). El archivo real va en
-    `especificacion/plantillas/` y viaja al instalador por `extraResources`.
+    `especificacion/plantillas/` y viaja al instalador por `extraResources` (que lista los archivos
+    uno por uno desde ADR-028).
 15. **El motor no se toca sin sus pruebas.** Toda fórmula vive en `compartido/motor`; los casos de
     `compartido/motor/calculo.test.ts` salen de `ANEXO_C` y **ningún valor esperado se cambia sin una
-    entrada en la bitácora que lo justifique** (`RG-01`). El caso de uso `calcularEjercicio` no
-    contiene aritmética: lee, llama al motor y persiste.
+    entrada en la bitácora que lo justifique** (`RG-01`). El caso de uso `calcularCorte` no
+    contiene aritmética: lee la fecha y los parámetros del proceso, llama al motor y reemplaza el corte.
 16. **Un resultado que no se pudo calcular nunca es un cero.** El motor devuelve `NO_APLICA`,
     `NO_CALCULABLE` o `ERROR_DATOS` con su motivo, y la interfaz los muestra por separado: significan
     cosas distintas para quien tiene que arreglarlos.
@@ -276,7 +305,7 @@ Flecos del propietario: primer **push** (`T-A-08`); confirmar **CT-16**, **CT-17
 | 3 · Stack | ✅ | ✅ | Congelado; librerías de interfaz añadidas con versión exacta |
 | 4 · Inicialización | ✅ | ✅ | |
 | 5 · Implementación | ✅ | 🟡 | **Núcleo ADR-026: 6 de 6 etapas ✅** · 34/64 tareas |
-| 6 · Testing | ✅ | 🟡 | 386 unit/integración + 5 de rendimiento + 15 E2E (también sobre el paquete) |
+| 6 · Testing | ✅ | 🟡 | 369 unit/integración + 5 de rendimiento + 16 E2E |
 | 7 · Seguridad | ✅ | 🟡 | CSP, sandbox, lista blanca IPC, P-1 (el main abre los diálogos), triggers |
 | 8 · Build | ✅ | 🟡 | Instalador regenerado con la interfaz nueva; firma pendiente (hito H) |
 | 9 · Validación | ✅ | ❌ | — |

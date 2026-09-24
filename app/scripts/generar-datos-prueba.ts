@@ -320,15 +320,15 @@ const BIENES_CON_PROBLEMAS: readonly Fila[] = [
   ['HSA01SIND006', '166002094', null, 'EQUIPO MEDICO CIENTIFICO', 'GENERICA', 'X', 'SN-X7', '01', 'URGENCIAS', 1, 'BUENO', 'PROPIO', 'JEFE DE ENFERMERIA', FECHA_TOMA, 'TECNICO 1', null, 'NO'],
   // 9. Serie repetida: ADVERTENCIA, no error (RN-02-05). Entra igual.
   ['HSA01SERI007', '166002093', 'EQUIPO CON SERIE REPETIDA', 'EQUIPO MEDICO CIENTIFICO', 'GENERICA', 'X', 'SN-166002001', '01', 'URGENCIAS', 1, 'BUENO', 'PROPIO', 'JEFE DE ENFERMERIA', FECHA_TOMA, 'TECNICO 1', null, 'NO'],
-  // 10. Toma posterior a la fecha de corte: ADVERTENCIA. Entra igual.
-  ['HSA01TARD008', '166002092', 'EQUIPO CONTADO DESPUES DEL CORTE', 'EQUIPO MEDICO CIENTIFICO', 'GENERICA', 'X', 'SN-X9', '01', 'URGENCIAS', 1, 'BUENO', 'PROPIO', 'JEFE DE ENFERMERIA', '2026-02-14', 'TECNICO 1', null, 'NO'],
+  // 10. Toma con fecha futura (error de digitación): ADVERTENCIA. Entra igual.
+  ['HSA01TARD008', '166002092', 'EQUIPO CON TOMA EN EL FUTURO', 'EQUIPO MEDICO CIENTIFICO', 'GENERICA', 'X', 'SN-X9', '01', 'URGENCIAS', 1, 'BUENO', 'PROPIO', 'JEFE DE ENFERMERIA', '2030-02-14', 'TECNICO 1', null, 'NO'],
 ];
 
 const HOJAS_VIDA_CON_PROBLEMAS: readonly Fila[] = [
   // 1. Código que no está en el inventario (hay que importar PL-03 primero).
   ['HSA01NOEXISTE', 'MOVIL', null, 'GENERICA', 'COLOMBIA', 'X', 'OPERATIVO', 'COMPRA', '2020-01-15', 'FACTURA', 'FV-1', 'PROVEEDOR', 4000000, 0, 'RECURSOS PROPIOS', null, null, null],
-  // 2. Adquisición posterior a la fecha de corte (VAL-03-02, bloqueante).
-  ['HSA01MON0001', 'MOVIL', null, 'MINDRAY', 'CHINA', 'X', 'OPERATIVO', 'COMPRA', '2026-03-01', 'FACTURA', 'FV-2', 'PROVEEDOR', 15800000, 0, 'RECURSOS PROPIOS', null, null, null],
+  // 2. Adquisición con fecha futura (VAL-03-02, bloqueante).
+  ['HSA01MON0001', 'MOVIL', null, 'MINDRAY', 'CHINA', 'X', 'OPERATIVO', 'COMPRA', '2030-03-01', 'FACTURA', 'FV-2', 'PROVEEDOR', 15800000, 0, 'RECURSOS PROPIOS', null, null, null],
   // 3. Costo en cero sin ser donación: se trata como dato faltante (RN-03-02).
   ['HSA01DES0002', 'MOVIL', null, 'PHILIPS', 'ESTADOS UNIDOS', 'X', 'OPERATIVO', 'COMPRA', '2021-08-30', 'FACTURA', 'FV-3', 'PROVEEDOR', 0, 0, 'RECURSOS PROPIOS', null, null, null],
   // 4. Sobrescribe la vida útil técnica sin justificarlo (RN-03-06).
@@ -390,51 +390,49 @@ function generarLeeme(): void {
 | NIT | ${HOSPITAL.nit} |
 | Municipio | ${HOSPITAL.municipio}, ${HOSPITAL.departamento} |
 | Nivel de complejidad | ${HOSPITAL.nivel} |
-| Fecha de corte | ${HOSPITAL.fechaCorte} |
+| Fecha de corte (en PL-01) | ${HOSPITAL.fechaCorte} |
 | Bienes | ${BIENES.length} en 2 sedes y 8 servicios |
 
 > **¿Va a entregar los formatos a alguien para que los llene?** Léase primero
-> [INSTRUCTIVO_DILIGENCIAMIENTO.md](INSTRUCTIVO_DILIGENCIAMIENTO.md): dice **cuáles
-> de las 28 plantillas hay que llenar hoy** (son 5), columna por columna, con los
-> valores admitidos y los errores que más se cometen.
+> [INSTRUCTIVO_DILIGENCIAMIENTO.md](INSTRUCTIVO_DILIGENCIAMIENTO.md): explica las
+> 5 plantillas columna por columna, con los valores admitidos y los errores que más
+> se cometen.
 
 ---
 
 ## Cómo usarlo
 
-### 1. Cree la entidad y el ejercicio (etapa 1)
+### 1. Inicie el proceso (Configurar)
 
-En la aplicación: **Nueva entidad → Crear desde PL-01**, y elija
-\`01_caso_limpio/PL-01_parametros_entidad.xlsx\`. La entidad nace del formato con
-razón social, NIT, gerente y los parámetros de cálculo, sin teclear nada. Verá la
-previsualización antes de que se cree.
+Lo primero que muestra la aplicación son los **procesos de valuación**. Pulse
+**Iniciar un proceso nuevo → Crear desde PL-01**, y elija
+\`01_caso_limpio/PL-01_parametros_entidad.xlsx\`. El proceso nace del formato con
+razón social, NIT, gerente, **fecha de corte** y parámetros de cálculo, sin teclear
+nada. Verá la previsualización antes de que se cree.
 
-(También puede teclear los datos a mano en el mismo asistente, y más tarde
-importar el PL-01 desde *Entidad* para actualizarlos.)
+(También puede teclear los datos a mano en el mismo asistente —nombre del proceso,
+fecha de corte y datos del hospital—, y más tarde importar el PL-01 desde
+*Configurar → Proceso y hospital* para actualizarlos.)
 
-Después, en el paso 01:
+Después, en **Configurar**:
 
 1. **Clases de activo** → importar \`PL-02_clases_vida_util.xlsx\`.
 2. **Sedes y servicios** → importar \`PL-02b_sedes_servicios.xlsx\`.
-3. **Parámetros** → marcar **"método de conteo confirmado por acta"**. Sin eso la
-   aplicación se niega a calcular, y hace bien: es \`VAL-01-07\`. El acta no se
-   hereda de un Excel.
-4. **Ejercicio** → crearlo con fecha de corte **${HOSPITAL.fechaCorte}**.
 
-> Al importar PL-01 verá una advertencia sobre \`fecha_corte_ejercicio\`: la fecha
-> de corte se fija al crear el ejercicio, no desde la plantilla. Es correcto.
+> Cada proceso es independiente: si inicia otro con el mismo PL-01, tendrá que
+> cargarle su propio catálogo e inventario.
 
-### 2. Importe el inventario (etapa 3)
+### 2. Cargue el inventario (Inventario)
 
-En **3. Inventario → Importar**:
+En **Inventario → Cargar**:
 
-1. \`PL-03_toma_inventario_fisico.xlsx\` → ${BIENES.length} bienes.
+1. \`PL-03_toma_inventario_fisico.xlsx\` → el primer barrido: ${BIENES.length} bienes.
 2. \`PL-05_hoja_de_vida.xlsx\` → datos económicos, mantenimientos y los avalúos
    de reconocimiento inicial.
 
-### 3. Calcule (etapa 4)
+### 3. Calcule (Calcular)
 
-**4. Calcular → Calcular.** Debería ver:
+Pulse **Calcular ${BIENES.length} bienes al ${HOSPITAL.fechaCorte.split('-').reverse().join('/')}**: la fecha es la del proceso. Debería ver:
 
 - Los cuatro colores del semáforo poblados.
 - Varios **candidatos a baja**: los que superaron su vida útil y los que están en
@@ -442,10 +440,13 @@ En **3. Inventario → Importar**:
 - En *"Qué quedó fuera del cálculo"*: el **terreno** (no depreciable) y el
   **ventilador en comodato** (no entra al patrimonio, \`RN-02-04\`).
 
-### 4. Bajas e informe (etapas 5 y 6)
+Si corrige algo, **Recalcular** reemplaza el cálculo: hay uno solo por proceso.
 
-Cierre el inventario, proponga la baja de algún candidato con una justificación
-individual, recorra la decisión del Comité y genere el PDF.
+### 4. Bajas, informe y finalizar
+
+En **Bajas**, registre la baja de algún candidato con una justificación individual.
+En **Informe**, guárdelo en PDF. Por último, en **Resumen**, pulse **Finalizar
+proceso**: queda de solo lectura, y su informe se puede volver a sacar cuando quiera.
 
 ---
 
@@ -456,17 +457,17 @@ individual, recorra la decisión del Comité y genere el PDF.
 | Bienes de 1998 a 2024 | todo el inventario | Que el semáforo muestre los cuatro colores |
 | \`HSA01CAH0009\` inservible de 2008 | Hospitalización | Candidato a baja claro |
 | \`HSA01AGI0021\` y \`HSA01ESTE034\` | Laboratorio y Mantenimiento | Correctivo **fallido** registrado: candidatos por ese criterio |
-| \`HSA01MIC0018\` y \`HSA01UPS0032\` | sin fecha ni costo | Entran **INCOMPLETOS**; se resuelven con la hoja \`SIN_SOPORTE\` (\`RN-03-04\`) |
+| \`HSA01MIC0018\` y \`HSA01UPS0032\` | sin fecha ni costo | Se resuelven con la hoja \`SIN_SOPORTE\` (\`RN-03-04\`) |
 | \`HSA01VEN0037\` en comodato | Urgencias | No se deprecia: no es de la entidad (\`RN-02-04\`) |
 | \`HSA01TER0041\` terreno | Administración | Clase no depreciable: aparece como **NO APLICA**, no como cero |
-| 7 mantenimientos | \`PL-05\` | Alimentan \`VAL-03-05\` y el criterio de baja |
+| 7 mantenimientos | \`PL-05\` | Alimentan el criterio de baja por correctivo fallido |
 
 ---
 
 ## Qué trae el caso con problemas
 
-Sirve para ver **cómo informa la aplicación**, fila por fila. Impórtelo sobre una
-entidad que ya tenga el catálogo del caso limpio.
+Sirve para ver **cómo informa la aplicación**, fila por fila. Impórtelo sobre un
+proceso que ya tenga el catálogo del caso limpio.
 
 ### \`PL-03\` — 10 filas
 
@@ -481,7 +482,7 @@ entidad que ya tenga el catálogo del caso limpio.
 | 7 | Estado físico inventado | **Error** · lista los valores admitidos |
 | 8 | Sin descripción funcional | **Error** · campo obligatorio vacío |
 | 9 | Serie repetida | **Advertencia** · entra igual (\`RN-02-05\`) |
-| 10 | Contado después del corte | **Advertencia** · entra igual |
+| 10 | Toma con fecha futura | **Advertencia** · entra igual |
 
 Resultado esperado: **3 filas válidas, 7 con error**. La aplicación no importa
 nada hasta que usted confirme explícitamente que quiere entrar solo las válidas.
@@ -491,7 +492,7 @@ nada hasta que usted confirme explícitamente que quiere entrar solo las válida
 | # | Defecto | Qué debe pasar |
 |:-:|---|---|
 | 1 | Código que no está en el inventario | **Error** · dice que importe PL-03 antes |
-| 2 | Adquisición posterior al corte | **Error** · \`VAL-03-02\` |
+| 2 | Adquisición con fecha futura | **Error** · \`VAL-03-02\` |
 | 3 | Costo en cero sin ser donación | **Advertencia** · se trata como dato faltante (\`RN-03-02\`) |
 | 4 | Vida útil sobrescrita sin justificación | **Error** · \`RN-03-06\` |
 | 5 | Estado operativo fuera del catálogo | **Error** · lista los admitidos |

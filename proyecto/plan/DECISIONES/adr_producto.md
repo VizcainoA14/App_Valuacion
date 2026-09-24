@@ -182,3 +182,188 @@ no existe en el producto. Quien lea el esquema debe saber por qué.
 
 Cuando se construya la extensión del Comité y las resoluciones (pasos 09-10), que sí exige actas
 firmadas por varias personas distintas del Gerente. Entonces se abre un ADR nuevo.
+
+---
+
+## ADR-028 · El proceso se desacopla: inventario vivo, cálculo por cortes y sin trámites externos
+
+**Fecha:** 2026-09-24 · **Estado:** Aceptada · **Decidido por:** el propietario del proyecto
+**Sustituye a:** el ejercicio de valuación como unidad de trabajo (ADR-026 §núcleo, ADR-017 en su
+objeto, ADR-027 en el bloque de firmas). **Retira:** las extensiones de ADR-026.
+
+### Contexto
+
+El propietario fija el uso real de la aplicación, en sus palabras:
+
+> «darle esta app a la persona del hospital que maneje esto, y que pueda hacer el proceso cuando
+> desee […] hay cosas externas que no quiero que el software esten determinadas, yo solo quiero
+> que la persona haga el barrido de las cosas que hay, y el software calcule lo que tenga que
+> calcular».
+
+Y decide tres cosas concretas: **ningún hospital tiene todavía la aplicación**, **las extensiones
+se borran** y **el informe se genera al final, sin firmas**.
+
+El modelo vigente no encajaba con eso. Todo colgaba de un **ejercicio**: un expediente con siete
+estados (ABIERTO → … → CERRADO), un paso actual de 1 a 11, número de contrato y un responsable que
+«firmaba el acta de parametrización». Los bienes pertenecían al ejercicio, así que **valorar otra vez
+obligaba a abrir uno nuevo y reimportar el inventario desde cero**. Y varias cosas externas
+bloqueaban el trabajo: el cálculo se negaba a correr sin un acta del contador (`VAL-01-07`), una baja
+no podía ejecutarse sin el acta del Comité (`INT-07`), y 58 validaciones decidían si se podía pasar
+de un paso al siguiente.
+
+### Alternativas
+
+| Opción | Veredicto |
+|---|---|
+| **Conservar el ejercicio y solo quitarle los bloqueos** | **Descartado.** Deja el defecto de fondo: el inventario sigue atado a un expediente y cada valuación empieza de cero |
+| **Ejercicios independientes y desechables** | **Descartado.** Resuelve los bloqueos pero no la continuidad: el hospital vuelve a importar todo cada vez |
+| **Inventario vivo de la entidad + cortes de cálculo** | **Elegido** |
+
+### Decisión
+
+1. **El inventario es de la entidad, no de un ejercicio.** `bien.entidad_id` sustituye a
+   `bien.ejercicio_id`; código y placa son únicos dentro de la entidad.
+2. **Cada importación de `PL-03` es un barrido** (tabla `barrido`, inmutable). Un barrido agrega
+   los bienes nuevos, **actualiza** los que ya existían (mismo código institucional) y marca como
+   `NO_ENCONTRADO` los que estaban registrados en un servicio que el archivo **sí** recorre pero no
+   aparecen en él. Los servicios que el archivo no menciona no se tocan: un barrido parcial es
+   legítimo.
+3. **El estado del bien se reduce a tres**, en un catálogo propio de la aplicación (`ESTADO_BIEN`):
+   `ACTIVO`, `NO_ENCONTRADO`, `DADO_DE_BAJA`. `ESTADO_REGISTRO` de `ANEXO_B` §6.2 se conserva
+   declarado como reflejo literal de la teoría, sin uso.
+4. **El cálculo se hace por cortes** (tabla `corte`). El hospital elige una fecha y calcula; cada
+   corrida guarda una copia de los parámetros vigentes (RN-01-01), sus resultados y **sus
+   exclusiones con motivo** (tabla `calculo_exclusion`, regla 11). Ningún corte pisa a otro y
+   ninguno se modifica —un disparador lo impide—; el que sobra se elimina entero.
+5. **Las bajas se registran, no se tramitan** (tabla `baja`). El cálculo señala candidatos con su
+   motivo, que queda guardado con el corte. El hospital registra la baja que decidió por su propio
+   trámite, con causal, fecha, justificación individual (RN-09-06) y, si quiere, el número del
+   documento que la aprobó. Una baja equivocada **se anula** con motivo; no se borra.
+6. **El informe es de un corte y no lleva firmas.** Dice lo que ese corte calculó, así que
+   regenerarlo meses después da el mismo documento.
+7. **Se retiran** los estados del ejercicio, el paso actual, el contrato, la confirmación por acta
+   del método de conteo (`metodo_conteo_meses_confirmado`), la tabla `responsable` y los campos del
+   contador, las propuestas de baja con su máquina de estados, el reconocimiento de deterioro y las
+   extensiones completas: conciliación (paso 04), valuación de muebles (07), inmuebles (08), Comité
+   y actos administrativos (10) y entrega y cierre (11). Del esquema salen 26 de sus 44 tablas.
+8. **La revisión de validaciones queda en la configuración**: las cinco bloqueantes y dos
+   advertencias de `VAL-01-*` que no dependen de un ejercicio ni de un documento externo. La calidad
+   del inventario la vigilan el importador, fila por fila, y el cálculo, que dice qué dejó fuera.
+9. **La aplicación entrega solo las cinco plantillas** que se diligencian e importan (`PL-01`,
+   `PL-02`, `PL-02b`, `PL-03`, `PL-05`). Las otras 23 siguen en `especificacion/plantillas` como
+   referencia.
+10. **Las migraciones se regeneran desde cero** (`0000`–`0002`): ningún hospital tiene datos, y
+    reconstruir 26 tablas por migración sería código que nadie va a ejecutar.
+
+### Relación con `/especificacion/teoria`
+
+**No se modifica.** Sigue siendo la descripción completa del proceso de saneamiento y la fuente de
+las fórmulas: `ANEXO_C` manda en todo lo que el motor calcula, y **el motor no cambió ni un
+carácter**; los casos de verificación pasan con los mismos valores esperados (regla 8). Lo que cambia
+es el **alcance del producto**: la aplicación implementa el cálculo y lo que lo alimenta, y deja
+fuera los trámites que el hospital hace por su cuenta. Los requisitos retirados se marcan
+`FUERA_DE_ALCANCE (ADR-028)` en `app/docs/trazabilidad.csv`, igual que ADR-015 hizo con la captura
+en campo.
+
+### Consecuencias negativas, admitidas
+
+- **El informe sin firmas no es, por sí solo, un soporte de saneamiento.** ADR-027 lo decía: ante
+  una contraloría hace falta la firma del representante legal y del contador (Res. 193/2016 §1.1).
+  Esa firma ahora va **en el acto del hospital que adopta el informe**, no en el informe. Quien
+  use la aplicación tiene que saberlo; el informe lo dice en su propio texto.
+- **El deterioro no se calcula.** Exige indicios y un avalúo que la aplicación no hace (Guía 003
+  de la CGN). El informe lo declara en vez de mostrar un cero sin explicación.
+- **Una base creada antes de ADR-028 no abre.** Su versión de esquema es 4 y la de la aplicación
+  es 3; el migrador la rechaza. Como ningún hospital tiene datos, basta con borrar la carpeta de
+  datos de desarrollo. Si algún día existiera una base real de ese tiempo, haría falta un
+  migrador de rescate.
+- **La trazabilidad deja de cubrir** la conciliación, los avalúos, el Comité y el cierre. Es el
+  precio de un producto que un hospital usa solo.
+
+### Cuándo reconsiderarla
+
+Si un hospital necesita que la aplicación lleve el expediente completo del saneamiento —con actas,
+resoluciones y firmas dentro—, o si un cliente contractual vuelve a pedir los 11 pasos. Entonces se
+abre un ADR nuevo; `/especificacion/teoria` ya tiene todo lo necesario.
+
+---
+
+## ADR-029 · El proceso de valuación es la unidad principal, y cada uno es independiente
+
+**Fecha:** 2026-09-24 · **Estado:** Aceptada · **Decidido por:** el propietario del proyecto
+**Sustituye a:** en ADR-028, el inventario vivo **de la entidad** (§1) y los cortes a la fecha que se
+quiera (§4). Se mantiene todo lo demás de ADR-028: barridos, bajas que solo se registran, informe sin
+firmas, alcance del producto.
+
+### Contexto
+
+El mismo día de ADR-028, al ver la aplicación, el propietario pide:
+
+> «quita el tema de la entidad y quiero que lo principal sea un proceso, es decir lo primero que yo
+> debería ver es continuar con un proceso o seguir con uno que ya esté activo; los procesos deben
+> ser independientes».
+
+Y resuelve las cuatro dudas que eso abre: **los datos del hospital viven dentro de cada proceso**;
+un proceso **termina con un botón «Finalizar»** y queda de solo lectura; **una fecha de corte por
+proceso** (recalcular reemplaza el cálculo anterior), y **cada proceso nuevo importa su inventario de
+cero**.
+
+Con ADR-028 la pantalla inicial era una lista de entidades; de la entidad colgaban un inventario que
+se iba actualizando y cualquier cantidad de cortes a cualquier fecha. Para quien usa la aplicación,
+eso no respondía a la pregunta que se hace al abrirla: *¿en qué valuación voy?*
+
+### Decisión
+
+1. **La tabla `entidad` se sustituye por `proceso`.** Un proceso tiene nombre, **fecha de corte**,
+   estado (`EN_CURSO` → `FINALIZADO`, `MAQUINA_PROCESO`) y fecha de finalización, además de los
+   datos del hospital (IN-01-01). Todo lo que antes colgaba de la entidad —sedes, servicios,
+   clases, parámetros, convención, barridos, bienes— cuelga ahora del proceso (`proceso_id`). El
+   NIT deja de ser único: dos procesos del mismo hospital son dos valuaciones.
+2. **Los procesos son independientes.** Nada se comparte ni se copia entre ellos: un proceso nuevo
+   se configura e importa su inventario de cero (desaparece la clonación de parametrización,
+   RF-01-09). La interfaz no recuerda un «proceso activo»: el proceso con el que se trabaja es
+   siempre el de la ruta (`/proceso/:procesoId/...`).
+3. **La pantalla inicial es la lista de procesos**: iniciar uno nuevo, continuar uno en curso o
+   consultar uno finalizado. Dentro de un proceso, su **Resumen** dice en qué va (configurar,
+   inventario, cálculo, bajas, informe) y ofrece **Finalizar**.
+4. **Un cálculo por proceso, a su fecha de corte.** `calculo:ejecutar` ya no recibe fecha: calcula
+   a la del proceso. Recalcular **reemplaza** el cálculo anterior (índice único
+   `ux_corte_proceso`); cambiar la fecha de corte del proceso **descarta** el cálculo hecho, porque
+   ya no es el suyo. Los cálculos siguen siendo inmutables mientras existen (ADR-028 §4); lo que
+   cambia es que se reemplazan en vez de acumularse. La bitácora conserva cada corrida.
+5. **Finalizar exige un cálculo** y deja el proceso **de solo lectura, garantizado por la base**:
+   el generador de disparadores exige que toda tabla del esquema declare cómo llega a su proceso
+   (`proceso_id` o una ruta indirecta) y emite, para cada una, disparadores que rechazan INSERT,
+   UPDATE y DELETE cuando el proceso está `FINALIZADO` (ADR-017 sobre la nueva unidad). Una tabla
+   nueva sin esa declaración rompe la construcción. El proceso de demostración se puede borrar
+   aunque esté finalizado (T-B-11).
+6. **Eliminar un proceso** solo se permite **en curso y sin inventario**. Un bien nunca se elimina
+   físicamente (`RN-09-09`, `ANEXO_B` §4 e `INT-03`, que se conserva): en cuanto entra el primer
+   barrido, el proceso ya no se borra. Uno finalizado tampoco: es evidencia de lo que se calculó.
+7. **`PL-01` puede iniciar el proceso**, y para eso `fecha_corte_ejercicio` pasa a ser obligatoria
+   (no futura). Sobre un proceso existente, la fecha de la plantilla no cambia la del proceso:
+   si difiere, se advierte.
+8. **Las migraciones se regeneran desde cero** otra vez (`0000`–`0002`), por la misma razón que en
+   ADR-028: ningún hospital tiene datos.
+
+### Relación con `/especificacion/teoria`
+
+**No se modifica.** La teoría describe un ejercicio de valuación con una fecha de corte, que es
+exactamente lo que ahora es un proceso: ADR-029 acerca el producto a la teoría en vez de alejarlo.
+El motor no cambió; los valores esperados de las pruebas del cálculo siguen iguales (regla 8). Se
+conservan `RN-09-09` e `INT-03`.
+
+### Consecuencias negativas, admitidas
+
+- **Valorar otra vez exige volver a cargar todo**, catálogo e inventario. Es lo que el propietario
+  eligió («se importa de cero»): a cambio, ningún proceso puede alterar a otro.
+- **Un proceso en curso con inventario cargado por error no se puede borrar**; queda en la lista
+  hasta que alguien lo corrija o lo finalice. Es el precio de no borrar nunca un bien.
+- **Una base creada con ADR-028 no abre** (misma situación que en ADR-028: basta con borrar la
+  carpeta de datos de desarrollo).
+
+### Cuándo reconsiderarla
+
+Si los hospitales piden arrancar un proceso a partir del anterior (copiar catálogo o inventario),
+se abre un ADR que lo haga **copiando**, nunca compartiendo: la independencia de los procesos es el
+punto de esta decisión.

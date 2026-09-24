@@ -15,7 +15,7 @@
 | `npm run instructivo` | Genera el manual de diligenciamiento |
 | `npm run db:generar` | Migración nueva desde el esquema (drizzle-kit) |
 | `npm run db:migrar` | Aplica migraciones desde consola |
-| `npm run db:triggers` | Regenera los 119 disparadores |
+| `npm run db:triggers` | Regenera los 13 disparadores de integridad |
 | `npx tsx scripts/sembrar.ts` | Siembra datos de carga para medir rendimiento (no tiene atajo en `package.json`) |
 
 ## Desarrollo aislado: léalo antes de usar `npm run dev`

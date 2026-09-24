@@ -70,11 +70,11 @@ describe('cadena de middleware', () => {
 
   it('6/7 · un canal que muta corre en transacción: si el caso de uso falla, la bitácora no queda', async () => {
     const { registro, ctx } = await preparar();
-    registro.registrar('entidad:eliminar', (_e, c) => {
+    registro.registrar('proceso:eliminar', (_e, c) => {
       c.bitacora.registrar({ entidadAfectada: 'x', registroId: 'y', accion: 'ACTUALIZAR' });
       throw new Error('se cae después de escribir bitácora');
     });
-    const r = await registro.invocar('entidad:eliminar', {
+    const r = await registro.invocar('proceso:eliminar', {
       id: '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b',
       justificacion: 'prueba de reversión',
     });
@@ -85,8 +85,8 @@ describe('cadena de middleware', () => {
 
   it('6 · un manejador asíncrono en un canal que muta se rechaza', async () => {
     const { registro } = await preparar();
-    registro.registrar('entidad:eliminar', async () => ({}) as never);
-    const r = await registro.invocar('entidad:eliminar', {
+    registro.registrar('proceso:eliminar', async () => ({}) as never);
+    const r = await registro.invocar('proceso:eliminar', {
       id: '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b',
       justificacion: 'x',
     });
@@ -95,18 +95,17 @@ describe('cadena de middleware', () => {
 
   it('9 · los errores de SQLite se traducen: el código de la regla viaja como codigo, sin traza', async () => {
     const { registro, ctx } = await preparar();
-    const ids = sembrarMinimo(ctx.db);
-    registro.registrar('entidad:eliminar', (_e, c) => {
-      c.sqlite.prepare('DELETE FROM ejercicio WHERE id = ?').run(ids.ejercicio);
+    sembrarMinimo(ctx.db);
+    registro.registrar('proceso:eliminar', (_e, c) => {
       c.sqlite
         .prepare(
-          `INSERT INTO entidad (id, razon_social, nit, municipio, departamento, nivel_complejidad, nombre_gerente, direccion)
-           VALUES ('z', 'X', '9', 'M', 'D', 'IV', 'G', 'Dir')`,
+          `INSERT INTO proceso (id, nombre, fecha_corte, razon_social, nit, municipio, departamento, nivel_complejidad, nombre_gerente, direccion)
+           VALUES ('z', 'P', '2025-06-30', 'X', '9', 'M', 'D', 'IV', 'G', 'Dir')`,
         )
         .run();
       return {} as never;
     });
-    const r = await registro.invocar('entidad:eliminar', {
+    const r = await registro.invocar('proceso:eliminar', {
       id: '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b',
       justificacion: 'x',
     });
@@ -123,15 +122,15 @@ describe('cadena de middleware', () => {
     const ids = sembrarMinimo(ctx.db);
     ctx.sqlite
       .prepare(
-        `INSERT INTO bien (id, ejercicio_id, codigo_institucional, placa, descripcion_funcional, clase_activo_id, sede_id, servicio_id, estado_actual, condicion_tenencia, fecha_toma, funcionario_conteo)
+        `INSERT INTO bien (id, proceso_id, codigo_institucional, placa, descripcion_funcional, clase_activo_id, sede_id, servicio_id, estado_actual, condicion_tenencia, fecha_toma, funcionario_conteo)
          VALUES ('b1', ?, 'C', 'P', 'D', ?, ?, ?, 'BUENO', 'PROPIO', '2025-05-01', 'F')`,
       )
-      .run(ids.ejercicio, ids.clase, ids.sede, ids.servicio);
-    registro.registrar('entidad:eliminar', (_e, c) => {
+      .run(ids.proceso, ids.clase, ids.sede, ids.servicio);
+    registro.registrar('proceso:eliminar', (_e, c) => {
       c.sqlite.prepare(`DELETE FROM bien WHERE id = 'b1'`).run();
       return {} as never;
     });
-    const r = await registro.invocar('entidad:eliminar', {
+    const r = await registro.invocar('proceso:eliminar', {
       id: '0190a1b2-c3d4-7e5f-8a9b-0c1d2e3f4a5b',
       justificacion: 'x',
     });

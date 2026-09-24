@@ -1,36 +1,37 @@
 /**
- * Pantalla 2 del paso 02 — Listado de bienes. Filtros por sede, servicio, clase
+ * Listado de bienes del inventario vivo. Filtros por sede, servicio, clase
  * y estado; búsqueda por código, placa o serie. Todo se resuelve en el main
  * (TR-10): el renderer solo pide páginas y las acumula.
  */
 import { useMemo, useState, type JSX } from 'react';
 import { Search, X } from 'lucide-react';
 import type { FiltrosBien } from '@compartido/dtos/inventario';
-import { ESTADO_ACTUAL, CONDICION_TENENCIA, ESTADO_REGISTRO } from '@compartido/enums/catalogos';
+import { ESTADO_ACTUAL, CONDICION_TENENCIA } from '@compartido/enums/catalogos';
+import { ESTADO_BIEN } from '@compartido/enums/estados';
 import { cliente, useCanal, useListadoInfinito } from '../../../ipc/consultas';
 import { TablaDatos, type OrdenTabla } from '../../../componentes/TablaDatos/TablaDatos';
 import { Boton, Campo, Encabezado, Selector, Aviso } from '../../../componentes/ui';
 import { COLUMNAS_BIEN } from '../columnas';
-import { useContextoEjercicio } from '../hooks';
+import { useProcesoRuta } from '../hooks';
 
 const TAMANO_PAGINA = 200;
 
 export function ListadoBienes(): JSX.Element {
-  const { entidadId, ejercicioId } = useContextoEjercicio();
+  const procesoId = useProcesoRuta();
   const [texto, setTexto] = useState('');
   const [textoAplicado, setTextoAplicado] = useState('');
   const [filtros, setFiltros] = useState<FiltrosBien>({});
   const [orden, setOrden] = useState<OrdenTabla>({ columna: 'codigoInstitucional', ascendente: true });
   const [seleccion, setSeleccion] = useState<ReadonlySet<string>>(new Set());
 
-  const sedes = useCanal('sede:listar', { entidadId });
-  const servicios = useCanal('servicio:listar', { entidadId });
-  const clases = useCanal('clase:listar', { entidadId });
+  const sedes = useCanal('sede:listar', { procesoId });
+  const servicios = useCanal('servicio:listar', { procesoId });
+  const clases = useCanal('clase:listar', { procesoId });
 
   const filtrosCompletos = useMemo<FiltrosBien>(() => ({ ...filtros, texto: textoAplicado === '' ? undefined : textoAplicado }), [filtros, textoAplicado]);
   const hayFiltros = Object.values(filtrosCompletos).some((v) => v !== undefined && v !== '');
 
-  const consulta = useListadoInfinito('bien:listar', { ejercicioId, filtros: filtrosCompletos, orden: { columna: orden.columna as never, ascendente: orden.ascendente }, tamano: TAMANO_PAGINA }, TAMANO_PAGINA);
+  const consulta = useListadoInfinito('bien:listar', { procesoId, filtros: filtrosCompletos, orden: { columna: orden.columna as never, ascendente: orden.ascendente }, tamano: TAMANO_PAGINA }, TAMANO_PAGINA);
   const paginas = consulta.data?.pages ?? [];
   const filas = useMemo(() => paginas.flatMap((p) => p.filas), [paginas]);
   const total = paginas[0]?.total ?? 0;
@@ -46,7 +47,7 @@ export function ListadoBienes(): JSX.Element {
     <>
       <Encabezado
         titulo="Bienes del inventario"
-        subtitulo="Fuente de verdad física del ejercicio. El inventario entra por importación de PL-03 (ADR-015)."
+        subtitulo="Lo que existe físicamente, según el último barrido de cada servicio. El inventario entra por importación de PL-03 (ADR-015)."
       />
       <div className="flex flex-col gap-4">
         <form
@@ -79,7 +80,7 @@ export function ListadoBienes(): JSX.Element {
             <Selector etiqueta="Tenencia" vacio="Todas" value={filtros.condicionTenencia ?? ''} onChange={(e) => cambiar('condicionTenencia', e.target.value)} opciones={CONDICION_TENENCIA.valores.map((v) => ({ valor: v, etiqueta: CONDICION_TENENCIA.etiqueta(v) }))} />
           </div>
           <div className="w-44">
-            <Selector etiqueta="Estado del registro" vacio="Todos" value={filtros.estadoRegistro ?? ''} onChange={(e) => cambiar('estadoRegistro', e.target.value)} opciones={ESTADO_REGISTRO.valores.map((v) => ({ valor: v, etiqueta: ESTADO_REGISTRO.etiqueta(v) }))} />
+            <Selector etiqueta="En el inventario" vacio="Todos" value={filtros.estadoRegistro ?? ''} onChange={(e) => cambiar('estadoRegistro', e.target.value)} opciones={ESTADO_BIEN.valores.map((v) => ({ valor: v, etiqueta: ESTADO_BIEN.etiqueta(v) }))} />
           </div>
           {hayFiltros && (
             <Boton variante="sutil" icono={<X className="h-4 w-4" aria-hidden />} onClick={limpiar}>
@@ -90,7 +91,7 @@ export function ListadoBienes(): JSX.Element {
 
         {seleccion.size > 0 && (
           <Aviso tono="info">
-            {seleccion.size} bien(es) seleccionados. Las acciones por lote (etiquetas, valuación masiva) se habilitan con sus tareas.
+            {seleccion.size} bien(es) seleccionados.
           </Aviso>
         )}
 
@@ -111,7 +112,7 @@ export function ListadoBienes(): JSX.Element {
             ids: seleccion,
             onCambio: setSeleccion,
             onSeleccionarTodoElFiltro: async () => {
-              const ids = await cliente().invocar('bien:idsDelFiltro', { ejercicioId, filtros: filtrosCompletos });
+              const ids = await cliente().invocar('bien:idsDelFiltro', { procesoId, filtros: filtrosCompletos });
               setSeleccion(new Set(ids));
             },
           }}

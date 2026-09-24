@@ -20,16 +20,15 @@ afterEach(() => {
 });
 
 describe('plantilla:listar', () => {
-  it('publica las 28 plantillas de ANEXO_A §1 y todas están presentes en la instalación', async () => {
+  it('publica las cinco plantillas que el hospital diligencia, y todas están en la instalación (ADR-028)', async () => {
     const { registro } = await arnesPaso01();
     const lista = valor(await registro.invocar('plantilla:listar', undefined));
-    expect(lista).toHaveLength(28);
+    expect(lista).toHaveLength(5);
     expect(lista).toHaveLength(PLANTILLAS.length);
 
     const faltantes = lista.filter((p) => !p.disponible).map((p) => p.codigo);
     expect(faltantes, `sin archivo: ${faltantes.join(', ')}`).toEqual([]);
-    expect(lista.filter((p) => p.formato === 'xlsx')).toHaveLength(20);
-    expect(lista.filter((p) => p.formato === 'docx')).toHaveLength(8);
+    expect(lista.every((p) => p.formato === 'xlsx')).toBe(true);
   });
 
   it('marca las cinco que el hospital diligencia y puede volver a cargar', async () => {
@@ -43,10 +42,9 @@ describe('plantilla:descargar', () => {
   it('PL-03 sale con las clases, sedes y servicios del hospital como listas desplegables', async () => {
     const a = await arnesPaso01();
     const demo = valor(await a.registro.invocar('demo:cargar', undefined));
-    const ejercicio = valor(await a.registro.invocar('ejercicio:listar', { entidadId: demo.id }))[0];
     a.guardarEn(dir);
 
-    const r = valor(await a.registro.invocar('plantilla:descargar', { codigo: 'PL-03', entidadId: demo.id, ejercicioId: ejercicio?.id }));
+    const r = valor(await a.registro.invocar('plantilla:descargar', { codigo: 'PL-03', procesoId: demo.id }));
     if (r === null) throw new Error('no entregó');
     expect([...r.catalogosInyectados].sort()).toEqual(['clases', 'sedes', 'servicios']);
     expect(existsSync(r.ruta)).toBe(true);
@@ -57,11 +55,12 @@ describe('plantilla:descargar', () => {
     const hoja = libro.getWorksheet('INVENTARIO');
     if (hoja === undefined) throw new Error('sin hoja INVENTARIO');
 
-    // Membrete con la razón social y la fecha de corte reales, no los marcadores.
+    // Membrete con la razón social real, no los marcadores. La fecha de corte se
+    // elige al calcular (ADR-028): su marcador se vacía en vez de quedar a la vista.
     const encabezado = JSON.stringify(hoja.getRow(1).values) + JSON.stringify(hoja.getRow(3).values);
     expect(encabezado).toContain('HOSPITAL DE DEMOSTRACIÓN');
     expect(encabezado).not.toContain('{{ENTIDAD_RAZON_SOCIAL}}');
-    expect(encabezado).toContain('2025-06-30');
+    expect(encabezado).not.toContain('{{FECHA_CORTE}}');
 
     // Listas desplegables en las tres columnas declaradas, desde la primera fila de captura.
     const validacionClase = hoja.getCell('D8').dataValidation;
@@ -82,7 +81,7 @@ describe('plantilla:descargar', () => {
     const demo = valor(await a.registro.invocar('demo:cargar', undefined));
     a.guardarEn(dir);
 
-    const r = valor(await a.registro.invocar('plantilla:descargar', { codigo: 'PL-02b', entidadId: demo.id }));
+    const r = valor(await a.registro.invocar('plantilla:descargar', { codigo: 'PL-02b', procesoId: demo.id }));
     if (r === null) throw new Error('no entregó');
 
     // El hospital lo diligencia…
@@ -97,13 +96,13 @@ describe('plantilla:descargar', () => {
 
     // …y lo vuelve a cargar.
     a.seleccionarArchivo(r.ruta);
-    const informe = valor(await a.registro.invocar('importacion:previsualizar', { entidadId: demo.id, plantilla: 'PL-02b' }));
+    const informe = valor(await a.registro.invocar('importacion:previsualizar', { procesoId: demo.id, plantilla: 'PL-02b' }));
     if (informe === null) throw new Error('sin informe');
     expect(informe.hojas.find((h) => h.hoja === 'SEDES')?.filaEncabezados).toBe(6);
     expect(informe.errores).toBe(0);
 
     valor(await a.registro.invocar('importacion:confirmar', { token: informe.token }));
-    expect(valor(await a.registro.invocar('sede:listar', { entidadId: demo.id })).map((s) => s.codigo)).toContain('03');
+    expect(valor(await a.registro.invocar('sede:listar', { procesoId: demo.id })).map((s) => s.codigo)).toContain('03');
   });
 
   it('sin entidad configurada se entrega igual, pero sin listas desplegables', async () => {
@@ -134,7 +133,7 @@ describe('plantilla:descargarPaquete', () => {
     const demo = valor(await a.registro.invocar('demo:cargar', undefined));
     a.guardarEn(dir);
 
-    const r = valor(await a.registro.invocar('plantilla:descargarPaquete', { codigos: ['PL-01', 'PL-02', 'PL-02b', 'PL-03', 'PL-05'], entidadId: demo.id }));
+    const r = valor(await a.registro.invocar('plantilla:descargarPaquete', { codigos: ['PL-01', 'PL-02', 'PL-02b', 'PL-03', 'PL-05'], procesoId: demo.id }));
     expect(r?.entregadas).toHaveLength(5);
     expect(readdirSync(dir).sort()).toEqual([
       'PL-01_parametros_entidad.xlsx',

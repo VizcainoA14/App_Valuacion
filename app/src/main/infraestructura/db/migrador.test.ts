@@ -30,10 +30,10 @@ describe('migrar desde una base vacía', () => {
     expect(versionEsquema(db)).toBe(MIGRACIONES.length);
   });
 
-  it('crea las 44 entidades de ANEXO_B §1 (+ cierre_ejercicio) y la tabla FTS', async () => {
+  it('crea las 18 tablas del modelo de ADR-028 y la tabla FTS', async () => {
     const db = abrirSqlite(':memory:');
     await migrar(db, MIGRACIONES);
-    expect(tablas(db)).toHaveLength(44);
+    expect(tablas(db)).toHaveLength(18);
     const fts = db
       .prepare(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'bien_fts'`)
       .get();

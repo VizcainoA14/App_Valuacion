@@ -1,4 +1,4 @@
-/** Barra de progreso del asistente del paso 01 (pantalla 1): estado por subpaso, icono + texto. */
+/** Barra de progreso del asistente de configuración: estado por parte, icono + texto. */
 import type { JSX } from 'react';
 import { NavLink } from 'react-router';
 import { CheckCircle2, Circle, AlertCircle } from 'lucide-react';
@@ -16,9 +16,9 @@ export interface Subpaso {
 export function AsistentePasos({ subpasos }: { subpasos: readonly Subpaso[] }): JSX.Element {
   const completos = subpasos.filter((s) => s.estado === 'completo').length;
   return (
-    <nav aria-label="Progreso de la parametrización" className="rounded-lg border border-borde bg-elevada px-4 py-3">
+    <nav aria-label="Progreso de la configuración" className="rounded-lg border border-borde bg-elevada px-4 py-3">
       <div className="mb-2 flex items-center justify-between text-sm text-texto-secundario">
-        <span>Parametrización de la entidad</span>
+        <span>Configuración del proceso</span>
         <span aria-live="polite">
           {completos} de {subpasos.length} completos
         </span>

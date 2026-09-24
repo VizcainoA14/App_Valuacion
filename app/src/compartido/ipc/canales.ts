@@ -8,13 +8,13 @@ export const CANALES_PERMITIDOS = [
   'app:obtenerEstado',
   'app:registrarErrorRenderer',
   'tarea:cancelar',
-  // Paso 01 · configuración (MOD-02)
-  'entidad:listar',
-  'entidad:porId',
-  'entidad:crear',
-  'entidad:actualizar',
-  'entidad:clonarParametrizacion',
-  'entidad:eliminar',
+  // El proceso y su configuración (MOD-02, ADR-029)
+  'proceso:listar',
+  'proceso:porId',
+  'proceso:crear',
+  'proceso:actualizar',
+  'proceso:finalizar',
+  'proceso:eliminar',
   'sede:listar',
   'sede:crear',
   'sede:actualizar',
@@ -32,36 +32,32 @@ export const CANALES_PERMITIDOS = [
   'convencion:previsualizar',
   'abreviatura:listar',
   'abreviatura:guardar',
-  'ejercicio:listar',
-  'ejercicio:porId',
-  'ejercicio:crear',
-  'ejercicio:cambiarFechaCorte',
-  // TR-01 · validaciones (un canal para los 11 pasos)
+  // Revisión de la configuración
   'validaciones:evaluar',
-  // Paso 02 · inventario (MOD-03)
+  // Inventario vivo y sus barridos (ADR-028)
   'bien:listar',
   'bien:porId',
   'bien:idsDelFiltro',
   'bien:cobertura',
-  // TR-03 · plantillas que la aplicación entrega (ANEXO_A §6.1)
+  'bien:marcarObsolescenciaFuncional',
+  'barrido:listar',
+  // Plantillas que la aplicación entrega (ANEXO_A §6.1)
   'plantilla:listar',
   'plantilla:descargar',
   'plantilla:descargarPaquete',
-  // Pasos 05 y 06 · motor de cálculo (MOD-07/08)
+  // Cálculo del proceso (ADR-029)
+  'corte:actual',
+  'corte:porId',
   'calculo:ejecutar',
   'calculo:resumen',
   'calculo:listar',
-  'calculo:marcarObsolescenciaFuncional',
-  // Paso 09 · bajas (MOD-11)
+  'calculo:exclusiones',
+  // Bajas: candidatos del motor y registro de lo que el hospital decidió
   'baja:candidatos',
   'baja:listar',
-  'baja:resumen',
-  'baja:proponer',
-  'baja:actualizar',
-  'baja:cambiarEstado',
-  // Cierre del inventario: los validados pasan a activos
-  'bien:activarValidados',
-  // Etapa 6 · informe de valuación (TR-05)
+  'baja:registrar',
+  'baja:anular',
+  // Informe de valuación (TR-05)
   'informe:previsualizar',
   'informe:generar',
   // TR-02 · importación

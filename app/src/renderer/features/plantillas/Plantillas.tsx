@@ -1,33 +1,30 @@
 /**
- * Etapa 2 del núcleo (ADR-026): el hospital obtiene aquí los formatos que debe
- * diligenciar, ya con sus propias clases, sedes y servicios como listas
- * desplegables. Antes había que buscarlos fuera de la aplicación.
+ * El hospital obtiene aquí los formatos que debe diligenciar, ya con sus propias
+ * clases, sedes y servicios como listas desplegables. Son solo los cinco que se
+ * vuelven a cargar en la aplicación (ADR-028).
  */
 import { useState, type JSX } from 'react';
 import { Download, FileSpreadsheet, FileText, PackageOpen, CheckCircle2 } from 'lucide-react';
 import type { PlantillaDto } from '@compartido/dtos/plantillas';
 import { cliente, useCanal } from '../../ipc/consultas';
 import { Aviso, Boton, Cargando, Encabezado, Insignia, Seccion, cn } from '../../componentes/ui';
-import { useEstadoInterfaz } from '../../app/estado';
+import { useParams } from 'react-router';
 
 const NOMBRE_ETAPA: Record<PlantillaDto['etapa'], string> = {
-  configurar: '1 · Configurar la entidad',
-  inventario: '2 · Levantar el inventario',
-  'datos-economicos': '3 · Datos económicos (indispensables para calcular)',
-  calculo: '4 · Cálculo',
-  bajas: '5 · Bajas',
-  extension: 'Otros formatos del proceso',
+  configurar: 'Configurar el proceso',
+  inventario: 'Inventario (en cada barrido)',
 };
 
-const ORDEN_ETAPAS: PlantillaDto['etapa'][] = ['configurar', 'inventario', 'datos-economicos', 'calculo', 'bajas', 'extension'];
+const ORDEN_ETAPAS: PlantillaDto['etapa'][] = ['configurar', 'inventario'];
 
 export function Plantillas(): JSX.Element {
   const plantillas = useCanal('plantilla:listar');
-  const { entidadActivaId, ejercicioActivoId } = useEstadoInterfaz();
+  // Dentro de un proceso, los formatos salen con sus catálogos; fuera, en blanco.
+  const procesoId = useParams().procesoId ?? null;
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [aviso, setAviso] = useState<{ tono: 'exito' | 'peligro'; texto: string } | null>(null);
 
-  const contexto = { entidadId: entidadActivaId, ejercicioId: ejercicioActivoId };
+  const contexto = { procesoId };
 
   async function descargar(p: PlantillaDto): Promise<void> {
     setOcupado(p.codigo);
@@ -69,7 +66,7 @@ export function Plantillas(): JSX.Element {
     <>
       <Encabezado
         titulo="Formatos para diligenciar"
-        subtitulo="Descárguelos, diligéncielos en Excel y vuelva a cargarlos en la aplicación. Salen con las clases, sedes y servicios de su entidad ya cargados."
+        subtitulo="Descárguelos, diligéncielos en Excel y vuelva a cargarlos en la aplicación. Dentro de un proceso salen con sus clases, sedes y servicios ya cargados."
         acciones={
           <Boton variante="primario" icono={<PackageOpen className="h-4 w-4" aria-hidden />} cargando={ocupado === 'paquete'} onClick={() => void descargarEsenciales(esenciales.map((p) => p.codigo))}>
             Descargar los {esenciales.length} formatos indispensables
@@ -82,9 +79,9 @@ export function Plantillas(): JSX.Element {
           {aviso.texto}
         </Aviso>
       )}
-      {entidadActivaId === null && (
-        <Aviso tono="aviso" className="mb-4" titulo="Todavía no hay una entidad seleccionada">
-          Los formatos se descargarán sin listas desplegables. Configure primero la entidad para que salgan con sus clases, sedes y servicios.
+      {procesoId === null && (
+        <Aviso tono="info" className="mb-4" titulo="Formatos en blanco">
+          Se descargan sin listas desplegables. Para que salgan con las clases, sedes y servicios de un hospital, descárguelos desde dentro de su proceso.
         </Aviso>
       )}
       {noDisponibles.length > 0 && (
@@ -98,7 +95,7 @@ export function Plantillas(): JSX.Element {
           const deLaEtapa = lista.filter((p) => p.etapa === etapa);
           if (deLaEtapa.length === 0) return null;
           return (
-            <Seccion key={etapa} titulo={NOMBRE_ETAPA[etapa]} descripcion={etapa === 'extension' ? 'No hacen falta para calcular la depreciación; se usan en el proceso completo de saneamiento.' : undefined}>
+            <Seccion key={etapa} titulo={NOMBRE_ETAPA[etapa]} descripcion={etapa === 'inventario' ? 'PL-03 es el barrido: lo que se contó. PL-05 trae la fecha y el costo de cada bien, sin los que no se puede depreciar.' : undefined}>
               <ul className="flex flex-col divide-y divide-borde">
                 {deLaEtapa.map((p) => (
                   <li key={p.codigo} className="flex items-start justify-between gap-4 py-2.5">

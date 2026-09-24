@@ -36,12 +36,16 @@ electronLanguages:
 # ANEXO_A §6.1: la aplicación entrega sus propias plantillas. Van fuera del asar
 # para poder leerlas y copiarlas como archivos normales (ADR-026).
 extraResources:
+  # Solo las cinco plantillas que la aplicación entrega e importa (ADR-028). Las
+  # demás de ANEXO_A siguen en el repositorio como referencia; la app no las usa.
   - from: ../especificacion/plantillas
     to: plantillas
     filter:
-      - excel/**
-      - word/**
-      - LEEME_PLANTILLAS.md
+      - excel/PL-01_parametros_entidad.xlsx
+      - excel/PL-02_clases_vida_util.xlsx
+      - excel/PL-02b_sedes_servicios.xlsx
+      - excel/PL-03_toma_inventario_fisico.xlsx
+      - excel/PL-05_hoja_de_vida.xlsx
 
 win:
   target:

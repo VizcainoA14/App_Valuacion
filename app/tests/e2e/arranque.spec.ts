@@ -10,7 +10,7 @@ test('la app arranca, abre ventana y consulta SQLite', async () => {
   const ventana = await app.firstWindow();
 
   await expect(ventana).toHaveTitle('Valuación de Activos');
-  await expect(ventana.getByRole('heading', { name: 'Entidades' })).toBeVisible();
+  await expect(ventana.getByRole('heading', { name: 'Procesos de valuación' })).toBeVisible();
 
   // Criterio de T-A-03: SELECT 1 contra SQLite, por el IPC real.
   const estado = await ventana.evaluate(() =>

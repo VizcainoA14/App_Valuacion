@@ -11,15 +11,15 @@ Cómo está construida la aplicación. Escrito el **2026-09-04** leyendo el cód
 
 | Documento | Qué responde |
 |---|---|
-| [01_PANORAMA.md](01_PANORAMA.md) | Qué es, qué hace hoy, cifras del código y las seis etapas |
+| [01_PANORAMA.md](01_PANORAMA.md) | Qué es, qué hace hoy, cifras del código y las seis secciones |
 | [02_ARQUITECTURA.md](02_ARQUITECTURA.md) | Las cuatro capas, las ocho fronteras que un robot vigila, y por qué |
 | [03_ARRANQUE_Y_DATOS.md](03_ARRANQUE_Y_DATOS.md) | Qué pasa al abrir la app: rutas, base, migraciones, respaldos |
-| [04_BASE_DE_DATOS.md](04_BASE_DE_DATOS.md) | 44 tablas, 119 disparadores, dinero en centavos, inmutabilidad |
-| [05_IPC.md](05_IPC.md) | Los 55 canales, la cadena de middleware y las seis prohibiciones |
+| [04_BASE_DE_DATOS.md](04_BASE_DE_DATOS.md) | 18 tablas, 68 disparadores, dinero en centavos, el proceso finalizado congelado |
+| [05_IPC.md](05_IPC.md) | Los 53 canales, la cadena de middleware y las seis prohibiciones |
 | [06_MOTOR_DE_CALCULO.md](06_MOTOR_DE_CALCULO.md) | El dominio puro: depreciación, obsolescencia, deterioro, bajas |
 | [07_IMPORTACION.md](07_IMPORTACION.md) | Cómo entra un Excel y cómo se rechaza fila por fila |
 | [08_INTERFAZ.md](08_INTERFAZ.md) | Renderer: rutas, componentes, estado y accesibilidad |
-| [09_PRUEBAS_Y_CALIDAD.md](09_PRUEBAS_Y_CALIDAD.md) | 379 tests, 15 E2E, la puerta de calidad y la CI |
+| [09_PRUEBAS_Y_CALIDAD.md](09_PRUEBAS_Y_CALIDAD.md) | 360 tests, 16 E2E, la puerta de calidad y la CI |
 | [10_CONSTRUIR_Y_DISTRIBUIR.md](10_CONSTRUIR_Y_DISTRIBUIR.md) | Scripts, empaquetado, instalador y desarrollo aislado |
 | [decisiones-runtime.md](decisiones-runtime.md) | Versiones congeladas (`T-A-01`) — ya existía |
 | [trazabilidad.csv](trazabilidad.csv) | 380 requisitos de `/especificacion/teoria` y su estado — generado |
@@ -41,8 +41,8 @@ Están en `/CLAUDE.md` y se repiten aquí porque son las que más caro cuesta ro
 2. **El dinero nunca es un `number` de pesos.** Enteros de centavos en la base, `decimal.js` en el
    motor (ADR-006).
 3. **El motor de cálculo es dominio puro.** No importa `fs`, `electron`, `sqlite`, `react` ni `Date`.
-4. **Un ejercicio cerrado es inmutable**, también frente a SQL directo. Disparadores, no
-   validaciones de formulario (ADR-017).
+4. **Lo calculado no se reescribe**: un corte, un barrido y la bitácora son inmutables, y un proceso finalizado no cambia, también
+   frente a SQL directo. Disparadores, no validaciones de formulario (ADR-017, ADR-028).
 5. **Ningún valor esperado de los tests del motor se cambia sin justificarlo en la bitácora**
    (riesgo `RG-01`).
 6. **Un cálculo que no se pudo hacer nunca es un cero.** Devuelve `NO_APLICA`, `NO_CALCULABLE` o

@@ -6,13 +6,13 @@
 import { useState, type JSX } from 'react';
 import { Upload } from 'lucide-react';
 import type { InformeImportacion, PlantillaImportable } from '@compartido/dtos/importacion';
-import { cliente, useMutacion, EFECTOS_PASO_01 } from '../ipc/consultas';
+import { cliente, useMutacion, EFECTOS_CONFIGURACION } from '../ipc/consultas';
 import type { Canal } from '@compartido/ipc/contrato';
 import { Boton, Aviso, Casilla, Insignia, TablaSimple, cn } from './ui';
 import { Dialogo } from './Dialogo/Dialogo';
 
 const NOMBRE: Record<PlantillaImportable, string> = {
-  'PL-01': 'PL-01 · Parámetros de la entidad',
+  'PL-01': 'PL-01 · Parámetros del proceso',
   'PL-02': 'PL-02 · Clases de activo y vida útil',
   'PL-02b': 'PL-02b · Sedes y servicios',
   'PL-03': 'PL-03 · Toma de inventario físico',
@@ -20,15 +20,12 @@ const NOMBRE: Record<PlantillaImportable, string> = {
 };
 
 export function ImportarPlantilla({
-  entidadId,
-  ejercicioId,
+  procesoId,
   plantilla,
   invalida,
   variante = 'normal',
 }: {
-  entidadId: string;
-  /** Obligatorio para las plantillas que traen bienes (PL-03, PL-05). */
-  ejercicioId?: string | null;
+  procesoId: string;
   plantilla: PlantillaImportable;
   invalida: readonly Canal[];
   variante?: 'normal' | 'primario';
@@ -37,14 +34,14 @@ export function ImportarPlantilla({
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultado, setResultado] = useState<string | null>(null);
-  const confirmar = useMutacion('importacion:confirmar', [...invalida, ...EFECTOS_PASO_01]);
+  const confirmar = useMutacion('importacion:confirmar', [...invalida, ...EFECTOS_CONFIGURACION]);
 
   async function previsualizar(): Promise<void> {
     setCargando(true);
     setError(null);
     setResultado(null);
     try {
-      const r = await cliente().invocar('importacion:previsualizar', { entidadId, plantilla, ejercicioId: ejercicioId ?? null });
+      const r = await cliente().invocar('importacion:previsualizar', { procesoId, plantilla });
       if (r !== null) setInforme(r);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -57,25 +54,27 @@ export function ImportarPlantilla({
     if (informe === null) return;
     try {
       const r = await confirmar.mutateAsync({ token: informe.token, aceptarConErrores: conErrores });
-      setResultado(`${r.creados} creados, ${r.actualizados} actualizados, ${r.omitidos} omitidos. Copia guardada en ${r.archivoConservado}.`);
+      setResultado(`${r.creados} creados, ${r.actualizados} actualizados, ${r.omitidos} omitidos. El archivo original quedó guardado en la aplicación.`);
       setInforme(null);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     }
   }
 
+  // Va en la cabecera de una sección, junto al título: el aviso se apila bajo el
+  // botón con ancho acotado en vez de empujar el título y desbordar la pantalla.
   return (
-    <>
+    <div className="flex w-72 flex-col items-end gap-2">
       <Boton variante={variante === 'primario' ? 'primario' : 'secundario'} icono={<Upload className="h-4 w-4" aria-hidden />} cargando={cargando} onClick={() => void previsualizar()}>
         Importar {plantilla}
       </Boton>
       {error !== null && (
-        <Aviso tono="peligro" className="mt-2">
+        <Aviso tono="peligro" className="w-full [overflow-wrap:anywhere]">
           {error}
         </Aviso>
       )}
       {resultado !== null && (
-        <Aviso tono="exito" titulo={`${plantilla} importada`} className="mt-2">
+        <Aviso tono="exito" titulo={`${plantilla} importada`} className="w-full [overflow-wrap:anywhere]">
           {resultado}
         </Aviso>
       )}
@@ -86,14 +85,14 @@ export function ImportarPlantilla({
         confirmando={confirmar.isPending}
         onConfirmar={(conErrores) => void ejecutar(conErrores)}
       />
-    </>
+    </div>
   );
 }
 
 /**
- * El diálogo de previsualización, aparte del botón: la pantalla de nueva entidad
+ * El diálogo de previsualización, aparte del botón: la pantalla de nuevo proceso
  * lo usa sin botón propio, porque allí la importación es una de dos vías para
- * crear la entidad, no una acción sobre una que ya existe.
+ * crear el proceso, no una acción sobre uno que ya existe.
  */
 export function InformeImportacionDialogo({
   informe,

@@ -6,22 +6,21 @@ import { test, expect } from '@playwright/test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { lanzarApp } from './_lanzar';
+import { lanzarApp, seccion } from './_lanzar';
 
-test('listado de bienes: filtra, ordena, selecciona y muestra cobertura', async () => {
+test('inventario: carga, listado que filtra, ordena y selecciona, y servicios barridos', async () => {
   test.setTimeout(120_000);
   const userData = mkdtempSync(join(tmpdir(), 'valuacion-e2e-inv-'));
   const app = await lanzarApp({ argumentos: [`--user-data=${userData}`] });
   try {
     const pagina = await app.firstWindow();
-    await pagina.getByRole('button', { name: 'Cargar hospital de demostración' }).click();
+    await pagina.getByRole('button', { name: 'Cargar proceso de demostración' }).click();
     await pagina.getByRole('link', { name: /HOSPITAL DE DEMOSTRACIÓN/ }).click();
 
-    // El paso 02 está habilitado porque la demostración trae ejercicio. La etapa
-    // abre por "Importar" (ADR-026): con la base vacía, un listado vacío no dice
+    // La sección abre por "Cargar": con la base vacía, un listado vacío no dice
     // qué hacer a continuación.
-    await pagina.getByRole('link', { name: /^3. Inventario/ }).click();
-    await expect(pagina.getByRole('heading', { name: '1 · Los bienes — PL-03' })).toBeVisible();
+    await seccion(pagina, 'Inventario').click();
+    await expect(pagina.getByRole('heading', { name: '1 · El barrido — PL-03' })).toBeVisible();
     await expect(pagina.getByRole('heading', { name: '2 · Fecha y costo de adquisición — PL-05' })).toBeVisible();
     await expect(pagina.getByRole('button', { name: 'Importar PL-03' })).toBeVisible();
     await expect(pagina.getByRole('button', { name: 'Importar PL-05' })).toBeVisible();
@@ -71,14 +70,12 @@ test('listado de bienes: filtra, ordena, selecciona y muestra cobertura', async 
     await pagina.getByRole('button', { name: 'Limpiar selección' }).click();
     await expect(pagina.getByText('50 seleccionados')).toBeHidden();
 
-    // Cobertura: la demostración recorre los 8 servicios activos.
-    await pagina.getByRole('link', { name: 'Cobertura' }).click();
-    await expect(pagina.getByRole('heading', { name: '100 % de cobertura' })).toBeVisible();
-    await expect(pagina.getByText('8 de 8 servicios activos · 50 bienes registrados')).toBeVisible();
-
-    // El panel de validaciones del paso 02 se muestra bajo las pantallas.
-    await expect(pagina.locator('[data-validacion="VAL-02-05"]')).toHaveAttribute('data-cumple', 'true');
-    await expect(pagina.locator('[data-validacion="VAL-02-06"]')).toHaveAttribute('data-cumple', 'false');
+    // Servicios: la demostración tiene bienes en los 8 servicios activos.
+    await pagina.getByRole('link', { name: 'Barridos y servicios' }).click();
+    await expect(pagina.getByRole('heading', { name: 'Barridos y servicios' }).first()).toBeVisible();
+    await expect(pagina.getByText('8 de 8 servicios activos con bienes · 50 bienes vigentes')).toBeVisible();
+    // Sus bienes no vinieron de un barrido, así que el historial está vacío.
+    await expect(pagina.getByText('Todavía no se ha importado ningún barrido.')).toBeVisible();
   } finally {
     await app.close();
     rmSync(userData, { recursive: true, force: true });
