@@ -43,6 +43,29 @@ if (!asegurarInstanciaUnica(app, enfocarVentanaPrincipal)) {
         // En pruebas automatizadas el diálogo modal bloquearía el proceso; el registro conserva la evidencia.
         if (process.env['VALUACION_SIN_DIALOGO'] !== '1') dialog.showErrorBox(titulo, mensaje);
       },
+      preguntarBaseIncompatible: (motivo, destino) => {
+        if (process.env['VALUACION_SIN_DIALOGO'] === '1') return process.env['VALUACION_APARTAR_BASE'] === '1';
+        const r = dialog.showMessageBoxSync({
+          type: 'warning',
+          title: 'Base de datos de otra versión',
+          message: 'La base de datos guardada no es compatible con esta versión de la aplicación.',
+          detail:
+            `${motivo}\n\nPuede apartarla y empezar con una base en blanco. No se borra: queda guardada como\n${destino}\n\n` +
+            'Si tiene procesos que necesita conservar, elija Salir y pida ayuda antes de continuar.',
+          buttons: ['Apartarla y empezar en blanco', 'Salir'],
+          defaultId: 1,
+          cancelId: 1,
+          noLink: true,
+        });
+        return r === 0;
+      },
+    }).catch((e: unknown) => {
+      // Un error de arranque sin atrapar dejaba la aplicación cerrada sin ventana ni aviso.
+      const mensaje = e instanceof Error ? e.message : String(e);
+      if (process.env['VALUACION_SIN_DIALOGO'] !== '1') {
+        dialog.showErrorBox('La aplicación no pudo abrirse', `${mensaje}\n\nEl detalle queda en ${join(app.getPath('userData'), 'logs')}.`);
+      }
+      return { estado: 'salir' as const, codigo: 1, registro: null };
     });
 
     if (resultado.estado === 'salir') {

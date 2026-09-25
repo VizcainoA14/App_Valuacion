@@ -32,6 +32,26 @@ Reglas:
 
 ---
 
+## 2026-09-25 · Claude · Defecto: la app instalada no abría con una base de otra versión
+
+**Tareas:** defecto reportado por el propietario
+
+- **Síntoma:** tras instalar, la app no abría. El registro se cortaba en «ruta de datos».
+- **Causa:** la base de `%APPDATA%` era de una versión anterior (esquema v4). El migrador lanzaba
+  `ESQUEMA_MAS_NUEVO` dentro de `whenReady().then(...)` y **nadie lo atrapaba**: la app se cerraba
+  sin ventana, sin aviso y sin registro. Peor aún, una base de ADR-028 (v3, otras tablas) habría
+  pasado por buena.
+- **Corrección:** `prepararBaseDatos` compara tablas y columnas contra el esquema
+  (`ESQUEMA_INCOMPATIBLE`) y cierra la conexión si falla. `arrancar` pregunta: **apartar la base**
+  (se renombra a `valuacion-incompatible-<fecha>.db`, no se borra) y empezar en blanco, o salir
+  (código 4). Cualquier otro error de arranque muestra un diálogo con la ruta del registro.
+- **Pruebas:** `compatibilidad.test.ts` (3) y dos E2E en `arranque-datos.spec.ts`. 372 tests,
+  18 E2E sobre el paquete. Instalador regenerado.
+
+**Siguiente:** commit de ADR-028 + ADR-029 + esta corrección.
+
+---
+
 ## 2026-09-24 · Claude · ADR-029: el proceso de valuación es lo principal, y cada uno es independiente
 
 **Tareas:** ADR-029 (nuevo) · RF-01-09 clonar parametrización ⏭️

@@ -3,7 +3,7 @@
 > **LEER ESTE ARCHIVO PRIMERO.** Es el punto de entrada obligatorio para cualquier persona o agente
 > que retome el trabajo. Ver `.claude/config_sesion.json` § *protocolo_inicio*.
 
-**Última actualización:** 2026-09-24
+**Última actualización:** 2026-09-25
 **Actualizado por:** Claude (ADR-029: el proceso es lo principal)
 **Versión del plan:** 1.1 + **ADR-026** a **ADR-029** · **Versión de `/especificacion/teoria`:** 2.1
 
@@ -22,6 +22,10 @@ cambió: mismas cifras de `ANEXO_C`.
 ---
 
 ## 2. Última tarea realizada
+
+**Defecto del 2026-09-25**: la app instalada no abría con una base de otra versión (el error de
+arranque no se atrapaba). Ahora detecta la base incompatible y ofrece apartarla y empezar en blanco.
+Detalle en la bitácora. 372 tests, 18 E2E sobre el paquete, instalador regenerado.
 
 **ADR-029 · el proceso es lo principal**, el 2026-09-24. Pedido del propietario: *«quita el tema de
 la entidad y quiero que lo principal sea un proceso […] los procesos deben ser independientes»*.

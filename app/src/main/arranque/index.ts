@@ -3,10 +3,14 @@
  *
  * Orden: registro técnico → config.json → ruta de datos → bloqueo de unidad de
  * red → base migrada (con respaldo previo si hace falta) → respaldo diario.
+ *
+ * Si la base no es de esta aplicación (más nueva, o de una versión de desarrollo
+ * con otro esquema), se pregunta: apartarla —se renombra, no se borra— y
+ * empezar con una en blanco, o salir. Nunca se cierra sin decir por qué.
  * Todo lo que toca Electron o el sistema llega inyectado, así que se prueba
  * sin arrancar Electron.
  */
-import { mkdirSync } from 'node:fs';
+import { existsSync, mkdirSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { leerConfigInstalacion, type ConfigInstalacion } from './configInstalacion';
 import { crearRegistro, interpretarNivel, type Registro } from './registro';
@@ -20,8 +24,12 @@ import {
 } from './rutaDatos';
 import { respaldoDiario } from './respaldoDiario';
 import { prepararBaseDatos, type BaseDatosAbierta } from '../infraestructura/db';
+import { ErrorInfraestructura } from '../../compartido/errores';
 
 export const CODIGO_SALIDA_UNIDAD_DE_RED = 3;
+export const CODIGO_SALIDA_BASE_INCOMPATIBLE = 4;
+
+const CODIGOS_BASE_INCOMPATIBLE = new Set(['ESQUEMA_MAS_NUEVO', 'ESQUEMA_INCOMPATIBLE']);
 
 export interface DependenciasArranque {
   readonly argv: readonly string[];
@@ -33,6 +41,11 @@ export interface DependenciasArranque {
   readonly ejecutar: Ejecutor;
   /** Diálogo bloqueante (o registro, en pruebas). */
   readonly mostrarBloqueo: (titulo: string, mensaje: string) => void;
+  /**
+   * La base no es de esta aplicación: `true` = apartarla y empezar en blanco,
+   * `false` = salir sin tocar nada. Recibe el motivo y dónde quedaría la base apartada.
+   */
+  readonly preguntarBaseIncompatible: (motivo: string, destino: string) => boolean;
 }
 
 export interface ContextoAplicacion {
@@ -70,9 +83,26 @@ export async function arrancar(deps: DependenciasArranque): Promise<ResultadoArr
 
   mkdirSync(rutaDatos.ruta, { recursive: true });
   const dirRespaldos = join(rutaDatos.ruta, 'respaldos');
-  const baseDatos = await prepararBaseDatos(join(rutaDatos.ruta, 'valuacion.db'), dirRespaldos, () =>
-    deps.ahora().toISOString(),
-  );
+  const archivoBase = join(rutaDatos.ruta, 'valuacion.db');
+  const preparar = (): Promise<BaseDatosAbierta> => prepararBaseDatos(archivoBase, dirRespaldos, () => deps.ahora().toISOString());
+  let baseDatos: BaseDatosAbierta;
+  try {
+    baseDatos = await preparar();
+  } catch (e) {
+    if (!(e instanceof ErrorInfraestructura) || !CODIGOS_BASE_INCOMPATIBLE.has(e.codigo)) throw e;
+    const marca = deps.ahora().toISOString().replace(/[:.]/g, '-');
+    const apartada = join(rutaDatos.ruta, `valuacion-incompatible-${marca}.db`);
+    registro.error('la base de datos no es de esta aplicación', { codigo: e.codigo, mensaje: e.message });
+    if (!deps.preguntarBaseIncompatible(e.message, apartada)) {
+      return { estado: 'salir', codigo: CODIGO_SALIDA_BASE_INCOMPATIBLE, registro };
+    }
+    // Se aparta, no se borra: la base y sus archivos de WAL quedan juntos con otro nombre.
+    for (const sufijo of ['', '-wal', '-shm']) {
+      if (existsSync(archivoBase + sufijo)) renameSync(archivoBase + sufijo, apartada + sufijo);
+    }
+    registro.warn('base incompatible apartada; se empieza con una en blanco', { apartada });
+    baseDatos = await preparar();
+  }
   registro.info('base de datos lista', {
     version: baseDatos.migracion.hasta,
     migradaDesde: baseDatos.migracion.desde,
